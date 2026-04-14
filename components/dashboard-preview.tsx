@@ -28,7 +28,7 @@ const selectedToday = [
 ];
 
 const readyRoles = [
-  { name: "Northline Health", pack: "CV v2 · Letter v1 · 3 links" },
+  { name: "Northline Health", pack: "Resume · Cover Letter · 3 links" },
   { name: "Meridian Labs", pack: "CV v1 · Letter v1 · 2 links" },
 ];
 
@@ -64,7 +64,7 @@ export function DashboardPreview({ fullPage = false }: { fullPage?: boolean }) {
                 HunterAgent
               </p>
               <h2 className="mt-2 text-xl font-semibold tracking-tight text-[var(--ink)]">
-                Daily brief at 8:00 AM
+                Daily roles at 8:00 AM
               </h2>
             </div>
             <button className="rounded-full border border-[var(--border-soft)] bg-white p-2 text-[var(--muted)]">
@@ -193,7 +193,7 @@ export function DashboardPreview({ fullPage = false }: { fullPage?: boolean }) {
 
               <div className="rounded-[1.8rem] border border-[var(--border-soft)] bg-white p-5 shadow-[0_25px_55px_-40px_rgba(18,40,38,0.3)]">
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-                  Applied memory
+                  Applications
                 </p>
                 <div className="mt-4 divide-y divide-[var(--border-soft)]">
                   {applied.map((item) => (
@@ -216,9 +216,6 @@ export function DashboardPreview({ fullPage = false }: { fullPage?: boolean }) {
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
                   Activity log
                 </p>
-                <h3 className="mt-2 text-xl font-semibold tracking-tight text-[var(--ink)]">
-                  Email owns discovery, dashboard owns execution.
-                </h3>
               </div>
               <span className="text-xs font-medium text-[var(--muted)]">4 events today</span>
             </div>
@@ -296,8 +293,7 @@ export function DashboardPreview({ fullPage = false }: { fullPage?: boolean }) {
               </div>
 
               <div className="rounded-[1.5rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4 text-sm text-[var(--muted)]">
-                Follow-up stays off until you mark this role as applied. Once enabled,
-                HunterAgent will remind you by email and prepare a draft in the dashboard.
+                Turn on follow-up reminders after you apply.
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">

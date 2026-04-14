@@ -86,7 +86,7 @@ export function MockEmailBrief() {
             Top picks
           </p>
           <div className="flex items-center gap-1 text-xs font-medium text-[var(--accent)]">
-            Reply examples: 1,4 or BrightPath
+            Reply with numbers or names, e.g. 1, 4 or BrightPath →
             <ArrowRight size={14} />
           </div>
         </div>
@@ -110,7 +110,7 @@ export function MockEmailBrief() {
                   </div>
                   <div className="flex items-center gap-1.5 rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-[11px] font-medium text-[var(--muted)]">
                     <Briefcase size={12} weight="fill" />
-                    Selected #{role.id}
+                    Selected
                   </div>
                 </div>
                 <div className="mt-3 flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
@@ -126,7 +126,7 @@ export function MockEmailBrief() {
 
       <div className="mt-5 rounded-[1.5rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)]/80 p-4">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-          More from today&apos;s shortlist
+          Other matches today
         </p>
         <div className="mt-3 grid gap-2 text-sm text-[var(--muted)]">
           {extraRoles.map((role, index) => (
@@ -141,9 +141,9 @@ export function MockEmailBrief() {
       <div className="mt-5 flex items-center justify-between gap-4 rounded-[1.4rem] bg-[var(--accent)] px-4 py-3 text-sm font-medium text-white shadow-[0_18px_45px_-28px_rgba(18,108,100,0.9)]">
         <div className="flex items-center gap-2">
           <Sparkle size={16} weight="fill" />
-          Email is for shortlist selection and alerts only.
+          Reply to choose roles — full details in your dashboard.
         </div>
-        <span className="rounded-full bg-white/14 px-3 py-1 text-xs">Open dashboard</span>
+        <span className="rounded-full bg-white/14 px-3 py-1 text-xs">Open your dashboard</span>
       </div>
     </div>
   );

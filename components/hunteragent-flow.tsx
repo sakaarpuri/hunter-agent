@@ -71,9 +71,9 @@ const ONBOARDING_STEPS = [
 ] as const;
 
 const PROCESSING_STAGES = [
-  "Matching evidence to the selected roles",
-  "Drafting the resume and cover letter",
-  "Ranking work samples and follow-up context",
+  "Analysing the roles you selected",
+  "Drafting your resume and cover letter",
+  "Selecting the best supporting materials",
 ] as const;
 
 const EDIT_PROMPT_SUGGESTIONS = ["Make it more direct", "Focus on growth work", "Sound more senior"] as const;
@@ -690,13 +690,13 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
 
   const stageLabel =
     workspace?.flowPhase === "onboarding"
-      ? "Set up the scouting rhythm once"
+      ? "Let's get you set up"
       : workspace?.flowPhase === "waiting"
         ? "First brief scheduled"
         : workspace?.flowPhase === "brief"
           ? "Today’s email brief is live"
           : workspace?.flowPhase === "processing"
-      ? "Reply received. Packs are moving."
+      ? "Building your application materials"
             : "Application studio";
 
   const isStudioLayout = workspace?.flowPhase === "studio";
@@ -824,7 +824,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span>Brief status</span>
-                <span className={cn("font-medium", draftProfile.briefsPaused ? "text-[rgb(179,88,58)]" : "text-[var(--accent)]")}>
+                <span className={cn("font-medium", draftProfile.briefsPaused ? "text-amber-600" : "text-[var(--accent)]")}>
                   {draftProfile.briefsPaused ? "Paused" : "Active"}
                 </span>
               </div>
@@ -833,7 +833,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
 
           {!workspace.leftRailCollapsed && <div className="mt-6 rounded-[1.7rem] border border-[var(--border-soft)] bg-white p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-              Profile signal
+              Your profile
             </p>
             <div className="mt-4 space-y-3 text-sm leading-6 text-[var(--muted)]">
               <div className="flex items-start gap-3">
@@ -938,8 +938,8 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
           </div>
 
           {(clientError || workspace.lastError) && (
-            <div className="mt-6 flex items-start gap-3 rounded-[1.6rem] border border-[rgba(179,88,58,0.22)] bg-[rgba(179,88,58,0.08)] px-4 py-4 text-sm leading-7 text-[var(--ink)]">
-              <WarningCircle size={18} className="mt-1 text-[rgb(179,88,58)]" />
+            <div className="mt-6 flex items-start gap-3 rounded-[1.6rem] border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-7 text-[var(--ink)]">
+              <WarningCircle size={18} className="mt-1 text-amber-600" />
               <div>{clientError ?? workspace.lastError}</div>
             </div>
           )}
@@ -964,7 +964,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                 <div className="rounded-[1.6rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
                   <p className="text-sm font-semibold text-[var(--ink)]">Edit name</p>
                   <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-                    This is the name HunterAgent shows in the signed-in shell instead of exposing the raw email.
+                    This is the name shown in your dashboard.
                   </p>
                   <label className="mt-4 block">
                     <span className="mb-2 block text-sm font-medium text-[var(--ink)]">Display name</span>
@@ -1022,9 +1022,9 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
               <div className="mt-5 rounded-[1.7rem] border border-[var(--border-soft)] bg-[var(--surface)] p-5">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <p className="text-sm font-semibold text-[var(--ink)]">Scouting preferences</p>
+                    <p className="text-sm font-semibold text-[var(--ink)]">Job search settings</p>
                     <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--muted)]">
-                      These settings shape ranking, filtering, and whether HunterAgent should send a daily brief at all.
+                      These settings shape which roles get matched and whether your daily email is active.
                     </p>
                   </div>
                   <button
@@ -1033,7 +1033,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                     disabled={isSavingPreferences}
                     className="inline-flex items-center rounded-full bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
                   >
-                    {isSavingPreferences ? "Saving…" : "Save scouting settings"}
+                    {isSavingPreferences ? "Saving…" : "Save settings"}
                   </button>
                 </div>
 
@@ -1041,7 +1041,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                   <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-white p-4">
                     <p className="text-sm font-semibold text-[var(--ink)]">Brief status</p>
                     <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-                      Pause the daily scout if you want to stop sends without losing your saved workspace.
+                      Pause your daily email if you need a break. Your settings and history are kept.
                     </p>
                     <div className="mt-4 flex flex-wrap gap-3">
                       <button
@@ -1059,7 +1059,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                         onClick={() => setDraftProfile((current) => ({ ...current, briefsPaused: true }))}
                         className={cn(
                           "rounded-full px-4 py-2 text-sm font-medium",
-                          draftProfile.briefsPaused ? "bg-[rgb(179,88,58)] text-white" : "border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--ink)]",
+                          draftProfile.briefsPaused ? "bg-amber-600 text-white" : "border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--ink)]",
                         )}
                       >
                         Pause briefs
@@ -1183,7 +1183,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                           </div>
                         </div>
                         <div className="grid gap-2 text-sm">
-                          <span className="font-medium text-[var(--ink)]">Remote region</span>
+                          <span className="font-medium text-[var(--ink)]">Remote work region</span>
                           <div className="flex flex-wrap gap-2">
                             {REMOTE_REGION_OPTIONS.map((option) => {
                               const active = draftProfile.remoteRegions.includes(option.id);
@@ -1661,7 +1661,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                 <div className="mt-5 grid gap-3">
                   {[
                     `Brief lands at ${draftProfile.briefTime} in ${draftProfile.recipientEmail || "your chosen inbox"}.`,
-                    "Replies arrive as raw email text and become brief records.",
+                    "Reply to your email with the roles you want — we'll pick them up automatically.",
                     "Selected roles move straight into real CV, letter, and follow-up generation.",
                   ].map((line) => (
                     <div key={line} className="rounded-[1.5rem] bg-[var(--surface)] px-4 py-4 text-sm leading-7 text-[var(--muted)]">
@@ -1811,7 +1811,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                     <div className="mt-5 space-y-3">
                       {selectedRoles.length === 0 ? (
                         <div className="rounded-[1.5rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4 text-sm leading-7 text-[var(--muted)]">
-                          No roles are selected yet. Paste the inbound email body to let HunterAgent build the brief record and start generation.
+                          No roles selected yet. Paste your daily email below and choose the roles you want to apply for.
                         </div>
                       ) : (
                         selectedRoles.map((role) => {
@@ -1857,7 +1857,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                     <div className="mt-4 space-y-3">
                       {activeBrief.inboundRecords.length === 0 ? (
                         <div className="rounded-[1.45rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] px-4 py-4 text-sm leading-7 text-[var(--muted)]">
-                          No inbound replies recorded yet.
+                          No replies yet. When you reply to your daily email, the roles you mention will appear here.
                         </div>
                       ) : (
                         activeBrief.inboundRecords.map((record) => (
@@ -1907,8 +1907,8 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
               </div>
               <div className="mt-5 rounded-[1.5rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4 text-sm leading-7 text-[var(--muted)]">
                 {workspace.flowPhase === "processing"
-                  ? `${PROCESSING_STAGES[generationStage]}. This run is ${process.env.NODE_ENV === "production" ? "ready for live keys" : "configured to use Anthropic when the API key is present, with a grounded fallback for local work."}`
-                  : "Once a reply is parsed, the right side becomes a focused role-by-role review space for resume, cover letter, work samples, and follow-up memory."}
+                  ? `${PROCESSING_STAGES[generationStage]}…`
+                  : "Select roles from your email to start building your application materials. Your CV, cover letter, and follow-up draft will appear here."}
               </div>
             </div>
           ) : (
@@ -2142,7 +2142,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                   <div className="mt-6 space-y-3">
                     {activePack.workSampleSelections.length === 0 ? (
                       <div className="rounded-[1.4rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4 text-sm leading-7 text-[var(--muted)]">
-                        This role is still strongest as a CV-and-letter application, so HunterAgent is not forcing work samples here.
+                        No work samples needed for this role — your CV and cover letter are the strongest application here.
                       </div>
                     ) : activePack.workSampleSelections.map((item) => (
                       <div key={`${item.title}-${item.note}`} className="rounded-[1.4rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
@@ -2185,7 +2185,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Trust layer</p>
                         <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-                          See why this role, style, and work-sample decision were chosen, and what is grounded versus inferred.
+                          See how this CV, cover letter, and work sample selection were put together.
                         </p>
                       </div>
                       <button
@@ -2262,7 +2262,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
 
                 {activePack.provider === "fallback" && (
                   <div className="mt-4 rounded-[1.45rem] border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-4 text-sm leading-7 text-[var(--muted)]">
-                    Anthropic is not configured yet, so HunterAgent is using the grounded fallback generator. Set <code>ANTHROPIC_API_KEY</code> and optionally <code>ANTHROPIC_MODEL</code> to switch the studio to live model output.
+                    These materials were generated using our fallback engine. They&apos;re a solid starting point — review and edit before sending.
                   </div>
                 )}
               </div>
@@ -2271,7 +2271,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Applied timeline</p>
                 {appliedDetails.length === 0 ? (
                   <div className="mt-4 rounded-[1.5rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4 text-sm leading-7 text-[var(--muted)]">
-                    No roles marked applied yet. Once the user applies, HunterAgent stores the role, provider, style, and optional follow-up draft so the memory survives refreshes.
+                    No applications logged yet. Mark a role as applied from the studio to track it here.
                   </div>
                 ) : (
                   <div className="mt-4 space-y-4">
