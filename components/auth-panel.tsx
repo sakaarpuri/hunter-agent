@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle, LockKey, UserCircle } from "@phosphor-icons/react/dist/ssr";
+import { ArrowLeft, CheckCircle, LockKey, UserCircle } from "@phosphor-icons/react/dist/ssr";
+import Link from "next/link";
 import type { AuthUser } from "@/lib/auth";
 
 type Mode = "signup" | "signin" | "forgot";
@@ -23,6 +24,9 @@ async function postJson<T>(url: string, body: unknown) {
   }
   return payload as T;
 }
+
+const inputClass =
+  "w-full rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-3.5 text-sm text-[var(--ink)] outline-none transition-all duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] focus:border-[var(--accent)] focus:bg-white focus:shadow-[0_0_0_3px_rgba(18,108,100,0.1)] placeholder:text-[var(--muted)]/60";
 
 export function AuthPanel() {
   const [mode, setMode] = useState<Mode>("signup");
@@ -65,177 +69,212 @@ export function AuthPanel() {
 
   return (
     <main className="px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100dvh-3rem)] max-w-[1400px] items-center gap-10 lg:grid-cols-[1.04fr_0.96fr]">
+      {/* Back to home */}
+      <div className="mx-auto max-w-[1400px] mb-6">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-sm text-[var(--muted)] hover:text-[var(--ink)] transition-colors duration-200"
+        >
+          <ArrowLeft size={14} weight="bold" />
+          Back to home
+        </Link>
+      </div>
+
+      <div className="mx-auto grid min-h-[calc(100dvh-6rem)] max-w-[1400px] items-center gap-10 lg:grid-cols-[1.04fr_0.96fr]">
+
+        {/* Left — value prop */}
         <section className="max-w-[42rem]">
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-white/85 px-4 py-2 text-sm font-medium text-[var(--muted)] shadow-[0_18px_38px_-28px_rgba(20,43,40,0.24)] backdrop-blur-sm">
             <CheckCircle size={16} weight="duotone" className="text-[var(--accent)]" />
-            Email-first job scouting with a real account behind it now
+            Your jobs, your applications, your account
           </div>
           <h1 className="mt-8 text-5xl font-semibold tracking-[-0.06em] text-[var(--ink)] md:text-6xl md:leading-[0.94]">
-            Sign in to keep your briefs, packs, and follow-ups tied to you.
+            Everything stays with you.
           </h1>
           <p className="mt-6 max-w-[38rem] text-lg leading-8 text-[var(--muted)]">
-            HunterAgent now saves your workspace per account, so your daily brief settings, application packs, prompt history,
-            and applied timeline stay with you across refreshes and future devices.
+            Your daily role preferences, generated CVs and cover letters, application history, and follow-up reminders — all tied to your account and available any time you sign in.
           </p>
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+          <div className="mt-10 grid gap-3 sm:grid-cols-3">
             {[
-              ["Real accounts", "Email and password with secure sessions instead of one shared local workspace."],
-              ["Your identity", "The dashboard shows your chosen name and gives you clean profile settings."],
-              ["Durable memory", "Brief history, prompt refinements, and applied records now persist per user."],
+              ["Your history", "Every role matched, every CV generated — saved."],
+              ["Your profile", "Set preferences once. Update any time from settings."],
+              ["Any device", "Sign in from anywhere and pick up where you left off."],
             ].map(([title, body]) => (
-              <article key={title} className="rounded-[1.6rem] border border-[var(--border-soft)] bg-white px-5 py-5 shadow-[0_24px_55px_-34px_rgba(20,43,40,0.22)]">
-                <p className="text-sm font-semibold text-[var(--ink)]">{title}</p>
-                <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{body}</p>
+              <article key={title} className="rounded-[1.8rem] border border-[var(--border-soft)] bg-[var(--surface)] p-1.5 shadow-[0_24px_55px_-34px_rgba(20,43,40,0.18)]">
+                <div className="rounded-[calc(1.8rem-0.375rem)] bg-white px-4 py-4 h-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.9)]">
+                  <p className="text-sm font-semibold text-[var(--ink)]">{title}</p>
+                  <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{body}</p>
+                </div>
               </article>
             ))}
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-[var(--border-soft)] bg-white p-6 shadow-[0_30px_70px_-36px_rgba(20,43,40,0.3)] sm:p-8">
-          {mode !== "forgot" && (
-            <div className="flex rounded-full bg-[var(--surface)] p-1 text-sm font-medium text-[var(--muted)]">
-              {([
-                ["signup", "Create account"],
-                ["signin", "Sign in"],
-              ] as const).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => switchMode(value)}
-                  className={cn(
-                    "flex-1 rounded-full px-4 py-2.5 transition-colors",
-                    mode === value ? "bg-white text-[var(--ink)] shadow-[0_14px_35px_-24px_rgba(20,43,40,0.4)]" : "hover:text-[var(--ink)]",
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
+        {/* Right — form */}
+        <section className="rounded-[2.2rem] border border-[var(--border-soft)] bg-[var(--surface)] p-1.5 shadow-[0_40px_90px_-40px_rgba(20,43,40,0.35)]">
+          <div className="rounded-[calc(2.2rem-0.375rem)] bg-white p-6 shadow-[inset_0_1px_1px_rgba(255,255,255,0.9)] sm:p-8">
 
-          {mode === "forgot" && (
-            <div>
-              <p className="text-sm font-semibold text-[var(--ink)]">Reset your password</p>
-              <p className="mt-1 text-sm text-[var(--muted)]">Enter your email and we’ll send a reset link.</p>
-            </div>
-          )}
+            {mode !== "forgot" && (
+              <div className="flex rounded-full bg-[var(--surface)] p-1 text-sm font-medium text-[var(--muted)]">
+                {([
+                  ["signup", "Create account"],
+                  ["signin", "Sign in"],
+                ] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => switchMode(value)}
+                    className={cn(
+                      "flex-1 rounded-full px-4 py-2.5 transition-all duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]",
+                      mode === value
+                        ? "bg-white text-[var(--ink)] shadow-[0_14px_35px_-24px_rgba(20,43,40,0.4)]"
+                        : "hover:text-[var(--ink)]",
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
 
-          {mode === "forgot" && forgotSent ? (
-            <div className="mt-8 rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] px-5 py-5 text-sm leading-7 text-[var(--muted)]">
+            {mode === "forgot" && (
               <div className="flex items-start gap-3">
-                <CheckCircle size={18} className="mt-1 text-[var(--accent)]" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-soft)]">
+                  <LockKey size={18} weight="duotone" className="text-[var(--accent)]" />
+                </div>
                 <div>
-                  <p className="font-medium text-[var(--ink)]">Check your inbox</p>
-                  <p>If that email has an account, a reset link is on its way. It expires in 1 hour.</p>
+                  <p className="font-semibold text-[var(--ink)]">Reset your password</p>
+                  <p className="mt-0.5 text-sm text-[var(--muted)]">Enter your email and we&apos;ll send a reset link.</p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => switchMode("signin")}
-                className="mt-4 text-sm font-medium text-[var(--accent)] hover:underline"
-              >
-                Back to sign in
-              </button>
-            </div>
-          ) : (
-            <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
-              {mode === "signup" && (
-                <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-[var(--ink)]">Your name</span>
-                  <input
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    className="w-full rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)]"
-                    placeholder="Aisha Patel"
-                    autoComplete="name"
-                  />
-                </label>
-              )}
+            )}
 
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[var(--ink)]">Email</span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="w-full rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)]"
-                  placeholder="you@example.com"
-                  autoComplete="email"
-                />
-              </label>
-
-              {mode !== "forgot" && (
-                <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-[var(--ink)]">Password</span>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    className="w-full rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)]"
-                    placeholder="At least 6 characters and one number or symbol"
-                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
-                  />
-                </label>
-              )}
-
-              {mode !== "forgot" && (
-                <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-4 text-sm leading-7 text-[var(--muted)]">
+            {mode === "forgot" && forgotSent ? (
+              <div className="mt-8 space-y-4">
+                <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] px-5 py-5">
                   <div className="flex items-start gap-3">
-                    {mode === "signup" ? <UserCircle size={18} className="mt-1 text-[var(--accent)]" /> : <LockKey size={18} className="mt-1 text-[var(--accent)]" />}
+                    <CheckCircle size={18} weight="duotone" className="mt-0.5 shrink-0 text-[var(--accent)]" />
                     <div>
-                      <p className="font-medium text-[var(--ink)]">{mode === "signup" ? "What happens next" : "Sign-in baseline"}</p>
-                      <p>
-                        {mode === "signup"
-                          ? "We’ll create your HunterAgent account, open your saved workspace immediately, and keep that workspace tied to your email from then on."
-                          : "Use the same email and password you created here. Your prompts, packs, and applied history will load into the dashboard after sign in."}
+                      <p className="font-medium text-[var(--ink)]">Check your inbox</p>
+                      <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+                        If that email has an account, a reset link is on its way. It expires in 1 hour.
                       </p>
                     </div>
                   </div>
                 </div>
-              )}
-
-              {error && (
-                <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                  {error}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="inline-flex w-full items-center justify-center rounded-full bg-[var(--accent)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_45px_-26px_rgba(18,108,100,0.9)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {isSubmitting
-                  ? "Working…"
-                  : mode === "signup"
-                    ? "Create HunterAgent account"
-                    : mode === "forgot"
-                      ? "Send reset link"
-                      : "Sign in to HunterAgent"}
-              </button>
-
-              {mode === "signin" && (
-                <button
-                  type="button"
-                  onClick={() => switchMode("forgot")}
-                  className="w-full text-center text-sm text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
-                >
-                  Forgot password?
-                </button>
-              )}
-
-              {mode === "forgot" && (
                 <button
                   type="button"
                   onClick={() => switchMode("signin")}
-                  className="w-full text-center text-sm text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-[var(--accent)] hover:underline"
                 >
+                  <ArrowLeft size={13} weight="bold" />
                   Back to sign in
                 </button>
-              )}
-            </form>
-          )}
+              </div>
+            ) : (
+              <form className="mt-7 space-y-4" onSubmit={handleSubmit}>
+                {mode === "signup" && (
+                  <label className="block">
+                    <span className="mb-1.5 block text-sm font-medium text-[var(--ink)]">Your name</span>
+                    <input
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      className={inputClass}
+                      placeholder="Aisha Patel"
+                      autoComplete="name"
+                    />
+                  </label>
+                )}
+
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-[var(--ink)]">Email</span>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    className={inputClass}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                  />
+                </label>
+
+                {mode !== "forgot" && (
+                  <label className="block">
+                    <span className="mb-1.5 block text-sm font-medium text-[var(--ink)]">Password</span>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      className={inputClass}
+                      placeholder="At least 6 characters and one number or symbol"
+                      autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                    />
+                  </label>
+                )}
+
+                {mode !== "forgot" && (
+                  <div className="rounded-[1.4rem] border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-4 text-sm leading-7 text-[var(--muted)]">
+                    <div className="flex items-start gap-3">
+                      {mode === "signup"
+                        ? <UserCircle size={18} weight="duotone" className="mt-0.5 shrink-0 text-[var(--accent)]" />
+                        : <LockKey size={18} weight="duotone" className="mt-0.5 shrink-0 text-[var(--accent)]" />}
+                      <div>
+                        <p className="font-medium text-[var(--ink)]">
+                          {mode === "signup" ? "What happens next" : "Signing back in"}
+                        </p>
+                        <p className="mt-0.5 leading-6">
+                          {mode === "signup"
+                            ? "We'll create your account and open your dashboard immediately. Your preferences, generated materials, and application history will be saved from this point on."
+                            : "Use the email and password you signed up with. Your roles, CVs, cover letters, and application history will all be there."}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                    {error}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="inline-flex w-full items-center justify-center rounded-full bg-[var(--accent)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_45px_-26px_rgba(18,108,100,0.9)] transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 active:scale-[0.98]"
+                >
+                  {isSubmitting
+                    ? "Working…"
+                    : mode === "signup"
+                      ? "Create your account"
+                      : mode === "forgot"
+                        ? "Send reset link"
+                        : "Sign in"}
+                </button>
+
+                {mode === "signin" && (
+                  <button
+                    type="button"
+                    onClick={() => switchMode("forgot")}
+                    className="w-full text-center text-sm text-[var(--muted)] transition-colors duration-200 hover:text-[var(--ink)]"
+                  >
+                    Forgot your password?
+                  </button>
+                )}
+
+                {mode === "forgot" && (
+                  <button
+                    type="button"
+                    onClick={() => switchMode("signin")}
+                    className="inline-flex items-center gap-2 text-sm text-[var(--muted)] transition-colors duration-200 hover:text-[var(--ink)]"
+                  >
+                    <ArrowLeft size={13} weight="bold" />
+                    Back to sign in
+                  </button>
+                )}
+              </form>
+            )}
+          </div>
         </section>
       </div>
     </main>
