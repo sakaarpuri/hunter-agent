@@ -186,6 +186,65 @@ export async function sendDailyBriefEmail(brief: BriefRecord, profile: Profile, 
   };
 }
 
+export async function sendPasswordResetEmail(toEmail: string, resetLink: string) {
+  const apiKey = requireEnv("AGENTMAIL_API_KEY");
+  const inboxId = requireEnv("AGENTMAIL_INBOX_ID");
+
+  const text = [
+    "Hi,",
+    "",
+    "We received a request to reset your HunterAgent password.",
+    "",
+    "Click the link below to set a new password. It expires in 1 hour.",
+    "",
+    resetLink,
+    "",
+    "If you didn't request this, you can safely ignore this email. Your password won't change.",
+  ].join("\n");
+
+  const html = `
+<!doctype html>
+<html>
+  <body style="margin:0;background:#f5f2ea;padding:24px;font-family:Inter,Arial,sans-serif;color:#172221;">
+    <div style="max-width:540px;margin:0 auto;background:#fffdf8;border:1px solid #dfddd6;border-radius:28px;overflow:hidden;">
+      <div style="padding:28px 28px 20px 28px;background:linear-gradient(135deg,#eef6f3 0%,#fffdf8 100%);border-bottom:1px solid #e6e2da;">
+        <div style="font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:#5c6a67;">HunterAgent</div>
+        <h1 style="margin:14px 0 0 0;font-size:26px;line-height:1.2;">Reset your password</h1>
+      </div>
+      <div style="padding:24px 28px;">
+        <p style="margin:0 0 20px 0;font-size:15px;line-height:1.7;color:#4f5c59;">
+          We received a request to reset your HunterAgent password. Click the button below to set a new one. The link expires in <strong>1 hour</strong>.
+        </p>
+        <a href="${escapeHtml(resetLink)}" style="display:inline-block;padding:13px 22px;border-radius:999px;background:#1d7a67;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;">Reset password</a>
+        <p style="margin:24px 0 0 0;font-size:13px;line-height:1.7;color:#73817d;">
+          If you didn't request this, you can safely ignore this email. Your password won't change.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>
+  `.trim();
+
+  const response = await fetch(`https://api.agentmail.to/v0/inboxes/${encodeURIComponent(inboxId)}/messages/send`, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${apiKey}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      to: toEmail,
+      subject: "Reset your HunterAgent password",
+      text,
+      html,
+    }),
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(`AgentMail send failed: ${response.status} ${message}`);
+  }
+}
+
 export function buildScheduledBriefStatus(brief: BriefRecord, profile: Profile) {
   if (profile.briefsPaused) {
     return "Daily briefs are paused. Resume them in settings when you want HunterAgent to send again.";

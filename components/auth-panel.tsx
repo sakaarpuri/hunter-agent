@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle, LockKey, UserCircle } from "@phosphor-icons/react";
+import { CheckCircle, LockKey, UserCircle } from "@phosphor-icons/react/dist/ssr";
 import type { AuthUser } from "@/lib/auth";
 
-type Mode = "signup" | "signin";
+type Mode = "signup" | "signin" | "forgot";
 
 function cn(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
@@ -31,11 +31,13 @@ export function AuthPanel() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
 
   function switchMode(nextMode: Mode) {
     setMode(nextMode);
     setPassword("");
     setError(null);
+    setForgotSent(false);
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -46,10 +48,14 @@ export function AuthPanel() {
     try {
       if (mode === "signup") {
         await postJson<{ user: AuthUser }>("/api/auth/signup", { name, email, password });
-      } else {
+        window.location.reload();
+      } else if (mode === "signin") {
         await postJson<{ user: AuthUser }>("/api/auth/login", { email, password });
+        window.location.reload();
+      } else {
+        await postJson<{ ok: boolean }>("/api/auth/forgot-password", { email });
+        setForgotSent(true);
       }
-      window.location.reload();
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Could not continue.");
     } finally {
@@ -87,91 +93,149 @@ export function AuthPanel() {
         </section>
 
         <section className="rounded-[2rem] border border-[var(--border-soft)] bg-white p-6 shadow-[0_30px_70px_-36px_rgba(20,43,40,0.3)] sm:p-8">
-          <div className="flex rounded-full bg-[var(--surface)] p-1 text-sm font-medium text-[var(--muted)]">
-            {([
-              ["signup", "Create account"],
-              ["signin", "Sign in"],
-            ] as const).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => switchMode(value)}
-                className={cn(
-                  "flex-1 rounded-full px-4 py-2.5 transition-colors",
-                  mode === value ? "bg-white text-[var(--ink)] shadow-[0_14px_35px_-24px_rgba(20,43,40,0.4)]" : "hover:text-[var(--ink)]",
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          {mode !== "forgot" && (
+            <div className="flex rounded-full bg-[var(--surface)] p-1 text-sm font-medium text-[var(--muted)]">
+              {([
+                ["signup", "Create account"],
+                ["signin", "Sign in"],
+              ] as const).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => switchMode(value)}
+                  className={cn(
+                    "flex-1 rounded-full px-4 py-2.5 transition-colors",
+                    mode === value ? "bg-white text-[var(--ink)] shadow-[0_14px_35px_-24px_rgba(20,43,40,0.4)]" : "hover:text-[var(--ink)]",
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
 
-          <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
-            {mode === "signup" && (
-              <label className="block">
-                <span className="mb-2 block text-sm font-medium text-[var(--ink)]">Your name</span>
-                <input
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  className="w-full rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)]"
-                  placeholder="Aisha Patel"
-                  autoComplete="name"
-                />
-              </label>
-            )}
+          {mode === "forgot" && (
+            <div>
+              <p className="text-sm font-semibold text-[var(--ink)]">Reset your password</p>
+              <p className="mt-1 text-sm text-[var(--muted)]">Enter your email and we’ll send a reset link.</p>
+            </div>
+          )}
 
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-[var(--ink)]">Email</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="w-full rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)]"
-                placeholder="you@example.com"
-                autoComplete="email"
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-sm font-medium text-[var(--ink)]">Password</span>
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="w-full rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)]"
-                placeholder="At least 6 characters and one number or symbol"
-                autoComplete={mode === "signup" ? "new-password" : "current-password"}
-              />
-            </label>
-
-            <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-4 text-sm leading-7 text-[var(--muted)]">
+          {mode === "forgot" && forgotSent ? (
+            <div className="mt-8 rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] px-5 py-5 text-sm leading-7 text-[var(--muted)]">
               <div className="flex items-start gap-3">
-                {mode === "signup" ? <UserCircle size={18} className="mt-1 text-[var(--accent)]" /> : <LockKey size={18} className="mt-1 text-[var(--accent)]" />}
+                <CheckCircle size={18} className="mt-1 text-[var(--accent)]" />
                 <div>
-                  <p className="font-medium text-[var(--ink)]">{mode === "signup" ? "What happens next" : "Sign-in baseline"}</p>
-                  <p>
-                    {mode === "signup"
-                      ? "We’ll create your HunterAgent account, open your saved workspace immediately, and keep that workspace tied to your email from then on."
-                      : "Use the same email and password you created here. Your prompts, packs, and applied history will load into the dashboard after sign in."}
-                  </p>
+                  <p className="font-medium text-[var(--ink)]">Check your inbox</p>
+                  <p>If that email has an account, a reset link is on its way. It expires in 1 hour.</p>
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={() => switchMode("signin")}
+                className="mt-4 text-sm font-medium text-[var(--accent)] hover:underline"
+              >
+                Back to sign in
+              </button>
             </div>
+          ) : (
+            <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+              {mode === "signup" && (
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-[var(--ink)]">Your name</span>
+                  <input
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    className="w-full rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)]"
+                    placeholder="Aisha Patel"
+                    autoComplete="name"
+                  />
+                </label>
+              )}
 
-            {error && (
-              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                {error}
-              </div>
-            )}
+              <label className="block">
+                <span className="mb-2 block text-sm font-medium text-[var(--ink)]">Email</span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className="w-full rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)]"
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                />
+              </label>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex w-full items-center justify-center rounded-full bg-[var(--accent)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_45px_-26px_rgba(18,108,100,0.9)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {isSubmitting ? "Working…" : mode === "signup" ? "Create HunterAgent account" : "Sign in to HunterAgent"}
-            </button>
-          </form>
+              {mode !== "forgot" && (
+                <label className="block">
+                  <span className="mb-2 block text-sm font-medium text-[var(--ink)]">Password</span>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    className="w-full rounded-2xl border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)]"
+                    placeholder="At least 6 characters and one number or symbol"
+                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
+                  />
+                </label>
+              )}
+
+              {mode !== "forgot" && (
+                <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-4 text-sm leading-7 text-[var(--muted)]">
+                  <div className="flex items-start gap-3">
+                    {mode === "signup" ? <UserCircle size={18} className="mt-1 text-[var(--accent)]" /> : <LockKey size={18} className="mt-1 text-[var(--accent)]" />}
+                    <div>
+                      <p className="font-medium text-[var(--ink)]">{mode === "signup" ? "What happens next" : "Sign-in baseline"}</p>
+                      <p>
+                        {mode === "signup"
+                          ? "We’ll create your HunterAgent account, open your saved workspace immediately, and keep that workspace tied to your email from then on."
+                          : "Use the same email and password you created here. Your prompts, packs, and applied history will load into the dashboard after sign in."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {error && (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="inline-flex w-full items-center justify-center rounded-full bg-[var(--accent)] px-6 py-3.5 text-sm font-semibold text-white shadow-[0_18px_45px_-26px_rgba(18,108,100,0.9)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {isSubmitting
+                  ? "Working…"
+                  : mode === "signup"
+                    ? "Create HunterAgent account"
+                    : mode === "forgot"
+                      ? "Send reset link"
+                      : "Sign in to HunterAgent"}
+              </button>
+
+              {mode === "signin" && (
+                <button
+                  type="button"
+                  onClick={() => switchMode("forgot")}
+                  className="w-full text-center text-sm text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
+                >
+                  Forgot password?
+                </button>
+              )}
+
+              {mode === "forgot" && (
+                <button
+                  type="button"
+                  onClick={() => switchMode("signin")}
+                  className="w-full text-center text-sm text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
+                >
+                  Back to sign in
+                </button>
+              )}
+            </form>
+          )}
         </section>
       </div>
     </main>

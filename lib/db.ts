@@ -67,8 +67,19 @@ async function initializeSchema() {
     )
   `;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL UNIQUE,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    )
+  `;
+
   await sql`CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_sessions_token_hash ON sessions(token_hash)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_reset_tokens_token_hash ON password_reset_tokens(token_hash)`;
 
   await migrateLegacyStateIfNeeded(sql);
 }
@@ -171,6 +182,14 @@ export type DbWorkspaceRow = {
   updated_at: string;
 };
 
+export type DbPasswordResetTokenRow = {
+  id: string;
+  user_id: string;
+  token_hash: string;
+  expires_at: string;
+  created_at: string;
+};
+
 export async function getUserByEmail(email: string) {
   await ensureDatabaseInitialized();
   const sql = getSql();
@@ -257,6 +276,29 @@ export async function upsertWorkspaceRow(userId: string, stateJson: string, upda
       SET state_json = EXCLUDED.state_json,
           updated_at = EXCLUDED.updated_at
   `;
+}
+
+export async function insertPasswordResetToken(row: DbPasswordResetTokenRow) {
+  await ensureDatabaseInitialized();
+  const sql = getSql();
+  await sql`DELETE FROM password_reset_tokens WHERE user_id = ${row.user_id}`;
+  await sql`
+    INSERT INTO password_reset_tokens (id, user_id, token_hash, expires_at, created_at)
+    VALUES (${row.id}, ${row.user_id}, ${row.token_hash}, ${row.expires_at}, ${row.created_at})
+  `;
+}
+
+export async function getPasswordResetTokenByHash(tokenHash: string) {
+  await ensureDatabaseInitialized();
+  const sql = getSql();
+  const rows = await sql<DbPasswordResetTokenRow[]>`SELECT * FROM password_reset_tokens WHERE token_hash = ${tokenHash} LIMIT 1`;
+  return rows[0];
+}
+
+export async function deletePasswordResetToken(tokenHash: string) {
+  await ensureDatabaseInitialized();
+  const sql = getSql();
+  await sql`DELETE FROM password_reset_tokens WHERE token_hash = ${tokenHash}`;
 }
 
 export async function listWorkspaceRows() {
