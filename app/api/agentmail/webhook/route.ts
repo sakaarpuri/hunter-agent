@@ -2,8 +2,24 @@ import { NextResponse } from "next/server";
 import { getAgentMailReplyText, isAgentMailMessageReceived, verifyAgentMailWebhook } from "@/lib/agentmail-webhook";
 import { listStoredWorkspaces, updateWorkspaceState } from "@/lib/hunteragent-store";
 import { type AppliedInboundReply, applyInboundReplyToWorkspace, generateSelectedPacksForWorkspace } from "@/lib/hunteragent-workspace-ops";
+import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
+
+async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 3): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxAttempts - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 200 * Math.pow(2, attempt)));
+      }
+    }
+  }
+  throw lastError;
+}
 
 type WorkspaceResolution = {
   userId: string | null;
@@ -66,16 +82,19 @@ export async function POST(request: Request) {
   try {
     event = verifyAgentMailWebhook(rawBody, request.headers);
   } catch (error) {
+    logger.warn("webhook: signature verification failed", { error: error instanceof Error ? error.message : String(error) });
     const message = error instanceof Error ? error.message : "Invalid AgentMail webhook.";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 
   if (!isAgentMailMessageReceived(event)) {
+    logger.debug("webhook: ignored non-message event", { eventType: event.event_type });
     return NextResponse.json({ ok: true, ignored: true, eventType: event.event_type });
   }
 
   const rawText = getAgentMailReplyText(event);
   if (!rawText) {
+    logger.debug("webhook: empty body, ignored", { eventType: event.event_type });
     return NextResponse.json({ ok: true, ignored: true, eventType: event.event_type, reason: "empty_body" });
   }
 
@@ -87,6 +106,7 @@ export async function POST(request: Request) {
   });
 
   if (!resolution.userId) {
+    logger.warn("webhook: could not resolve workspace", { reason: resolution.reason, sender: event.message.from });
     return NextResponse.json(
       {
         ok: true,
@@ -100,33 +120,43 @@ export async function POST(request: Request) {
 
   let appliedReply: AppliedInboundReply | null = null;
 
-  const workspace = await updateWorkspaceState(async (state) => {
-    appliedReply = applyInboundReplyToWorkspace(state, {
-      rawText,
-      sender: event.message.from,
-      subject: event.message.subject,
-      source: "webhook",
-      svixId: request.headers.get("svix-id") ?? undefined,
-      eventId: event.event_id,
-      inboxId: event.message.inbox_id,
-      threadId: event.message.thread_id,
-      messageId: event.message.message_id,
-    });
+  const workspace = await withRetry(() =>
+    updateWorkspaceState(async (state) => {
+      appliedReply = applyInboundReplyToWorkspace(state, {
+        rawText,
+        sender: event.message.from,
+        subject: event.message.subject,
+        source: "webhook",
+        svixId: request.headers.get("svix-id") ?? undefined,
+        eventId: event.event_id,
+        inboxId: event.message.inbox_id,
+        threadId: event.message.thread_id,
+        messageId: event.message.message_id,
+      });
 
-    if (!appliedReply?.briefId || appliedReply.duplicate || appliedReply.selectedRoleIds.length === 0) {
-      return state;
-    }
+      if (!appliedReply?.briefId || appliedReply.duplicate || appliedReply.selectedRoleIds.length === 0) {
+        return state;
+      }
 
-    return generateSelectedPacksForWorkspace(state, {
-      briefId: appliedReply.briefId,
-    });
-  }, resolution.userId);
+      return generateSelectedPacksForWorkspace(state, {
+        briefId: appliedReply.briefId,
+      });
+    }, resolution.userId ?? undefined)
+  );
 
   const replyMeta = appliedReply ?? {
     briefId: null,
     selectedRoleIds: [],
     duplicate: false,
   };
+
+  logger.info("webhook: processed", {
+    userId: resolution.userId,
+    resolvedBy: resolution.reason,
+    briefId: replyMeta.briefId,
+    selectedRoleIds: replyMeta.selectedRoleIds,
+    duplicate: replyMeta.duplicate,
+  });
 
   return NextResponse.json({
     ok: true,

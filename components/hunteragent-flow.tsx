@@ -866,6 +866,34 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
               </div>
             </div>
           </div>}
+
+          {!workspace.leftRailCollapsed && workspace.appliedRecords.length > 0 && (
+            <div className="mt-6 rounded-[1.7rem] border border-[var(--border-soft)] bg-white p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Applications</p>
+              <div className="mt-4 space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-[var(--muted)]">Applied</span>
+                  <span className="font-semibold text-[var(--ink)]">{workspace.appliedRecords.length}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[var(--muted)]">With follow-up</span>
+                  <span className="font-semibold text-[var(--ink)]">
+                    {workspace.appliedRecords.filter((r) => r.followUp && r.followUp !== "off").length}
+                  </span>
+                </div>
+                {workspace.appliedRecords.length > 0 && (
+                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface)]">
+                    <div
+                      className="h-full rounded-full bg-[var(--accent)]"
+                      style={{
+                        width: `${Math.min(100, (workspace.appliedRecords.filter((r) => r.followUp && r.followUp !== "off").length / workspace.appliedRecords.length) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </aside>
 
         <main className="border-b border-[var(--border-soft)] px-5 py-6 lg:border-r lg:border-b-0 lg:px-6 xl:px-8">
@@ -936,6 +964,21 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
               </div>
             </div>
           </div>
+
+          {isGenerating && (
+            <div className="mt-6">
+              <div className="mb-2 flex items-center justify-between text-xs text-[var(--muted)]">
+                <span className="font-medium">{PROCESSING_STAGES[generationStage]}</span>
+                <span>{Math.round(((generationStage + 1) / PROCESSING_STAGES.length) * 90)}%</span>
+              </div>
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface)]">
+                <div
+                  className="h-full rounded-full bg-[var(--accent)] transition-all duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]"
+                  style={{ width: `${Math.round(((generationStage + 1) / PROCESSING_STAGES.length) * 90)}%` }}
+                />
+              </div>
+            </div>
+          )}
 
           {(clientError || workspace.lastError) && (
             <div className="mt-6 flex items-start gap-3 rounded-[1.6rem] border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-7 text-[var(--ink)]">
