@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HunterAgent
 
-## Getting Started
+HunterAgent is an email-first job scout and application studio. It finds roles daily, sends a shortlist by email, prepares tailored application packs in the dashboard, and helps users track applied roles and follow-up timing.
 
-First, run the development server:
+## Local Development
+
+Run the app locally:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd "/Volumes/Extreme SSD/careeragent" && npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
+- [http://localhost:3000](http://localhost:3000)
+- [http://localhost:3000/dashboard](http://localhost:3000/dashboard)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Core Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+HunterAgent currently expects these environment variables for the full product loop:
 
-## Learn More
+```env
+ANTHROPIC_API_KEY=
+ANTHROPIC_MODEL=claude-sonnet-4-6
+TAVILY_API_KEY=
+AGENTMAIL_API_KEY=
+AGENTMAIL_INBOX_ID=
+AGENTMAIL_WEBHOOK_SECRET=
+APP_BASE_URL=
+CRON_SECRET=
+```
 
-To learn more about Next.js, take a look at the following resources:
+Notes:
+- `APP_BASE_URL` should be your deployed base URL so outbound brief emails include a working dashboard link.
+- `CRON_SECRET` protects the scheduled brief route in production. In local development, the route is open only when `NODE_ENV=development`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Production Scheduler
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+HunterAgent includes two ways to run daily brief scheduling:
 
-## Deploy on Vercel
+- a protected manual trigger route at `/api/cron/daily-briefs`
+- a Netlify Scheduled Function at `netlify/functions/daily-briefs.ts`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This project is now configured for Netlify deployment through [netlify.toml](/Volumes/Extreme SSD/careeragent/netlify.toml).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The scheduled function runs every 15 minutes:
+
+- schedule: every 15 minutes
+- function: `daily-briefs`
+
+Why 15 minutes:
+- users choose their own local brief time
+- HunterAgent needs a repeated scheduler window to evaluate each user’s timezone and chosen send time
+- a once-daily single global trigger is not enough for multi-timezone delivery
+
+What the scheduler does on each run:
+- skips users whose setup is incomplete
+- skips users whose briefs are paused
+- skips users who already received a brief that local day
+- sends only for users whose configured local brief time falls inside the current 15-minute scheduler window
+
+### Netlify notes
+
+The deployed scheduler should use Netlify Scheduled Functions, not Vercel Cron Jobs.
+
+Before deploying:
+1. Set `APP_BASE_URL` to the deployed app URL.
+2. Set `CRON_SECRET` in Netlify environment variables if you want to keep the manual `/api/cron/daily-briefs` route protected for manual runs.
+3. Make sure AgentMail outbound email and webhook env vars are also set.
+4. Deploy with the included `netlify.toml`.
+5. Ensure Netlify functions are enabled for the site.
+
+The `/api/cron/daily-briefs` route still exists for manual or authenticated server-to-server triggering, but Netlify Scheduled Functions should be the primary production scheduler.
+
+## Current Launch Status
+
+Already implemented:
+- real auth with per-user workspaces
+- inbound AgentMail webhook handling
+- outbound brief sending
+- Tavily-backed discovery with fallback
+- role-aware studio with conditional work samples
+- prompt memory and targeted pack editing
+- Netlify scheduled function for daily briefs
+
+Still to harden before broader launch:
+- recruiter-grade PDF export hardening
+- tighter unmatched AgentMail webhook fallback behavior
+
+## Verification
+
+Useful checks during development:
+
+```bash
+npm run lint
+npm run build
+```

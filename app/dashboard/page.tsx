@@ -1,0 +1,19 @@
+import { AuthPanel } from "@/components/auth-panel";
+import { HunterAgentFlow } from "@/components/hunteragent-flow";
+import { getCurrentUser } from "@/lib/auth";
+
+export default async function DashboardPage() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return <AuthPanel />;
+  }
+
+  return (
+    <main className="px-4 py-5 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[1400px]">
+        <HunterAgentFlow user={user} />
+      </div>
+    </main>
+  );
+}
