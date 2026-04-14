@@ -65,21 +65,21 @@ function ensureWorkspaceState(state: WorkspaceState) {
   return state;
 }
 
-function readStateFromRow(userId: string) {
-  const row = getWorkspaceRow(userId) ?? ensureWorkspaceForUser(userId);
+async function readStateFromRow(userId: string) {
+  const row = (await getWorkspaceRow(userId)) ?? (await ensureWorkspaceForUser(userId));
   const parsed = JSON.parse(row.state_json) as WorkspaceState;
   return ensureWorkspaceState(parsed);
 }
 
-function persistStateForUser(userId: string, state: WorkspaceState) {
+async function persistStateForUser(userId: string, state: WorkspaceState) {
   const normalized = ensureWorkspaceState(cloneState(state));
-  upsertWorkspaceRow(userId, JSON.stringify(normalized, null, 2), new Date().toISOString());
+  await upsertWorkspaceRow(userId, JSON.stringify(normalized, null, 2), new Date().toISOString());
   return cloneState(normalized);
 }
 
 export async function readWorkspaceState(userId?: string) {
   if (userId) {
-    return readStateFromRow(userId);
+    return await readStateFromRow(userId);
   }
 
   await ensureStoreDir();
@@ -97,7 +97,7 @@ export async function readWorkspaceState(userId?: string) {
 
 export async function writeWorkspaceState(state: WorkspaceState, userId?: string) {
   if (userId) {
-    return persistStateForUser(userId, state);
+    return await persistStateForUser(userId, state);
   }
 
   await ensureStoreDir();
@@ -115,7 +115,7 @@ export async function updateWorkspaceState(
 }
 
 export async function listStoredWorkspaces() {
-  return listWorkspaceRows().map((row) => ({
+  return (await listWorkspaceRows()).map((row) => ({
     userId: row.user_id,
     state: ensureWorkspaceState(JSON.parse(row.state_json) as WorkspaceState),
   }));

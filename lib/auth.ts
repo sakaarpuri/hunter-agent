@@ -66,7 +66,7 @@ export async function createUser(input: { name: string; email: string; password:
   validateSignUpInput(input);
   const email = normalizeEmail(input.email);
 
-  if (getUserByEmail(email)) {
+  if (await getUserByEmail(email)) {
     throw new AuthError("An account with that email already exists. Sign in instead.");
   }
 
@@ -80,14 +80,14 @@ export async function createUser(input: { name: string; email: string; password:
     updated_at: now,
   };
 
-  insertUser(row);
-  ensureWorkspaceForUser(row.id);
+  await insertUser(row);
+  await ensureWorkspaceForUser(row.id);
   return toAuthUser(row);
 }
 
 export async function authenticateUser(input: { email: string; password: string }) {
   const email = normalizeEmail(input.email);
-  const user = getUserByEmail(email);
+  const user = await getUserByEmail(email);
   if (!user) {
     throw new AuthError("We couldn’t find an account with that email.");
   }
@@ -100,15 +100,15 @@ export async function authenticateUser(input: { email: string; password: string 
   return toAuthUser(user);
 }
 
-export function createSession(userId: string) {
-  pruneExpiredSessions(new Date().toISOString());
+export async function createSession(userId: string) {
+  await pruneExpiredSessions(new Date().toISOString());
 
   const token = randomBytes(32).toString("hex");
   const tokenHash = hashToken(token);
   const now = new Date();
   const expiresAt = new Date(now.getTime() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
 
-  insertSession({
+  await insertSession({
     id: crypto.randomUUID(),
     user_id: userId,
     token_hash: tokenHash,
@@ -146,20 +146,20 @@ export function clearSessionCookie(response: NextResponse) {
 }
 
 export async function getCurrentUser() {
-  pruneExpiredSessions(new Date().toISOString());
+  await pruneExpiredSessions(new Date().toISOString());
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!token) return null;
 
-  const session = getSessionByTokenHash(hashToken(token));
+  const session = await getSessionByTokenHash(hashToken(token));
   if (!session) return null;
 
   if (session.expires_at <= new Date().toISOString()) {
-    deleteSessionByTokenHash(session.token_hash);
+    await deleteSessionByTokenHash(session.token_hash);
     return null;
   }
 
-  const user = getUserById(session.user_id);
+  const user = await getUserById(session.user_id);
   return user ? toAuthUser(user) : null;
 }
 
@@ -175,19 +175,19 @@ export async function destroyCurrentSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!token) return;
-  deleteSessionByTokenHash(hashToken(token));
+  await deleteSessionByTokenHash(hashToken(token));
 }
 
 export async function updateCurrentUserName(userId: string, fullName: string) {
   const trimmed = fullName.trim();
   if (!trimmed) throw new AuthError("Add a name before saving.");
-  updateUserName(userId, trimmed, new Date().toISOString());
-  const user = getUserById(userId);
+  await updateUserName(userId, trimmed, new Date().toISOString());
+  const user = await getUserById(userId);
   return user ? toAuthUser(user) : null;
 }
 
 export async function updateCurrentUserPassword(userId: string, input: { currentPassword: string; newPassword: string }) {
-  const user = getUserById(userId);
+  const user = await getUserById(userId);
   if (!user) throw new AuthError("We couldn’t find that account.");
 
   const matches = await bcrypt.compare(input.currentPassword, user.password_hash);
@@ -200,6 +200,6 @@ export async function updateCurrentUserPassword(userId: string, input: { current
   }
 
   const nextHash = await bcrypt.hash(input.newPassword, 10);
-  updateUserPassword(userId, nextHash, new Date().toISOString());
-  deleteSessionsForUser(userId);
+  await updateUserPassword(userId, nextHash, new Date().toISOString());
+  await deleteSessionsForUser(userId);
 }

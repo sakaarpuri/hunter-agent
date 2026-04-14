@@ -2,6 +2,8 @@ import { AuthPanel } from "@/components/auth-panel";
 import { HunterAgentFlow } from "@/components/hunteragent-flow";
 import { getCurrentUser } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   const user = await getCurrentUser();
 

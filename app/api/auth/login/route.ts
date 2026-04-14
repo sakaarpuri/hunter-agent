@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     });
 
     const response = NextResponse.json({ user });
-    return attachSessionCookie(response, createSession(user.id));
+    return attachSessionCookie(response, await createSession(user.id));
   } catch (error) {
     const message = error instanceof AuthError ? error.message : "Could not sign in.";
     return NextResponse.json({ error: message }, { status: 400 });
