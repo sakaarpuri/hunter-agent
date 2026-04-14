@@ -1,2 +1,8 @@
+[build]
+  command = "npm run build"
+
+[build.environment]
+  NPM_FLAGS = "--include=dev"
+
 [functions]
   directory = "netlify/functions"
