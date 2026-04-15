@@ -862,8 +862,8 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
               ? "lg:grid-cols-[92px_minmax(0,1fr)_minmax(520px,1.25fr)]"
               : "lg:grid-cols-[260px_minmax(0,1fr)_minmax(470px,1.1fr)]"
             : workspace.leftRailCollapsed
-              ? "lg:grid-cols-[92px_minmax(0,1.2fr)_minmax(360px,0.8fr)]"
-              : "lg:grid-cols-[260px_minmax(0,1.18fr)_minmax(360px,0.82fr)]",
+              ? "lg:grid-cols-[92px_minmax(0,1fr)]"
+              : "lg:grid-cols-[260px_minmax(0,1fr)]",
         )}
       >
         <LeftRail />
