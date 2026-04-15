@@ -10,6 +10,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { MockEmailBrief } from "@/components/mock-email-brief";
 import { DashboardPreview } from "@/components/dashboard-preview";
+import { FeatureShowcase } from "@/components/feature-showcase";
 
 const workflow = [
   {
@@ -124,6 +125,8 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <FeatureShowcase />
 
         {/* How it works */}
         <section className="px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
