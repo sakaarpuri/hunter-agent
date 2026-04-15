@@ -42,3 +42,5 @@ next-env.d.ts
 
 # local app state
 /.data/
+.gstack/
+._*

@@ -13,8 +13,8 @@ import { DashboardPreview } from "@/components/dashboard-preview";
 
 const workflow = [
   {
-    title: "We find 10 roles every day",
-    body: "HunterAgent searches for full-time, part-time, and contract jobs daily. Your top matches land in your inbox every morning — no job board tabs, no manual searching.",
+    title: "5 top roles, every morning",
+    body: "HunterAgent searches for full-time, part-time, and contract jobs daily. Your 5 top matches land in your inbox every morning — no job board tabs, no manual searching.",
     icon: MagnifyingGlass,
   },
   {
@@ -77,13 +77,13 @@ export default function Home() {
             <div className="max-w-[44rem]">
               <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-white/85 px-4 py-2 text-sm font-medium text-[var(--muted)] shadow-[0_18px_38px_-28px_rgba(20,43,40,0.24)] backdrop-blur-sm">
                 <Sparkle size={16} weight="duotone" />
-                10 matched roles in your inbox, every morning
+                5 top matches in your inbox, every morning
               </div>
               <h1 className="mt-8 text-5xl font-semibold tracking-[-0.06em] text-[var(--ink)] md:text-7xl md:leading-[0.94]">
                 Stop searching job boards every day.
               </h1>
               <p className="mt-6 max-w-[40rem] text-lg leading-8 text-[var(--muted)] md:text-xl md:leading-9">
-                Get 10 matched roles in your inbox every morning. Reply with the ones
+                Get 5 curated roles in your inbox every morning. Reply with the ones
                 you want — a tailored CV, cover letter, and work samples will be ready
                 in your dashboard within minutes.
               </p>
@@ -272,7 +272,11 @@ export default function Home() {
                 </span>
               </Link>
             </div>
-            <DashboardPreview />
+            <div className="overflow-hidden rounded-[2rem]" style={{ height: "calc(720px * 0.72)" }}>
+              <div style={{ transform: "scale(0.72)", transformOrigin: "top left", width: "calc(100% / 0.72)" }}>
+                <DashboardPreview />
+              </div>
+            </div>
           </div>
         </section>
 

@@ -55,6 +55,7 @@ function ensureWorkspaceState(state: WorkspaceState) {
   state.leftRailCollapsed = state.leftRailCollapsed ?? true;
   state.promptDrafts = state.promptDrafts ?? {};
   state.promptHistory = state.promptHistory ?? {};
+  state.stateVersion = (state.stateVersion as number | undefined) ?? 1;
 
   if (state.onboardingComplete && state.briefs.length === 0) {
     const brief = createBriefRecord(state.profile.firstBrief, state.roleCatalog);
@@ -73,6 +74,7 @@ async function readStateFromRow(userId: string) {
 
 async function persistStateForUser(userId: string, state: WorkspaceState) {
   const normalized = ensureWorkspaceState(cloneState(state));
+  normalized.stateVersion = (normalized.stateVersion ?? 1) + 1;
   await upsertWorkspaceRow(userId, JSON.stringify(normalized, null, 2), new Date().toISOString());
   return cloneState(normalized);
 }

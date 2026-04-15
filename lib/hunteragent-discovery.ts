@@ -238,9 +238,9 @@ function scoreRole(role: Role, profile: Profile) {
   return score;
 }
 
-export async function discoverRoles(profile: Profile) {
+export async function discoverRoles(profile: Profile): Promise<{ roles: Role[]; usedFallback: boolean }> {
   if (profile.briefsPaused) {
-    return DAILY_ROLES.map((role) => ({ ...role }));
+    return { roles: DAILY_ROLES.map((role) => ({ ...role })), usedFallback: false };
   }
 
   const queries = buildQueries(profile);
@@ -255,11 +255,13 @@ export async function discoverRoles(profile: Profile) {
     .sort((left, right) => scoreRole(right, profile) - scoreRole(left, profile));
 
   if (discovered.length >= 5) {
-    return discovered.slice(0, 10);
+    return { roles: discovered.slice(0, 10), usedFallback: false };
   }
 
-  return DAILY_ROLES.map((role) => ({ ...role }))
+  const fallbackRoles = DAILY_ROLES.map((role) => ({ ...role }))
     .filter((role) => matchesHardFilters(role, profile))
     .sort((left, right) => scoreRole(right, profile) - scoreRole(left, profile))
     .slice(0, 10);
+
+  return { roles: fallbackRoles, usedFallback: true };
 }

@@ -56,17 +56,13 @@ import { buildCvPrintHtml, CvPreview, getCvExportMetadata } from "@/components/c
 import { TrustExplanationPanel } from "@/components/trust-explanation-panel";
 import { buildTrustExplanation } from "@/lib/hunteragent-trust";
 import { HunterAgentProvider } from "@/components/hunteragent-context";
+import { CommandPalette } from "@/components/command-palette";
+import type { Command } from "@/components/command-palette";
 import { LeftRail } from "@/components/left-rail";
 import { SettingsModal } from "@/components/settings-modal";
 import { OnboardingWizard } from "@/components/onboarding-wizard";
+import { ResumeSetupCard } from "@/components/resume-setup-card";
 import { StudioPanel } from "@/components/studio-panel";
-
-type NavItem = {
-  label: string;
-  icon: typeof ListChecks;
-  active: boolean;
-  action?: () => void;
-};
 
 const ONBOARDING_STEPS = [
   { id: 1, label: "Profile" },
@@ -125,11 +121,13 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
   const [settingsNotice, setSettingsNotice] = useState<string | null>(null);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [isSavingPreferences, setIsSavingPreferences] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   const draftReadyRef = useRef(false);
   const draftTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const generationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const promptTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastKnownVersion = useRef<number | null>(null);
 
   const loadWorkspace = useCallback(async () => {
     setIsLoading(true);
@@ -139,6 +137,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
       const response = await fetch("/api/workspace", { cache: "no-store" });
       const nextState = (await response.json()) as WorkspaceState;
       setWorkspace(nextState);
+      lastKnownVersion.current = (nextState as { stateVersion?: number }).stateVersion ?? null;
       setDraftProfile(nextState.profile);
       setDraftStep(nextState.onboardingStep);
       draftReadyRef.current = true;
@@ -272,6 +271,13 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
   async function runWorkspaceAction(body: unknown) {
     const nextState = await postJson<WorkspaceState>("/api/workspace", body);
     setWorkspace(nextState);
+    const newVersion = (nextState as { stateVersion?: number }).stateVersion;
+    if (lastKnownVersion.current !== null && newVersion !== undefined) {
+      if (newVersion > lastKnownVersion.current + 1) {
+        setClientError("Your workspace was updated in another tab. Showing the latest version.");
+      }
+      lastKnownVersion.current = newVersion;
+    }
     return nextState;
   }
 
@@ -403,6 +409,17 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
       }
     };
   }, [editInstruction, promptKey, workspace]);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key === "k") {
+        event.preventDefault();
+        setCommandPaletteOpen((open) => !open);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   async function persistDraftNow() {
     const nextState = await postJson<WorkspaceState>("/api/workspace", {
@@ -635,9 +652,11 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
 
   async function handleLeftRailToggle() {
     if (!workspace) return;
+    const next = !workspace.leftRailCollapsed;
     try {
       setClientError(null);
-      await runWorkspaceAction({ action: "set_left_rail", collapsed: !workspace.leftRailCollapsed });
+      setWorkspace((current) => current ? { ...current, leftRailCollapsed: next } : current);
+      await runWorkspaceAction({ action: "set_left_rail", collapsed: next });
     } catch (error) {
       setClientError(error instanceof Error ? error.message : "Could not resize the navigation rail.");
     }
@@ -693,15 +712,6 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
     }
   }
 
-  const navItems: NavItem[] = [
-    { label: "Setup", icon: ListChecks, active: workspace?.flowPhase === "onboarding" },
-    { label: "Today", icon: EnvelopeSimple, active: ["waiting", "brief", "processing"].includes(workspace?.flowPhase ?? "onboarding") },
-    { label: "Studio", icon: Sparkle, active: workspace?.flowPhase === "studio" },
-    { label: "Applied", icon: Folders, active: (workspace?.appliedRecords.length ?? 0) > 0 },
-    { label: "Follow Up", icon: CalendarDots, active: (workspace?.appliedRecords.some((item) => item.followUp !== "off") ?? false) },
-    { label: "Reset", icon: ArrowClockwise, active: false, action: handleReset },
-  ];
-
   const stageLabel =
     workspace?.flowPhase === "onboarding"
       ? "Let's get you set up"
@@ -714,6 +724,32 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
             : "Application studio";
 
   const isStudioLayout = workspace?.flowPhase === "studio";
+
+  const commands: Command[] = workspace ? [
+    {
+      id: "go-settings",
+      label: "Open Settings",
+      description: "Edit your profile and preferences",
+      action: () => setIsSettingsOpen(true),
+    },
+    {
+      id: "toggle-rail",
+      label: workspace.leftRailCollapsed ? "Expand sidebar" : "Collapse sidebar",
+      action: () => void handleLeftRailToggle(),
+    },
+    {
+      id: "export-pdf",
+      label: "Export CV as PDF",
+      description: "Download your CV as a formatted PDF",
+      action: () => handleExportCvPreview(),
+    },
+    {
+      id: "reset",
+      label: "Reset workspace",
+      description: "Clear all data and start over",
+      action: () => void handleReset(),
+    },
+  ] : [];
 
   const contextValue = workspace ? {
     user,
@@ -844,6 +880,11 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
               <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[var(--ink)] md:text-4xl">
                 {stageLabel}
               </h1>
+              <div className="mt-2">
+                <span className="inline-flex items-center rounded-full border border-[var(--border-soft)] bg-[var(--surface)] px-3 py-1 text-xs font-medium text-[var(--muted)]">
+                  {workspace.flowPhase === "onboarding" ? `Step ${draftStep} of 4` : `${draftProfile.briefTime} ${draftProfile.timezone}`}
+                </span>
+              </div>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--muted)]">
                 {workspace.flowPhase === "onboarding" &&
                   "Set the profile, resume source, design direction, and delivery rhythm once. HunterAgent keeps the discovery loop in email and the deeper work in the dashboard."}
@@ -858,29 +899,13 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                 {workspace.flowPhase === "studio" &&
                   "Each role now has a real pack record. Adjust style or tone, regenerate when needed, mark the role applied, then switch on follow-up when it is worth nudging."}
               </p>
+              {workspace.generationStatus && workspace.flowPhase !== "onboarding" && (
+                <p className="mt-2 text-xs text-[var(--muted)]">{workspace.generationStatus}</p>
+              )}
             </div>
-            <div className="flex flex-col items-stretch gap-3 sm:items-end">
-              <div className="rounded-[1.6rem] border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-3 text-right shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-                  Current state
-                </p>
-                <p className="mt-2 font-mono text-sm text-[var(--ink)]">
-                  {workspace.flowPhase === "onboarding" ? `Step ${draftStep} of 4` : draftProfile.briefTime}
-                </p>
-                <p className="mt-1 text-sm text-[var(--muted)]">
-                  {workspace.flowPhase === "processing"
-                    ? PROCESSING_STAGES[generationStage]
-                    : workspace.generationStatus ?? draftProfile.timezone}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center justify-end gap-3">
-                <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-white px-4 py-3 text-left shadow-[0_18px_38px_-30px_rgba(20,43,40,0.24)]">
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-                    Signed in
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-[var(--ink)]">{user.fullName}</p>
-                  <p className="text-sm text-[var(--muted)]">{user.email}</p>
-                </div>
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-[var(--muted)]">{user.fullName}</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -1211,12 +1236,20 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
               )}
             </section>
           )}
+
+          <ResumeSetupCard />
         </main>
 
         <StudioPanel />
 
       </div>
     </div>
+    {commandPaletteOpen && (
+      <CommandPalette
+        commands={commands}
+        onClose={() => setCommandPaletteOpen(false)}
+      />
+    )}
     </HunterAgentProvider>
   );
 }

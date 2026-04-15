@@ -360,5 +360,6 @@ export function createInitialWorkspaceState(): WorkspaceState {
     promptHistory: {},
     generationStatus: null,
     lastError: null,
+    stateVersion: 1,
   };
 }

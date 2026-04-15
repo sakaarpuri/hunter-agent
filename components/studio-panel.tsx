@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import {
   CheckCircle,
   PaperPlaneTilt,
@@ -25,6 +26,27 @@ const PROCESSING_STAGES = [
 ] as const;
 
 const EDIT_PROMPT_SUGGESTIONS = ["Make it more direct", "Focus on growth work", "Sound more senior"] as const;
+
+function renderInline(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i} className="font-semibold text-[var(--ink)]">{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
+
+function renderMarkdown(text: string) {
+  return text.split("\n").map((line, index) => {
+    if (line.startsWith("### ")) return <h4 key={index} className="mt-4 font-semibold text-[var(--ink)]">{line.slice(4)}</h4>;
+    if (line.startsWith("## ")) return <h3 key={index} className="mt-5 text-base font-semibold text-[var(--ink)]">{line.slice(3)}</h3>;
+    if (line.startsWith("# ")) return <h2 key={index} className="mt-6 text-lg font-semibold text-[var(--ink)]">{line.slice(2)}</h2>;
+    if (line.startsWith("- ") || line.startsWith("* ")) return <li key={index} className="ml-4 list-disc">{renderInline(line.slice(2))}</li>;
+    if (line.trim() === "") return <br key={index} />;
+    return <p key={index}>{renderInline(line)}</p>;
+  });
+}
 
 function targetFromStudioTab(tab: StudioTab): PackTarget {
   if (tab === "cv") return "cv";
@@ -75,6 +97,33 @@ export function StudioPanel() {
     generationStage,
   } = useHunterAgent();
 
+  function handleExportPlainText() {
+    const lines: string[] = [];
+    lines.push(draftProfile.name);
+    if (draftProfile.currentTitle) lines.push(draftProfile.currentTitle);
+    if (draftProfile.locations) lines.push(draftProfile.locations);
+    lines.push("");
+    if (activePack.cvSummary) {
+      lines.push("SUMMARY");
+      lines.push(activePack.cvSummary);
+      lines.push("");
+    }
+    if (activePack.cvBullets.length > 0) {
+      lines.push("EXPERIENCE");
+      for (const bullet of activePack.cvBullets) {
+        lines.push(`• ${bullet}`);
+      }
+    }
+    const text = lines.join("\n");
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${draftProfile.name.replace(/\s+/g, "_")}_CV.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <section className="bg-[var(--surface)] px-5 py-6 lg:px-6 xl:px-7">
       {workspace.flowPhase !== "studio" || !activeRole || !activePack ? (
@@ -91,7 +140,7 @@ export function StudioPanel() {
           </h3>
           <div className="mt-5 grid gap-3">
             {[1, 2, 3].map((item) => (
-              <div key={item} className="skeleton-bar h-24 rounded-[1.5rem]" />
+              <div key={item} className="h-24 rounded-[1.5rem] border border-dashed border-[var(--border-soft)] bg-[var(--surface)]" />
             ))}
           </div>
           <div className="mt-5 rounded-[1.5rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4 text-sm leading-7 text-[var(--muted)]">
@@ -226,14 +275,23 @@ export function StudioPanel() {
                       </button>
                     ))}
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleExportCvPreview}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-soft)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                  >
-                    <PaperPlaneTilt size={16} />
-                    Export PDF
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={handleExportCvPreview}
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-soft)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
+                    >
+                      <PaperPlaneTilt size={16} />
+                      Export PDF
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleExportPlainText}
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-soft)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
+                    >
+                      Export plain text
+                    </button>
+                  </div>
                 </div>
 
                 {workspace.cvViewMode === "preview" ? (
@@ -322,8 +380,8 @@ export function StudioPanel() {
             )}
 
             {workspace.studioTab === "letter" && (
-              <div className="mt-6 rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4 text-sm leading-7 whitespace-pre-line text-[var(--muted)]">
-                {activePack.letter}
+              <div className="mt-6 rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4 text-sm leading-7 text-[var(--muted)]">
+                {renderMarkdown(activePack.letter)}
               </div>
             )}
 

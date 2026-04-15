@@ -10,14 +10,16 @@ export async function prepareFreshBrief(state: WorkspaceState) {
     return { state, brief: null, roles: state.roleCatalog };
   }
 
-  const roles = await discoverRoles(state.profile);
+  const { roles, usedFallback } = await discoverRoles(state.profile);
   state.roleCatalog = roles;
 
   const brief = createBriefRecord("now", roles);
   state.briefs.unshift(brief);
   state.activeBriefId = brief.id;
   state.flowPhase = "waiting";
-  state.generationStatus = `Prepared ${roles.length} fresh roles for the next brief.`;
+  state.generationStatus = usedFallback
+    ? `Live search returned fewer than 5 matches — showing curated roles instead. Add more specific preferences to improve results.`
+    : `Prepared ${roles.length} fresh roles for the next brief.`;
   return { state, brief, roles };
 }
 

@@ -3,12 +3,10 @@
 import { useState } from "react";
 import {
   REMOTE_REGION_OPTIONS,
-  RESUME_STYLES,
   WORKPLACE_MODE_OPTIONS,
   getResumeStyle,
   parsePreferenceList,
 } from "@/lib/hunteragent-data";
-import type { Profile } from "@/lib/hunteragent-types";
 import { useHunterAgent } from "./hunteragent-context";
 
 function cn(...parts: Array<string | false | null | undefined>) {
@@ -18,8 +16,7 @@ function cn(...parts: Array<string | false | null | undefined>) {
 const ONBOARDING_STEPS = [
   { id: 1, label: "Profile" },
   { id: 2, label: "Preferences" },
-  { id: 3, label: "Resume Setup" },
-  { id: 4, label: "Delivery" },
+  { id: 3, label: "Delivery" },
 ] as const;
 
 export function OnboardingWizard() {
@@ -83,7 +80,7 @@ export function OnboardingWizard() {
                       try {
                         const fd = new FormData();
                         fd.append("file", file);
-                        const res = await fetch("/api/parse-cv", { method: "POST", body: fd });
+                        const res = await fetch("/api/parse-cv", { method: "POST", headers: { "x-requested-with": "XMLHttpRequest" }, body: fd });
                         const data = await res.json() as { ok?: boolean; profile?: Record<string, unknown>; error?: string };
                         if (!res.ok || !data.profile) throw new Error(data.error ?? "Import failed.");
                         const p = data.profile;
@@ -263,117 +260,6 @@ export function OnboardingWizard() {
         )}
 
         {draftStep === 3 && (
-          <div className="mt-5 grid gap-6">
-            <div className="grid gap-3 text-sm">
-              <span className="font-medium text-[var(--ink)]">Resume source</span>
-              <div className="grid gap-3 md:grid-cols-2">
-                {[
-                  ["upload", "I already have a CV", "Upload or import a base resume and let HunterAgent tailor from it."],
-                  ["guided", "Create one for me", "Answer a few essentials and HunterAgent builds the first base resume from scratch."],
-                ].map(([value, label, note]) => {
-                  const active = draftProfile.resumeMode === value;
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => setDraftProfile((current) => ({ ...current, resumeMode: value as Profile["resumeMode"] }))}
-                      className={cn(
-                        "rounded-[1.5rem] border px-4 py-4 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                        active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border-strong)] bg-white",
-                      )}
-                    >
-                      <p className="font-semibold text-[var(--ink)]">{label}</p>
-                      <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{note}</p>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {draftProfile.resumeMode === "upload" ? (
-              <label className="grid gap-2 text-sm">
-                <span className="font-medium text-[var(--ink)]">Master CV file</span>
-                <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.cvFile} onChange={(event) => setDraftProfile((current) => ({ ...current, cvFile: event.target.value }))} />
-                <span className="text-xs leading-6 text-[var(--muted)]">This becomes the base resume HunterAgent tailors for each selected role.</span>
-              </label>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="grid gap-2 text-sm md:col-span-2">
-                  <span className="font-medium text-[var(--ink)]">Professional summary</span>
-                  <textarea className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.guidedResume.professionalSummary} onChange={(event) => setDraftProfile((current) => ({ ...current, guidedResume: { ...current.guidedResume, professionalSummary: event.target.value } }))} />
-                </label>
-                <label className="grid gap-2 text-sm">
-                  <span className="font-medium text-[var(--ink)]">Recent impact</span>
-                  <textarea className="min-h-28 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.guidedResume.recentImpact} onChange={(event) => setDraftProfile((current) => ({ ...current, guidedResume: { ...current.guidedResume, recentImpact: event.target.value } }))} />
-                </label>
-                <label className="grid gap-2 text-sm">
-                  <span className="font-medium text-[var(--ink)]">Experience snapshot</span>
-                  <textarea className="min-h-28 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.guidedResume.experienceSnapshot} onChange={(event) => setDraftProfile((current) => ({ ...current, guidedResume: { ...current.guidedResume, experienceSnapshot: event.target.value } }))} />
-                </label>
-                <label className="grid gap-2 text-sm">
-                  <span className="font-medium text-[var(--ink)]">Education</span>
-                  <textarea className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.guidedResume.education} onChange={(event) => setDraftProfile((current) => ({ ...current, guidedResume: { ...current.guidedResume, education: event.target.value } }))} />
-                </label>
-                <label className="grid gap-2 text-sm">
-                  <span className="font-medium text-[var(--ink)]">Skills</span>
-                  <textarea className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.guidedResume.skills} onChange={(event) => setDraftProfile((current) => ({ ...current, guidedResume: { ...current.guidedResume, skills: event.target.value } }))} />
-                </label>
-              </div>
-            )}
-
-            <div className="grid gap-3 text-sm">
-              <div className="flex items-center justify-between gap-3">
-                <span className="font-medium text-[var(--ink)]">Default resume style</span>
-                <span className="text-xs text-[var(--muted)]">Used first, overridable per job later</span>
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                {RESUME_STYLES.map((style) => {
-                  const active = draftProfile.resumeDefaultStyle === style.id;
-                  return (
-                    <button
-                      key={style.id}
-                      type="button"
-                      onClick={() => setDraftProfile((current) => ({ ...current, resumeDefaultStyle: style.id }))}
-                      className={cn(
-                        "rounded-[1.55rem] border p-4 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.99]",
-                        active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border-soft)] bg-white",
-                      )}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <h4 className="text-base font-semibold text-[var(--ink)]">{style.label}</h4>
-                        <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", active ? "bg-[var(--accent)] text-white" : "bg-[var(--surface)] text-[var(--muted)]")}>Default</span>
-                      </div>
-                      <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{style.blurb}</p>
-                      <p className="mt-2 text-xs leading-6 text-[var(--muted)]">Best for: {style.bestFor}</p>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="grid gap-3 text-sm">
-              <span className="font-medium text-[var(--ink)]">Work sample links</span>
-              {draftProfile.workSampleLinks.map((link, index) => (
-                <label key={index} className="grid gap-2 text-sm">
-                  <span className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">Link {index + 1}</span>
-                  <input
-                    className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none"
-                    value={link}
-                    onChange={(event) =>
-                      setDraftProfile((current) => {
-                        const next = [...current.workSampleLinks];
-                        next[index] = event.target.value;
-                        return { ...current, workSampleLinks: next };
-                      })
-                    }
-                  />
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {draftStep === 4 && (
           <div className="mt-5 grid gap-5 md:grid-cols-2">
             <label className="grid gap-2 text-sm md:col-span-2">
               <span className="font-medium text-[var(--ink)]">Daily brief recipient</span>

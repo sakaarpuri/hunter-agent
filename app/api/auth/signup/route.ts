@@ -12,8 +12,9 @@ export async function POST(request: Request) {
       password: body.password ?? "",
     });
 
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
     const response = NextResponse.json({ user });
-    return attachSessionCookie(response, await createSession(user.id));
+    return attachSessionCookie(response, await createSession(user.id, ip));
   } catch (error) {
     const message = error instanceof AuthError ? error.message : "Could not create the account.";
     return NextResponse.json({ error: message }, { status: 400 });

@@ -174,6 +174,7 @@ export type DbSessionRow = {
   token_hash: string;
   expires_at: string;
   created_at: string;
+  ip_address: string | null;
 };
 
 export type DbWorkspaceRow = {
@@ -229,8 +230,8 @@ export async function insertSession(row: DbSessionRow) {
   await ensureDatabaseInitialized();
   const sql = getSql();
   await sql`
-    INSERT INTO sessions (id, user_id, token_hash, expires_at, created_at)
-    VALUES (${row.id}, ${row.user_id}, ${row.token_hash}, ${row.expires_at}, ${row.created_at})
+    INSERT INTO sessions (id, user_id, token_hash, expires_at, created_at, ip_address)
+    VALUES (${row.id}, ${row.user_id}, ${row.token_hash}, ${row.expires_at}, ${row.created_at}, ${row.ip_address ?? null})
   `;
 }
 
@@ -299,6 +300,12 @@ export async function deletePasswordResetToken(tokenHash: string) {
   await ensureDatabaseInitialized();
   const sql = getSql();
   await sql`DELETE FROM password_reset_tokens WHERE token_hash = ${tokenHash}`;
+}
+
+export async function deleteUser(userId: string) {
+  await ensureDatabaseInitialized();
+  const sql = getSql();
+  await sql`DELETE FROM users WHERE id = ${userId}`;
 }
 
 export async function listWorkspaceRows() {

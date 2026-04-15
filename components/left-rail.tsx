@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
   ArrowClockwise,
-  ArrowLeft,
   CalendarDots,
   CaretLeft,
   CaretRight,
@@ -71,15 +69,7 @@ export function LeftRail() {
           </div>
         )}
         <div className="flex items-center gap-2">
-          {!workspace.leftRailCollapsed && (
-            <Link
-              href="/"
-              className="rounded-full border border-[var(--border-soft)] bg-white p-2 text-[var(--muted)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-            >
-              <ArrowLeft size={18} />
-            </Link>
-          )}
-          <button
+<button
             type="button"
             onClick={() => void handleLeftRailToggle()}
             className="rounded-full border border-[var(--border-soft)] bg-white p-2 text-[var(--muted)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"

@@ -100,7 +100,7 @@ export async function authenticateUser(input: { email: string; password: string 
   return toAuthUser(user);
 }
 
-export async function createSession(userId: string) {
+export async function createSession(userId: string, ipAddress?: string | null) {
   await pruneExpiredSessions(new Date().toISOString());
 
   const token = randomBytes(32).toString("hex");
@@ -114,6 +114,7 @@ export async function createSession(userId: string) {
     token_hash: tokenHash,
     created_at: now.toISOString(),
     expires_at: expiresAt.toISOString(),
+    ip_address: ipAddress ?? null,
   });
 
   return { token, expiresAt };
@@ -145,7 +146,7 @@ export function clearSessionCookie(response: NextResponse) {
   return response;
 }
 
-export async function getCurrentUser() {
+export async function getCurrentUser(requestIp?: string | null) {
   await pruneExpiredSessions(new Date().toISOString());
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
@@ -159,12 +160,18 @@ export async function getCurrentUser() {
     return null;
   }
 
+  // If the session was created with an IP, reject requests from a different IP.
+  if (session.ip_address && requestIp && session.ip_address !== requestIp) {
+    await deleteSessionByTokenHash(session.token_hash);
+    return null;
+  }
+
   const user = await getUserById(session.user_id);
   return user ? toAuthUser(user) : null;
 }
 
-export async function requireUser() {
-  const user = await getCurrentUser();
+export async function requireUser(requestIp?: string | null) {
+  const user = await getCurrentUser(requestIp);
   if (!user) {
     throw new AuthError("Sign in to access HunterAgent.");
   }

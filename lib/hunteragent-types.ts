@@ -153,6 +153,7 @@ export type WorkspaceState = {
   promptHistory: Record<string, string[]>;
   generationStatus: string | null;
   lastError: string | null;
+  stateVersion: number;
 };
 
 export type InboundReplyResult = {
