@@ -132,12 +132,12 @@ export function StudioPanel() {
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Workspace preview</p>
           <h3 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--ink)]">
             {workspace.flowPhase === "onboarding"
-              ? "The studio wakes up after the first inbound reply."
+              ? "Your studio opens here once setup is complete."
               : workspace.flowPhase === "waiting"
-                ? "The dashboard is ready for the first brief."
+                ? "Waiting for your first brief to arrive."
                 : workspace.flowPhase === "brief"
-                  ? "Paste the inbound email and the studio will fill in here."
-                  : "Real generation is running through the server routes."}
+                  ? "Choose your roles and your materials will appear here."
+                  : "Preparing your application materials…"}
           </h3>
           <div className="mt-5 grid gap-3">
             {[1, 2, 3].map((item) => (
@@ -399,7 +399,7 @@ export function StudioPanel() {
                         <h4 className="font-semibold text-[var(--ink)]">{item.title}</h4>
                         {item.href && <p className="mt-2 text-xs font-mono text-[var(--accent)]">{item.href}</p>}
                       </div>
-                      <div className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-[var(--muted)]">Selected proof</div>
+                      <div className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-[var(--muted)]">Work sample</div>
                     </div>
                     <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{item.note}</p>
                   </div>
@@ -417,7 +417,7 @@ export function StudioPanel() {
                     `Resume · ${getResumeStyle(activePack.resumeStyleUsed).label}`,
                     `Cover letter · ${workspace.tone}`,
                     showWorkSamplesTab ? `Work samples · ${activePack.workSampleSelections.length} picks` : "Work samples · not in scope",
-                    `Provider · ${activePack.provider}`,
+                    `Provider · ${activePack.provider === "anthropic" ? "AI (Claude)" : activePack.provider === "fallback" ? "Template" : activePack.provider}`,
                   ].map((item) => (
                     <div key={item} className="rounded-[1.4rem] border border-[var(--border-soft)] bg-white px-4 py-4 text-sm font-medium text-[var(--ink)]">
                       {item}
@@ -466,10 +466,11 @@ export function StudioPanel() {
               <button
                 type="button"
                 onClick={() => void handleSharpenPack()}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
+                disabled={isGenerating}
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] disabled:cursor-not-allowed disabled:opacity-45 enabled:hover:-translate-y-0.5 enabled:active:translate-y-[1px] enabled:active:scale-[0.98]"
               >
                 <Sparkle size={16} weight="fill" />
-                Sharpen pack
+                Regenerate all
               </button>
             </div>
 
@@ -477,7 +478,8 @@ export function StudioPanel() {
               <button
                 type="button"
                 onClick={handleMarkApplied}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
+                disabled={isGenerating}
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] disabled:cursor-not-allowed disabled:opacity-45 enabled:hover:-translate-y-0.5 enabled:active:translate-y-[1px] enabled:active:scale-[0.98]"
               >
                 <CheckCircle size={16} weight="fill" />
                 Mark applied
@@ -510,7 +512,7 @@ export function StudioPanel() {
 
             {activePack.provider === "fallback" && (
               <div className="mt-4 rounded-[1.45rem] border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-4 text-sm leading-7 text-[var(--muted)]">
-                These materials were generated using our fallback engine. They&apos;re a solid starting point — review and edit before sending.
+                These materials were built automatically from your profile. They&apos;re a solid starting point — review and edit before sending.
               </div>
             )}
           </div>
@@ -535,7 +537,8 @@ export function StudioPanel() {
                       </div>
                     </div>
                     <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-                      Follow-up is {item.followUp === "off" ? "off" : `${item.followUp} days`}. {item.followUpDueAt ? `Due ${formatAppliedDate(item.followUpDueAt)}.` : "Enable a reminder when you want the nudge."}
+                      {item.followUp === "off" ? "No follow-up reminder set." : `Follow-up reminder: in ${item.followUp} days.`}{" "}
+                      {item.followUpDueAt ? `Due ${formatAppliedDate(item.followUpDueAt)}.` : ""}
                     </p>
                     <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium">
                       {([

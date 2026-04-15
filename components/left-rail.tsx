@@ -38,7 +38,6 @@ export function LeftRail() {
   const {
     workspace,
     draftProfile,
-    isSavingDraft,
     handleReset,
     handleLeftRailToggle,
     handleSetActiveBrief,
@@ -201,12 +200,6 @@ export function LeftRail() {
             <span className="min-w-0 truncate text-right text-[var(--ink)]">{draftProfile.recipientEmail || "Not set"}</span>
           </div>
           <div className="flex items-center justify-between gap-3">
-            <span>Draft autosave</span>
-            <span className={cn("font-medium", isSavingDraft ? "text-[var(--accent)]" : "text-[var(--muted)]")}>
-              {isSavingDraft ? "Saving" : "Live"}
-            </span>
-          </div>
-          <div className="flex items-center justify-between gap-3">
             <span>Brief status</span>
             <span className={cn("font-medium", draftProfile.briefsPaused ? "text-amber-600" : "text-[var(--accent)]")}>
               {draftProfile.briefsPaused ? "Paused" : "Active"}
@@ -231,7 +224,7 @@ export function LeftRail() {
             <Target size={18} className="mt-1 text-[var(--accent)]" />
             <div>
               <p className="font-medium text-[var(--ink)]">Target roles</p>
-              <p>{draftProfile.targetRoles.filter(Boolean).join(" · ")}</p>
+              <p>{draftProfile.targetRoles.filter(Boolean).join(" · ") || "Not set"}</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
@@ -280,7 +273,7 @@ export function LeftRail() {
       )}
       <div className={cn("mt-6 border-t border-[var(--border-soft)] pt-4", workspace.leftRailCollapsed ? "flex flex-col items-center gap-2" : "space-y-1")}>
         {!workspace.leftRailCollapsed && (
-          <p className="mb-2 truncate text-xs text-[var(--muted)]">{user.fullName}</p>
+          <p className="mb-2 truncate text-xs text-[var(--muted)]">{user.fullName || user.email || "Your account"}</p>
         )}
         <button
           type="button"

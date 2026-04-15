@@ -112,6 +112,8 @@ export function OnboardingWizard() {
                             : prev.targetRoles,
                           locations: typeof p.locations === "string" && p.locations ? p.locations : prev.locations,
                           coreStrength: typeof p.coreStrength === "string" && p.coreStrength ? p.coreStrength : prev.coreStrength,
+                          cvFile: file.name,
+                          resumeMode: "upload" as const,
                         }));
                       } catch (err) {
                         setCvImportError(err instanceof Error ? err.message : "Import failed.");
@@ -312,7 +314,7 @@ export function OnboardingWizard() {
               <span className="text-xs leading-6 text-[var(--muted)]">Time and timezone your brief lands every morning.</span>
             </div>
             <div className="grid gap-3 text-sm md:col-span-2">
-              <span className="font-medium text-[var(--ink)]">First shortlist</span>
+              <span className="font-medium text-[var(--ink)]">First brief</span>
               {/* Send immediately — checkbox style, checked by default */}
               <button
                 type="button"

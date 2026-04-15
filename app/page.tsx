@@ -228,7 +228,7 @@ export default function Home() {
                   </h3>
                 </div>
                 <span className="rounded-full bg-[var(--surface)] px-4 py-2 text-xs font-medium text-[var(--muted)]">
-                  Step 4 of 4
+                  Step 3 of 3
                 </span>
               </div>
 

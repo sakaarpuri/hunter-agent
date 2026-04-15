@@ -68,7 +68,7 @@ export function SettingsModal() {
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border-soft)] pb-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Account settings</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--ink)]">Keep your HunterAgent identity clean.</h2>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--ink)]">Manage your account.</h2>
         </div>
         <button
           type="button"
@@ -106,7 +106,7 @@ export function SettingsModal() {
         <form onSubmit={handlePasswordChange} className="rounded-[1.6rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
           <p className="text-sm font-semibold text-[var(--ink)]">Change password</p>
           <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-            Keep the same baseline here too: at least 6 characters, with one number or symbol.
+            Choose a strong password — at least 6 characters, with one number or symbol.
           </p>
           <label className="mt-4 block">
             <span className="mb-2 block text-sm font-medium text-[var(--ink)]">Current password</span>
@@ -201,6 +201,7 @@ export function SettingsModal() {
               <label className="grid gap-2 text-sm">
                 <span className="font-medium text-[var(--ink)]">Daily brief time</span>
                 <input
+                  type="time"
                   className="rounded-[1.2rem] border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[var(--ink)] outline-none"
                   value={draftProfile.briefTime}
                   onChange={(event) => setDraftProfile((current) => ({ ...current, briefTime: event.target.value }))}
@@ -239,6 +240,7 @@ export function SettingsModal() {
                 <label className="grid gap-2 text-sm">
                   <span className="font-medium text-[var(--ink)]">Excluded companies</span>
                   <textarea
+                    placeholder="e.g. Google, Meta, Amazon"
                     className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[var(--ink)] outline-none"
                     value={draftProfile.excludedCompanies.join(", ")}
                     onChange={(event) =>
@@ -248,6 +250,7 @@ export function SettingsModal() {
                       }))
                     }
                   />
+                  <span className="text-xs text-[var(--muted)]">Companies listed here won&apos;t appear in future briefs.</span>
                 </label>
               </div>
 
@@ -325,6 +328,7 @@ export function SettingsModal() {
                 <label className="grid gap-2 text-sm">
                   <span className="font-medium text-[var(--ink)]">Special preferences</span>
                   <textarea
+                    placeholder="e.g. no agencies, startups only, no relocation"
                     className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[var(--ink)] outline-none"
                     value={draftProfile.specialPreferences.join(", ")}
                     onChange={(event) =>
@@ -338,6 +342,16 @@ export function SettingsModal() {
               </div>
             </div>
           </div>
+        </div>
+        <div className="mt-5 flex justify-end">
+          <button
+            type="button"
+            onClick={handlePreferenceSave}
+            disabled={isSavingPreferences}
+            className="inline-flex items-center rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {isSavingPreferences ? "Saving…" : "Save settings"}
+          </button>
         </div>
       </div>
 

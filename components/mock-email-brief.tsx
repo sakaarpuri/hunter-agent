@@ -65,7 +65,7 @@ export function MockEmailBrief() {
       </div>
 
       <div className="mb-5 rounded-[1.4rem] border border-[var(--border-soft)] bg-[var(--surface)]/90 p-4 text-sm leading-6 text-[var(--muted)] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
-        <p className="font-medium text-[var(--ink)]">Hi Alina,</p>
+        <p className="font-medium text-[var(--ink)]">Hi there,</p>
         <p className="mt-2">
           I found 5 roles that fit your profile today. Reply with the numbers or
           names you want me to prepare, then check your dashboard in about 2 to 10
