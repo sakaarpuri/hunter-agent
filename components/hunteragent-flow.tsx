@@ -1237,7 +1237,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
           <ResumeSetupCard />
         </main>
 
-        {(workspace.flowPhase === "processing" || workspace.flowPhase === "studio") && (
+        {workspace.flowPhase === "studio" && (
           <StudioPanel />
         )}
 

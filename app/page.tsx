@@ -10,7 +10,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { MockEmailBrief } from "@/components/mock-email-brief";
 import { DashboardPreview } from "@/components/dashboard-preview";
-import { FeatureShowcase } from "@/components/feature-showcase";
+import { FeatureCards } from "@/components/feature-showcase";
 
 const workflow = [
   {
@@ -75,8 +75,9 @@ export default function Home() {
 
       <main className="relative z-10">
         {/* Hero */}
-        <section className="px-4 pb-14 pt-10 sm:px-6 lg:px-8 lg:pb-24 lg:pt-14">
-          <div className="mx-auto grid max-w-[1400px] items-center gap-12 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16">
+        <section className="px-4 pb-14 pt-16 sm:px-6 lg:px-8 lg:pb-20 lg:pt-24">
+          <div className="mx-auto grid max-w-[1400px] items-start gap-12 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16">
+            {/* Left — headline */}
             <div className="max-w-[44rem]">
               <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-white/85 px-4 py-2 text-sm font-medium text-[var(--muted)] shadow-[0_18px_38px_-28px_rgba(20,43,40,0.24)] backdrop-blur-sm">
                 <Sparkle size={16} weight="duotone" className="text-[var(--accent)]" />
@@ -120,13 +121,31 @@ export default function Home() {
                 </ul>
               </div>
             </div>
-            <div id="brief" className="lg:pl-8">
-              <MockEmailBrief />
+
+            {/* Right — feature cards, pushed down to align with lower hero content */}
+            <div className="lg:pt-48">
+              <FeatureCards />
             </div>
           </div>
         </section>
 
-        <FeatureShowcase />
+        {/* Sample email brief */}
+        <section id="brief" className="px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+          <div className="mx-auto max-w-[1400px]">
+            <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+              <div className="lg:pt-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Sample email</p>
+                <h2 className="mt-3 text-4xl font-semibold tracking-[-0.05em] text-[var(--ink)] md:text-5xl">
+                  This is what lands in your inbox.
+                </h2>
+                <p className="mt-5 max-w-sm text-base leading-8 text-[var(--muted)]">
+                  Every morning at your chosen time. Reply with numbers or names — your dashboard does the rest.
+                </p>
+              </div>
+              <MockEmailBrief />
+            </div>
+          </div>
+        </section>
 
         {/* How it works */}
         <section className="px-4 py-20 sm:px-6 lg:px-8 lg:py-28">

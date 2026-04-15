@@ -1,49 +1,142 @@
-// Server component — pure CSS animations, no client JS needed
+"use client";
 
-const SCENE_H = "h-56";
+import { useState, useEffect } from "react";
+
+const SCENE_H = "h-96";
+
+// Teal core fading to cyan at the outer edge — brand-anchored gradient side face
+const SHADOW_3D =
+  "7px 2px 0 rgba(18,108,100,0.95), 13px 3px 0 rgba(10,148,128,0.65), 17px 4px 0 rgba(6,182,212,0.32)";
+
+// rotateX(-2deg): near-flat backward lean — removes top/bottom width distortion
+// rotateY(-16deg): right face visible (viewer slightly to the right)
+const TILT = "perspective(560px) rotateX(-2deg) rotateY(-16deg)";
+
+// Build the stacked / entry transform for each card index.
+function entryTransform(index: number) {
+  if (index === 0) return TILT;
+  return `perspective(560px) translateX(calc(-${index * 100}% - ${index * 20}px)) rotateX(-2deg) rotateY(-16deg)`;
+}
+
+// ─── Typing text ───────────────────────────────────────────────────────────────
+
+function TypingText({ text, delay = 0 }: { text: string; delay?: number }) {
+  const [shown, setShown] = useState("");
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    let charTimer: ReturnType<typeof setTimeout>;
+    const startTimer = setTimeout(() => {
+      let i = 0;
+      const tick = () => {
+        i++;
+        setShown(text.slice(0, i));
+        if (i < text.length) {
+          charTimer = setTimeout(tick, 22);
+        } else {
+          setDone(true);
+        }
+      };
+      tick();
+    }, delay);
+    return () => {
+      clearTimeout(startTimer);
+      clearTimeout(charTimer!);
+    };
+  }, [text, delay]);
+
+  return (
+    <p className="mt-1.5 min-h-[3.8rem] text-xs leading-5 text-[var(--muted)]">
+      {shown || <span className="opacity-0">{text}</span>}
+      {!done && shown.length > 0 && (
+        <span
+          className="ml-px text-[var(--accent)]"
+          style={{ animation: "cursor-blink 0.65s step-end infinite" }}
+        >
+          |
+        </span>
+      )}
+    </p>
+  );
+}
+
+// ─── Scenes ────────────────────────────────────────────────────────────────────
+
+// Varying widths per row so skeleton lines look like real varied content
+const LISTING_WIDTHS: [number, number][] = [
+  [62, 38],
+  [74, 44],
+  [55, 30],
+  [68, 40],
+  [58, 35],
+];
 
 function EnvelopeScene() {
   return (
-    <div
-      className={`relative ${SCENE_H} overflow-hidden rounded-[1.4rem] bg-[var(--ink)]`}
-      style={{ perspective: "600px" }}
-    >
-      {/* Ambient glow */}
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_40%_90%,rgba(18,108,100,0.32),transparent)]" />
+    <div className={`relative ${SCENE_H} overflow-hidden rounded-[1.4rem] bg-[var(--ink)]`}>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_65%_55%_at_38%_85%,rgba(18,108,100,0.35),transparent)]" />
 
-      {/* 3D tilt wrapper */}
+      {/* Envelope — drops from top, bounces, holds, fades, repeats */}
       <div
-        className="absolute inset-0 flex items-center justify-center"
-        style={{ transform: "rotateX(14deg) rotateY(-10deg)", transformStyle: "preserve-3d" }}
+        className="absolute"
+        style={{
+          left: "50%",
+          top: 38,
+          marginLeft: -30,
+          animation: "env-cycle-v2 5.5s ease-out 0.3s infinite",
+        }}
       >
-        {/* Inbox tray */}
         <div
-          className="absolute bottom-7 h-11 w-40 rounded-xl border border-white/10 bg-white/6 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.5),inset_0_2px_4px_rgba(0,0,0,0.3)]"
-          style={{ transform: "translateZ(-8px)" }}
-        />
-
-        {/* Envelope — drop in, pause, reset */}
-        <div
-          className="absolute"
           style={{
-            animation: "envelope-drop 0.9s cubic-bezier(0.34,1.4,0.64,1) 0.2s both, envelope-pause 3.8s 1.1s infinite",
-            filter: "drop-shadow(0 12px 20px rgba(0,0,0,0.4))",
+            width: 60,
+            height: 45,
+            borderRadius: 7,
+            background: "rgba(18,108,100,0.92)",
+            border: "1px solid rgba(255,255,255,0.16)",
+            overflow: "hidden",
+            position: "relative",
           }}
         >
-          <svg width="60" height="44" viewBox="0 0 60 44" fill="none">
-            <rect x="1" y="1" width="58" height="42" rx="7" fill="rgba(18,108,100,0.9)" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5" />
-            <path d="M1 9l29 18L59 9" stroke="rgba(255,255,255,0.28)" strokeWidth="1.5" />
-            <rect x="19" y="20" width="22" height="3" rx="1.5" fill="rgba(255,255,255,0.14)" />
-            <rect x="22" y="27" width="16" height="3" rx="1.5" fill="rgba(255,255,255,0.09)" />
+          <svg width="60" height="45" viewBox="0 0 60 45" style={{ position: "absolute", inset: 0 }} fill="none">
+            <path d="M1 8L30 26L59 8" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
           </svg>
+          <div style={{ position: "absolute", bottom: 14, left: 10, width: 24, height: 3, borderRadius: 2, background: "rgba(255,255,255,0.15)" }} />
+          <div style={{ position: "absolute", bottom: 8, left: 10, width: 16, height: 3, borderRadius: 2, background: "rgba(255,255,255,0.1)" }} />
         </div>
       </div>
 
-      {/* Overlays — flat */}
+      {/* 5 skeleton listing rows — staggered appearance after envelope lands */}
+      <div className="absolute inset-x-3 bottom-3 flex flex-col gap-[4px]">
+        {LISTING_WIDTHS.map(([titleW, companyW], i) => (
+          <div
+            key={i}
+            style={{
+              height: 22,
+              borderRadius: 6,
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.05)",
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+              padding: "0 8px",
+              opacity: 0,
+              animation: `listing-row-appear 5.5s ease-out ${0.3 + i * 0.18}s infinite`,
+            }}
+          >
+            {/* Bullet */}
+            <div style={{ width: 5, height: 5, borderRadius: "50%", background: "rgba(18,108,100,0.85)", flexShrink: 0 }} />
+            {/* Title skeleton */}
+            <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)", width: `${titleW}%` }} />
+            {/* Company skeleton */}
+            <div style={{ height: 3, borderRadius: 2, background: "rgba(255,255,255,0.1)", width: `${companyW}%` }} />
+          </div>
+        ))}
+      </div>
+
       <div className="absolute right-4 top-4 rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium text-white/60">
         8:00 AM
       </div>
-      <div className="absolute left-4 top-4 h-2 w-2 rounded-full bg-[var(--accent)] shadow-[0_0_8px_rgba(18,108,100,0.8)]" />
+      <div className="absolute left-4 top-4 h-2 w-2 rounded-full bg-[var(--accent)] shadow-[0_0_8px_rgba(18,108,100,0.9)]" />
     </div>
   );
 }
@@ -51,62 +144,71 @@ function EnvelopeScene() {
 function DocsScene() {
   return (
     <div
-      className={`relative ${SCENE_H} rounded-[1.4rem] bg-[var(--surface)]`}
-      style={{ perspective: "500px", overflow: "visible" }}
+      className={`relative ${SCENE_H} overflow-hidden rounded-[1.4rem]`}
+      style={{
+        background: "var(--surface)",
+        backgroundImage: "radial-gradient(ellipse 60% 60% at 50% 50%, rgba(18,108,100,0.07), transparent)",
+      }}
     >
-      <div className="pointer-events-none absolute inset-0 rounded-[1.4rem] bg-[radial-gradient(ellipse_60%_60%_at_50%_50%,rgba(18,108,100,0.08),transparent)]" />
-
-      {/* 3D tilt wrapper */}
-      <div
-        className="absolute inset-0 flex items-center justify-center"
-        style={{ transform: "rotateX(-6deg) rotateY(6deg)", transformStyle: "preserve-3d" }}
-      >
-        {/* Letter card — behind (rendered first, lower z) */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        {/* Letter — behind */}
         <div
-          className="absolute z-0 h-36 w-24 origin-bottom-left rounded-xl border border-[var(--border-soft)] bg-white"
           style={{
+            position: "absolute",
+            width: 96,
+            height: 136,
+            borderRadius: 12,
+            overflow: "hidden",
+            background: "white",
+            border: "1px solid rgba(24,44,41,0.09)",
+            zIndex: 0,
             animation: "doc-right-fan 4s cubic-bezier(0.34,1.2,0.64,1) 0.5s infinite",
-            boxShadow: "0 12px 40px -10px rgba(18,44,41,0.28), 0 4px 12px -4px rgba(18,44,41,0.14)",
+            transformOrigin: "50% 100%",
           }}
         >
-          <div className="h-3 w-full rounded-t-xl bg-amber-500" />
-          <div className="mt-3 space-y-1.5 px-3">
-            {[90, 70, 95, 55, 75, 60].map((w, i) => (
-              <div key={i} className="h-1.5 rounded-full bg-[var(--border-strong)]" style={{ width: `${w}%` }} />
+          <div style={{ height: 11, background: "#f59e0b", borderRadius: "12px 12px 0 0" }} />
+          <div style={{ padding: "10px 10px 0" }}>
+            {[90, 68, 96, 52, 78, 62].map((w, i) => (
+              <div key={i} style={{ height: 5, borderRadius: 3, background: "rgba(24,44,41,0.13)", width: `${w}%`, marginBottom: 6 }} />
             ))}
           </div>
-          <p className="absolute bottom-2 left-0 right-0 text-center text-[8px] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">Letter</p>
-          <div
-            className="absolute -left-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 shadow-[0_2px_8px_rgba(217,119,6,0.4)]"
-            style={{ animation: "check-pop 4s 0.5s infinite" }}
-          >
-            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-              <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <p style={{ position: "absolute", bottom: 8, left: 0, right: 0, textAlign: "center", fontSize: 8, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(96,115,109,0.7)" }}>
+            Letter
+          </p>
+          <div style={{ position: "absolute", top: 3, left: 3, width: 18, height: 18, borderRadius: "50%", background: "#f59e0b", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(217,119,6,0.4)", animation: "check-pop 4s 0.5s infinite" }}>
+            <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+              <path d="M1 3.5l2.5 2.5 4.5-5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
         </div>
 
-        {/* CV card — in front (rendered second, z-10) */}
+        {/* CV — in front */}
         <div
-          className="absolute z-10 h-36 w-24 origin-bottom-right rounded-xl border border-[var(--border-soft)] bg-white"
           style={{
+            position: "absolute",
+            width: 96,
+            height: 136,
+            borderRadius: 12,
+            overflow: "hidden",
+            background: "white",
+            border: "1px solid rgba(24,44,41,0.09)",
+            zIndex: 10,
             animation: "doc-left-fan 4s cubic-bezier(0.34,1.2,0.64,1) 0.5s infinite",
-            boxShadow: "0 12px 40px -10px rgba(18,44,41,0.28), 0 4px 12px -4px rgba(18,44,41,0.14)",
+            transformOrigin: "50% 100%",
           }}
         >
-          <div className="h-3 w-full rounded-t-xl bg-[var(--accent)]" />
-          <div className="mt-3 space-y-1.5 px-3">
-            {[100, 75, 88, 60, 80, 70].map((w, i) => (
-              <div key={i} className="h-1.5 rounded-full bg-[var(--border-strong)]" style={{ width: `${w}%` }} />
+          <div style={{ height: 11, background: "#126c64", borderRadius: "12px 12px 0 0" }} />
+          <div style={{ padding: "10px 10px 0" }}>
+            {[100, 75, 88, 60, 82, 70].map((w, i) => (
+              <div key={i} style={{ height: 5, borderRadius: 3, background: "rgba(24,44,41,0.13)", width: `${w}%`, marginBottom: 6 }} />
             ))}
           </div>
-          <p className="absolute bottom-2 left-0 right-0 text-center text-[8px] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">CV</p>
-          <div
-            className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] shadow-[0_2px_8px_rgba(18,108,100,0.5)]"
-            style={{ animation: "check-pop 4s 0.5s infinite" }}
-          >
-            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-              <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          <p style={{ position: "absolute", bottom: 8, left: 0, right: 0, textAlign: "center", fontSize: 8, fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "rgba(96,115,109,0.7)" }}>
+            CV
+          </p>
+          <div style={{ position: "absolute", top: 3, right: 3, width: 18, height: 18, borderRadius: "50%", background: "#126c64", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(18,108,100,0.5)", animation: "check-pop 4s 0.5s infinite" }}>
+            <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
+              <path d="M1 3.5l2.5 2.5 4.5-5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
         </div>
@@ -117,46 +219,77 @@ function DocsScene() {
 
 const trackRows = [
   { company: "BrightPath Studio", role: "Product Designer", delay: "0s" },
-  { company: "Hollow Arc", role: "UX Lead", delay: "0.15s" },
-  { company: "Meridian Labs", role: "Content Strategist", delay: "0.3s" },
+  { company: "Hollow Arc", role: "UX Lead", delay: "0.12s" },
+  { company: "Meridian Labs", role: "Content Strategist", delay: "0.24s" },
+  { company: "Riverframe", role: "Growth Marketer", delay: "0.36s" },
 ];
 
 const STATUS_LABELS = [
-  { label: "Applied", color: "bg-[var(--accent-soft)] text-[var(--accent)]", anim: "status-a" },
-  { label: "Interview", color: "bg-amber-50 text-amber-600", anim: "status-b" },
-  { label: "Follow-up", color: "bg-blue-50 text-blue-600", anim: "status-c" },
+  { label: "Applied", color: "rgba(18,108,100,0.12)", text: "#126c64", anim: "status-a" },
+  { label: "Interview", color: "rgba(245,158,11,0.12)", text: "#d97706", anim: "status-b" },
+  { label: "Follow-up", color: "rgba(59,130,246,0.12)", text: "#2563eb", anim: "status-c" },
 ] as const;
 
 function TrackScene() {
   return (
     <div
-      className={`relative ${SCENE_H} overflow-hidden rounded-[1.4rem] bg-white`}
-      style={{ perspective: "700px" }}
+      className={`relative ${SCENE_H} overflow-hidden rounded-[1.4rem] bg-[var(--surface)]`}
+      style={{
+        backgroundImage: "radial-gradient(ellipse 55% 38% at 50% 100%, rgba(18,108,100,0.06), transparent)",
+      }}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_100%,rgba(18,108,100,0.05),transparent)]" />
+      {/* Header */}
+      <div className="absolute left-4 right-4 top-3.5 flex items-center justify-between">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+          Pipeline
+        </span>
+        <span className="text-[10px] font-medium text-[var(--accent)]">4 active</span>
+      </div>
 
-      {/* 3D tilt wrapper */}
-      <div
-        className="absolute inset-0 flex flex-col justify-center gap-2.5 px-4 py-5"
-        style={{ transform: "rotateX(10deg) rotateY(-5deg)", transformStyle: "preserve-3d" }}
-      >
+      {/* Rows */}
+      <div className="absolute inset-x-3 top-10 flex flex-col gap-[7px]">
         {trackRows.map((row) => (
           <div
             key={row.company}
-            className="flex items-center justify-between gap-2 rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] px-3 py-2 shadow-[0_4px_12px_-4px_rgba(18,44,41,0.1)]"
-            style={{ animation: `row-in 0.5s cubic-bezier(0.16,1,0.3,1) ${row.delay} both` }}
+            style={{
+              height: 44,
+              borderRadius: 10,
+              border: "1px solid rgba(24,44,41,0.08)",
+              background: "white",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "0 10px",
+              gap: 8,
+              animation: `row-in 0.5s cubic-bezier(0.16,1,0.3,1) ${row.delay} both`,
+            }}
           >
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-semibold text-[var(--ink)]">{row.company}</p>
-              <p className="truncate text-[10px] text-[var(--muted)]">{row.role}</p>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: "#182c29", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {row.company}
+              </p>
+              <p style={{ fontSize: 10, color: "#60736d", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {row.role}
+              </p>
             </div>
-            {/* Cycling status badge — fixed width container prevents overflow */}
-            <div className="relative h-5 w-[68px] shrink-0">
-              {STATUS_LABELS.map(({ label, color, anim }) => (
+            <div style={{ position: "relative", width: 64, height: 20, flexShrink: 0 }}>
+              {STATUS_LABELS.map(({ label, color, text, anim }) => (
                 <span
                   key={label}
-                  className={`absolute inset-0 flex items-center justify-center whitespace-nowrap rounded-full text-[9px] font-semibold ${color}`}
-                  style={{ animation: `${anim} 4s 1s infinite` }}
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: 999,
+                    background: color,
+                    color: text,
+                    fontSize: 9,
+                    fontWeight: 700,
+                    whiteSpace: "nowrap",
+                    animation: `${anim} 4s 1s infinite`,
+                  }}
                 >
                   {label}
                 </span>
@@ -169,47 +302,129 @@ function TrackScene() {
   );
 }
 
+// ─── Cards data ────────────────────────────────────────────────────────────────
+
 const cards = [
   {
     scene: <EnvelopeScene />,
     label: "Daily brief",
     title: "5 roles, 8:00 AM sharp",
     body: "Your top matches land in your inbox every morning. No job board tabs.",
+    typingDelay: 500,
   },
   {
     scene: <DocsScene />,
     label: "Application materials",
     title: "CV & cover letter — tailored",
     body: "A role-specific CV and cover letter are ready in your dashboard within minutes.",
+    typingDelay: 1100,
   },
   {
     scene: <TrackScene />,
     label: "Applications",
     title: "Track every application",
     body: "Mark roles applied, set follow-up reminders, and see your pipeline at a glance.",
+    typingDelay: 1500,
   },
 ];
 
-export function FeatureShowcase() {
+// ─── Inline card grid (no section wrapper — embeds in hero right col) ──────────
+
+export function FeatureCards() {
+  const [entered, setEntered] = useState(false);
+
+  useEffect(() => {
+    if (window.innerWidth < 768) { setEntered(true); return; }
+    const t = setTimeout(() => setEntered(true), 120);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Each card after the first overlaps the previous by 22px
+  const OVERLAP = 22;
+
   return (
-    <section className="px-4 pb-8 pt-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-[1400px]">
-        <div className="grid gap-5 md:grid-cols-3">
-          {cards.map((card) => (
+    <div className="flex">
+      {cards.map((card, index) => (
+        <article
+          key={card.title}
+          style={{
+            transform: entered ? TILT : entryTransform(index),
+            boxShadow: SHADOW_3D,
+            zIndex: cards.length - index,
+            position: "relative",
+            flex: "1 1 0",
+            minWidth: 0,
+            marginLeft: index > 0 ? -OVERLAP : 0,
+            transition: entered
+              ? `transform 0.78s cubic-bezier(0.16, 1, 0.3, 1) ${index * 280}ms`
+              : "none",
+          }}
+          className="rounded-[1.4rem] border border-[var(--border-soft)] bg-[var(--surface)] p-0.5"
+        >
+          <div className="rounded-[calc(1.4rem-0.125rem)] bg-white p-2 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]">
+            {card.scene}
+            <div className="mt-2 px-0.5 pb-0.5">
+              <p className="truncate text-[0.58rem] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+                {card.label}
+              </p>
+              <h3 className="mt-0.5 text-[0.72rem] font-semibold leading-[1.3] tracking-tight text-[var(--ink)]">
+                {card.title}
+              </h3>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+// ─── Main component ────────────────────────────────────────────────────────────
+
+export function FeatureShowcase() {
+  // Once `entered` flips true each card transitions to its final TILT position.
+  // Card 0 starts at final position; cards 1 & 2 start stacked behind card 0.
+  const [entered, setEntered] = useState(false);
+
+  useEffect(() => {
+    // On mobile (single-column grid) skip the slide animation entirely
+    if (window.innerWidth < 768) {
+      setEntered(true);
+      return;
+    }
+    // Short pause so the user sees card 0 before the others slide out
+    const t = setTimeout(() => setEntered(true), 120);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <section className="px-4 pb-6 pt-3 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-[960px]">
+        <div className="grid gap-4 md:grid-cols-3">
+          {cards.map((card, index) => (
             <article
               key={card.title}
-              className="reveal rounded-[2rem] border border-[var(--border-soft)] bg-[var(--surface)] p-1.5 shadow-[0_28px_60px_-42px_rgba(20,43,40,0.2)] transition-transform duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1"
+              style={{
+                transform: entered ? TILT : entryTransform(index),
+                boxShadow: SHADOW_3D,
+                // Card 0 sits on top so 1 & 2 slide from beneath it
+                zIndex: cards.length - index,
+                position: "relative",
+                transition: entered
+                  ? `transform 0.78s cubic-bezier(0.16, 1, 0.3, 1) ${index * 280}ms`
+                  : "none",
+              }}
+              className="rounded-[1.75rem] border border-[var(--border-soft)] bg-[var(--surface)] p-1"
             >
-              <div className="rounded-[calc(2rem-0.375rem)] bg-white p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]">
+              <div className="rounded-[calc(1.75rem-0.25rem)] bg-white p-3 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]">
                 {card.scene}
-                <div className="mt-4 px-1">
-                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
+                <div className="mt-3 px-1">
+                  <p className="text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
                     {card.label}
                   </p>
-                  <h3 className="mt-2 text-lg font-semibold tracking-tight text-[var(--ink)]">
+                  <h3 className="mt-1.5 text-base font-semibold tracking-tight text-[var(--ink)]">
                     {card.title}
                   </h3>
-                  <p className="mt-1.5 text-sm leading-6 text-[var(--muted)]">{card.body}</p>
+                  <TypingText text={card.body} delay={card.typingDelay} />
                 </div>
               </div>
             </article>

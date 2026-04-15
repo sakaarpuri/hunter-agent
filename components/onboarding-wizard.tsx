@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   REMOTE_REGION_OPTIONS,
   WORKPLACE_MODE_OPTIONS,
@@ -22,6 +22,7 @@ const ONBOARDING_STEPS = [
 export function OnboardingWizard() {
   const {
     workspace,
+    user,
     draftProfile,
     setDraftProfile,
     draftStep,
@@ -34,6 +35,14 @@ export function OnboardingWizard() {
 
   const [cvImporting, setCvImporting] = useState(false);
   const [cvImportError, setCvImportError] = useState<string | null>(null);
+
+  // Pre-populate recipient email with the signed-in user's email if not already set
+  useEffect(() => {
+    if (!draftProfile.recipientEmail && user?.email) {
+      setDraftProfile((current) => ({ ...current, recipientEmail: user.email }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (workspace.flowPhase !== "onboarding") return null;
 
@@ -116,19 +125,19 @@ export function OnboardingWizard() {
               )}
             </div>
 
-            <label className="grid gap-2 text-sm">
+            <label className="grid min-w-0 gap-2 text-sm">
               <span className="font-medium text-[var(--ink)]">Name</span>
-              <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.name} onChange={(event) => setDraftProfile((current) => ({ ...current, name: event.target.value }))} />
+              <input className="w-full rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.name} onChange={(event) => setDraftProfile((current) => ({ ...current, name: event.target.value }))} />
             </label>
-            <label className="grid gap-2 text-sm">
+            <label className="grid min-w-0 gap-2 text-sm">
               <span className="font-medium text-[var(--ink)]">Current title</span>
-              <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.currentTitle} onChange={(event) => setDraftProfile((current) => ({ ...current, currentTitle: event.target.value }))} />
+              <input className="w-full rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.currentTitle} onChange={(event) => setDraftProfile((current) => ({ ...current, currentTitle: event.target.value }))} />
             </label>
             {draftProfile.targetRoles.map((role, index) => (
-              <label key={index} className="grid gap-2 text-sm">
+              <label key={index} className="grid min-w-0 gap-2 text-sm">
                 <span className="font-medium text-[var(--ink)]">Target role {index + 1}</span>
                 <input
-                  className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none"
+                  className="w-full rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none"
                   value={role}
                   onChange={(event) =>
                     setDraftProfile((current) => {
@@ -207,7 +216,7 @@ export function OnboardingWizard() {
               </div>
             </div>
             <div className="grid gap-2 text-sm md:col-span-2">
-              <span className="font-medium text-[var(--ink)]">Remote region</span>
+              <span className="font-medium text-[var(--ink)]">Region</span>
               <div className="flex flex-wrap gap-2">
                 {REMOTE_REGION_OPTIONS.map((option) => {
                   const active = draftProfile.remoteRegions.includes(option.id);
@@ -226,22 +235,8 @@ export function OnboardingWizard() {
                   );
                 })}
               </div>
-              <span className="text-xs leading-6 text-[var(--muted)]">Used when a role is remote and the posting limits which regions can apply.</span>
+              <span className="text-xs leading-6 text-[var(--muted)]">Used when a posting limits which regions can apply.</span>
             </div>
-            <label className="grid gap-2 text-sm md:col-span-2">
-              <span className="font-medium text-[var(--ink)]">Excluded companies</span>
-              <textarea
-                className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none"
-                value={draftProfile.excludedCompanies.join(", ")}
-                onChange={(event) =>
-                  setDraftProfile((current) => ({
-                    ...current,
-                    excludedCompanies: parsePreferenceList(event.target.value),
-                  }))
-                }
-                placeholder="Comma-separated, e.g. Meta, Agency Inc"
-              />
-            </label>
             <label className="grid gap-2 text-sm md:col-span-2">
               <span className="font-medium text-[var(--ink)]">Special preferences</span>
               <textarea
@@ -283,22 +278,38 @@ export function OnboardingWizard() {
             </label>
             <div className="grid gap-3 text-sm md:col-span-2">
               <span className="font-medium text-[var(--ink)]">First shortlist</span>
+              {/* Send immediately — checkbox style, checked by default */}
               <button
                 type="button"
-                onClick={() => setDraftProfile((current) => ({ ...current, firstBrief: "now" }))}
-                className={cn(
-                  "rounded-[1.3rem] border px-4 py-3 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                  draftProfile.firstBrief === "now" ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]" : "border-[var(--border-strong)] bg-white text-[var(--muted)]",
-                )}
+                onClick={() => setDraftProfile((current) => ({ ...current, firstBrief: current.firstBrief === "now" ? "scheduled" : "now" }))}
+                className="flex items-center gap-3 rounded-[1.3rem] border border-[var(--border-soft)] bg-white px-4 py-3 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:scale-[0.98]"
               >
-                Send the first brief immediately
+                <span className={cn(
+                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition-colors duration-200",
+                  draftProfile.firstBrief === "now"
+                    ? "bg-[var(--accent)]"
+                    : "border-2 border-[var(--border-strong)] bg-white",
+                )}>
+                  {draftProfile.firstBrief === "now" && (
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                      <path d="M1 4l2.5 2.5 5.5-5.5" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </span>
+                <div>
+                  <p className="font-medium text-[var(--ink)]">Send the first brief immediately</p>
+                  <p className="mt-0.5 text-xs text-[var(--muted)]">Roles arrive right after you finish setup</p>
+                </div>
               </button>
+              {/* Wait option */}
               <button
                 type="button"
                 onClick={() => setDraftProfile((current) => ({ ...current, firstBrief: "scheduled" }))}
                 className={cn(
                   "rounded-[1.3rem] border px-4 py-3 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                  draftProfile.firstBrief === "scheduled" ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]" : "border-[var(--border-strong)] bg-white text-[var(--muted)]",
+                  draftProfile.firstBrief === "scheduled"
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]"
+                    : "border-[var(--border-soft)] bg-[var(--surface)] text-[var(--muted)]",
                 )}
               >
                 Wait until the scheduled time

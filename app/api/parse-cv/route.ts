@@ -9,9 +9,12 @@ async function extractTextFromFile(file: File): Promise<string> {
   const buffer = Buffer.from(bytes);
 
   if (file.name.endsWith(".pdf")) {
+    // pdf-parse v2: class-based API, accepts { data: Buffer } directly
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require("pdf-parse") as (buf: Buffer) => Promise<{ text: string }>;
-    const result = await pdfParse(buffer);
+    const { PDFParse } = require("pdf-parse") as { PDFParse: new (opts: { data: Buffer }) => { getText: () => Promise<{ text: string }>; destroy: () => Promise<void> } };
+    const parser = new PDFParse({ data: buffer });
+    const result = await parser.getText();
+    await parser.destroy();
     return result.text;
   }
 
