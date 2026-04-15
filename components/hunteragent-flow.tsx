@@ -900,30 +900,6 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                 <p className="mt-2 text-xs text-[var(--muted)]">{workspace.generationStatus}</p>
               )}
             </div>
-            <div className="flex flex-col items-end gap-2">
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-[var(--muted)]">{user.fullName}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSettingsOpen((current) => !current);
-                    setSettingsError(null);
-                    setSettingsNotice(null);
-                  }}
-                  className="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                >
-                  <PencilSimple size={16} weight="bold" />
-                  Settings
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-2.5 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                >
-                  Sign out
-                </button>
-              </div>
-            </div>
           </div>
 
           {isGenerating && (

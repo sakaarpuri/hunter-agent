@@ -12,6 +12,8 @@ import {
   ListChecks,
   MagnifyingGlass,
   Palette,
+  PencilSimple,
+  SignOut,
   Sparkle,
   Target,
   UserCircle,
@@ -40,6 +42,9 @@ export function LeftRail() {
     handleReset,
     handleLeftRailToggle,
     handleSetActiveBrief,
+    user,
+    setIsSettingsOpen,
+    handleSignOut,
   } = useHunterAgent();
 
   const [briefSearch, setBriefSearch] = useState("");
@@ -273,6 +278,35 @@ export function LeftRail() {
           </div>
         </div>
       )}
+      <div className={cn("mt-6 border-t border-[var(--border-soft)] pt-4", workspace.leftRailCollapsed ? "flex flex-col items-center gap-2" : "space-y-1")}>
+        {!workspace.leftRailCollapsed && (
+          <p className="mb-2 truncate text-xs text-[var(--muted)]">{user.fullName}</p>
+        )}
+        <button
+          type="button"
+          onClick={() => setIsSettingsOpen((current) => !current)}
+          className={cn(
+            "flex items-center rounded-2xl py-3 text-left text-[var(--muted)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:bg-white active:translate-y-[1px] active:scale-[0.98]",
+            workspace.leftRailCollapsed ? "justify-center px-0 w-full" : "gap-3 px-3 w-full",
+          )}
+          title={workspace.leftRailCollapsed ? "Settings" : undefined}
+        >
+          <PencilSimple size={18} weight="duotone" />
+          {!workspace.leftRailCollapsed && <span className="font-medium">Settings</span>}
+        </button>
+        <button
+          type="button"
+          onClick={() => void handleSignOut()}
+          className={cn(
+            "flex items-center rounded-2xl py-3 text-left text-[var(--muted)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:bg-white active:translate-y-[1px] active:scale-[0.98]",
+            workspace.leftRailCollapsed ? "justify-center px-0 w-full" : "gap-3 px-3 w-full",
+          )}
+          title={workspace.leftRailCollapsed ? "Sign out" : undefined}
+        >
+          <SignOut size={18} weight="duotone" />
+          {!workspace.leftRailCollapsed && <span className="font-medium">Sign out</span>}
+        </button>
+      </div>
     </aside>
   );
 }
