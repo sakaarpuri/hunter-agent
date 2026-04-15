@@ -829,7 +829,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
   if (isLoading || !workspace) {
     return (
       <div className="overflow-hidden rounded-[2rem] border border-[var(--border-soft)] bg-white shadow-[0_35px_85px_-38px_rgba(21,49,46,0.32)]">
-        <div className="grid min-h-[860px] grid-cols-1 lg:grid-cols-[260px_minmax(0,1.15fr)_360px]">
+        <div className="grid min-h-[860px] grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)]">
           <aside className="hidden border-b border-[var(--border-soft)] bg-[var(--surface)] px-5 py-6 lg:block lg:border-r lg:border-b-0">
             <div className="skeleton-bar h-11 rounded-2xl" />
             <div className="mt-8 grid gap-3">
@@ -838,7 +838,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
               ))}
             </div>
           </aside>
-          <main className="border-b border-[var(--border-soft)] px-5 py-6 lg:border-r lg:border-b-0 lg:px-6 xl:px-8">
+          <main className="px-5 py-6 lg:px-6 xl:px-8">
             <div className="skeleton-bar h-20 rounded-[1.7rem]" />
             <div className="mt-6 grid gap-5 xl:grid-cols-2">
               {[1, 2, 3].map((item) => (
@@ -846,9 +846,6 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
               ))}
             </div>
           </main>
-          <section className="bg-[var(--surface)] px-5 py-6 lg:px-6 xl:px-7">
-            <div className="skeleton-bar h-[640px] rounded-[1.9rem]" />
-          </section>
         </div>
       </div>
     );
@@ -1240,7 +1237,9 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
           <ResumeSetupCard />
         </main>
 
-        <StudioPanel />
+        {(workspace.flowPhase === "processing" || workspace.flowPhase === "studio") && (
+          <StudioPanel />
+        )}
 
       </div>
     </div>
