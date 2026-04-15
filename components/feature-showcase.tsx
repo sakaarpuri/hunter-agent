@@ -10,12 +10,12 @@ const SHADOW_3D =
 
 // rotateX(-2deg): near-flat backward lean — removes top/bottom width distortion
 // rotateY(-16deg): right face visible (viewer slightly to the right)
-const TILT = "perspective(560px) rotateX(-2deg) rotateY(-16deg)";
+const TILT = "perspective(560px) rotateX(-2deg) rotateY(-11deg)";
 
 // Build the stacked / entry transform for each card index.
 function entryTransform(index: number) {
   if (index === 0) return TILT;
-  return `perspective(560px) translateX(calc(-${index * 100}% - ${index * 20}px)) rotateX(-2deg) rotateY(-16deg)`;
+  return `perspective(560px) translateX(calc(-${index * 100}% - ${index * 20}px)) rotateX(-2deg) rotateY(-11deg)`;
 }
 
 // ─── Typing text ───────────────────────────────────────────────────────────────
@@ -106,7 +106,8 @@ function EnvelopeScene() {
       </div>
 
       {/* 5 skeleton listing rows — staggered appearance after envelope lands */}
-      <div className="absolute inset-x-3 bottom-3 flex flex-col gap-[4px]">
+      {/* top:96 = ~13px below the envelope (top:38 + height:45) */}
+      <div className="absolute inset-x-3 flex flex-col gap-[4px]" style={{ top: 96 }}>
         {LISTING_WIDTHS.map(([titleW, companyW], i) => (
           <div
             key={i}
@@ -339,8 +340,8 @@ export function FeatureCards() {
     return () => clearTimeout(t);
   }, []);
 
-  // Each card after the first overlaps the previous by 22px
-  const OVERLAP = 22;
+  // Each card after the first overlaps the previous by 14px
+  const OVERLAP = 14;
 
   return (
     <div className="flex">
@@ -363,13 +364,16 @@ export function FeatureCards() {
         >
           <div className="rounded-[calc(1.4rem-0.125rem)] bg-white p-2 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]">
             {card.scene}
-            <div className="mt-2 px-0.5 pb-0.5">
+            <div className="mt-2 px-0.5 pb-1">
               <p className="truncate text-[0.58rem] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
                 {card.label}
               </p>
               <h3 className="mt-0.5 text-[0.72rem] font-semibold leading-[1.3] tracking-tight text-[var(--ink)]">
                 {card.title}
               </h3>
+              <p className="mt-1 text-[0.62rem] leading-[1.5] text-[var(--muted)]">
+                {card.body}
+              </p>
             </div>
           </div>
         </article>
