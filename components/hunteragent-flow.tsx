@@ -55,6 +55,11 @@ import {
 import { buildCvPrintHtml, CvPreview, getCvExportMetadata } from "@/components/cv-preview";
 import { TrustExplanationPanel } from "@/components/trust-explanation-panel";
 import { buildTrustExplanation } from "@/lib/hunteragent-trust";
+import { HunterAgentProvider } from "@/components/hunteragent-context";
+import { LeftRail } from "@/components/left-rail";
+import { SettingsModal } from "@/components/settings-modal";
+import { OnboardingWizard } from "@/components/onboarding-wizard";
+import { StudioPanel } from "@/components/studio-panel";
 
 type NavItem = {
   label: string;
@@ -85,7 +90,7 @@ function cn(...parts: Array<string | false | null | undefined>) {
 async function postJson<T>(url: string, body: unknown) {
   const response = await fetch(url, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", "x-requested-with": "XMLHttpRequest" },
     body: JSON.stringify(body),
   });
 
@@ -679,6 +684,15 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
     }
   }
 
+  async function handleSetActiveBrief(briefId: string) {
+    try {
+      setClientError(null);
+      await runWorkspaceAction({ action: "set_active_brief", briefId });
+    } catch (error) {
+      setClientError(error instanceof Error ? error.message : "Could not switch brief.");
+    }
+  }
+
   const navItems: NavItem[] = [
     { label: "Setup", icon: ListChecks, active: workspace?.flowPhase === "onboarding" },
     { label: "Today", icon: EnvelopeSimple, active: ["waiting", "brief", "processing"].includes(workspace?.flowPhase ?? "onboarding") },
@@ -700,6 +714,81 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
             : "Application studio";
 
   const isStudioLayout = workspace?.flowPhase === "studio";
+
+  const contextValue = workspace ? {
+    user,
+    workspace,
+    draftProfile,
+    setDraftProfile,
+    draftStep,
+    setDraftStep,
+    replyInput,
+    setReplyInput,
+    isLoading,
+    isSavingDraft,
+    isSubmittingReply,
+    isGenerating,
+    generationStage,
+    clientError,
+    isSettingsOpen,
+    setIsSettingsOpen,
+    settingsName,
+    setSettingsName,
+    currentPassword,
+    setCurrentPassword,
+    newPassword,
+    setNewPassword,
+    settingsError,
+    settingsNotice,
+    isSavingSettings,
+    isSavingPreferences,
+    editInstruction,
+    setEditInstruction,
+    designReferenceOpen,
+    setDesignReferenceOpen,
+    trustPanelOpen,
+    setTrustPanelOpen,
+    activeBrief,
+    selectedRoles,
+    activeRole,
+    activePack,
+    appliedDetails,
+    effectiveStyle,
+    trustExplanation,
+    activeProofMode,
+    showWorkSamplesTab,
+    visibleStudioTabs,
+    promptHistory,
+    stageLabel,
+    handleSettingsNameSave,
+    handlePasswordChange,
+    handleSignOut,
+    handlePreferenceSave,
+    toggleWorkplaceMode,
+    toggleRemoteRegion,
+    handleFinishOnboarding,
+    handleSendFirstBriefNow,
+    handleReopenOnboarding,
+    handleReset,
+    generatePacks,
+    handleSharpenPack,
+    handleSectionEdit,
+    handleSuggestionClick,
+    handleEditCurrentTabOnly,
+    handleClearPrompt,
+    handleInboundReplySubmit,
+    handleToneChange,
+    handleStudioTab,
+    handleCvViewMode,
+    handleActiveRole,
+    handleRoleStyle,
+    handleMakeDefaultStyle,
+    handleLeftRailToggle,
+    handleExportCvPreview,
+    handleMarkApplied,
+    handleFollowUpPlan,
+    handleSetActiveBrief,
+  } : null;
 
   if (isLoading || !workspace) {
     return (
@@ -730,6 +819,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
   }
 
   return (
+    <HunterAgentProvider value={contextValue!}>
     <div className="overflow-hidden rounded-[2rem] border border-[var(--border-soft)] bg-white shadow-[0_35px_85px_-38px_rgba(21,49,46,0.32)]">
       <div
         className={cn(
@@ -743,158 +833,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
               : "lg:grid-cols-[260px_minmax(0,1.18fr)_minmax(360px,0.82fr)]",
         )}
       >
-        <aside className={cn("hidden border-b border-[var(--border-soft)] bg-[var(--surface)] py-6 lg:block lg:border-r lg:border-b-0", workspace.leftRailCollapsed ? "px-3" : "px-5")}>
-          <div className={cn("flex items-center", workspace.leftRailCollapsed ? "justify-center" : "justify-between")}>
-            {!workspace.leftRailCollapsed && (
-              <div>
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-                HunterAgent
-              </p>
-              <h2 className="mt-2 text-xl font-semibold tracking-tight text-[var(--ink)]">
-                Daily brief at {draftProfile.briefTime}
-              </h2>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              {!workspace.leftRailCollapsed && (
-                <Link
-                  href="/"
-                  className="rounded-full border border-[var(--border-soft)] bg-white p-2 text-[var(--muted)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                >
-                  <ArrowLeft size={18} />
-                </Link>
-              )}
-              <button
-                type="button"
-                onClick={() => void handleLeftRailToggle()}
-                className="rounded-full border border-[var(--border-soft)] bg-white p-2 text-[var(--muted)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                aria-label={workspace.leftRailCollapsed ? "Expand navigation rail" : "Collapse navigation rail"}
-                title={workspace.leftRailCollapsed ? "Expand navigation rail" : "Collapse navigation rail"}
-              >
-                {workspace.leftRailCollapsed ? <CaretRight size={18} /> : <CaretLeft size={18} />}
-              </button>
-            </div>
-          </div>
-
-          <nav className={cn("grid gap-2 text-sm", workspace.leftRailCollapsed ? "mt-6" : "mt-8")}>
-            {navItems.map(({ label, icon: Icon, active, action }) => (
-              <button
-                key={label}
-                type="button"
-                onClick={action}
-                className={cn(
-                  "flex items-center rounded-2xl py-3 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                  workspace.leftRailCollapsed ? "justify-center px-0" : "gap-3 px-3",
-                  active ? "bg-[var(--accent)] text-white shadow-[0_20px_50px_-34px_rgba(18,108,100,0.9)]" : "text-[var(--muted)] hover:bg-white",
-                )}
-                title={workspace.leftRailCollapsed ? label : undefined}
-              >
-                <Icon size={18} weight={active ? "fill" : "duotone"} />
-                {!workspace.leftRailCollapsed && <span className="font-medium">{label}</span>}
-              </button>
-            ))}
-          </nav>
-
-          {!workspace.leftRailCollapsed && <div className="mt-10 rounded-[1.7rem] border border-[var(--border-soft)] bg-white p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-              Delivery
-            </p>
-            <div className="mt-4 space-y-3 text-sm text-[var(--muted)]">
-              <div className="flex items-center justify-between gap-3">
-                <span>Timezone</span>
-                <span className="font-mono text-[var(--ink)]">{draftProfile.timezone}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span>Brief time</span>
-                <span className="font-mono text-[var(--ink)]">{draftProfile.briefTime}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span>First brief</span>
-                <span className="text-[var(--ink)]">{draftProfile.firstBrief === "now" ? "Send now" : "Scheduled"}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span>Recipient</span>
-                <span className="text-[var(--ink)]">{draftProfile.recipientEmail || "Not set"}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span>Draft autosave</span>
-                <span className={cn("font-medium", isSavingDraft ? "text-[var(--accent)]" : "text-[var(--muted)]")}>
-                  {isSavingDraft ? "Saving" : "Live"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span>Brief status</span>
-                <span className={cn("font-medium", draftProfile.briefsPaused ? "text-amber-600" : "text-[var(--accent)]")}>
-                  {draftProfile.briefsPaused ? "Paused" : "Active"}
-                </span>
-              </div>
-            </div>
-          </div>}
-
-          {!workspace.leftRailCollapsed && <div className="mt-6 rounded-[1.7rem] border border-[var(--border-soft)] bg-white p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-              Your profile
-            </p>
-            <div className="mt-4 space-y-3 text-sm leading-6 text-[var(--muted)]">
-              <div className="flex items-start gap-3">
-                <UserCircle size={18} className="mt-1 text-[var(--accent)]" />
-                <div>
-                  <p className="font-medium text-[var(--ink)]">{draftProfile.name}</p>
-                  <p>{draftProfile.currentTitle}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Target size={18} className="mt-1 text-[var(--accent)]" />
-                <div>
-                  <p className="font-medium text-[var(--ink)]">Target roles</p>
-                  <p>{draftProfile.targetRoles.filter(Boolean).join(" · ")}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <GlobeHemisphereWest size={18} className="mt-1 text-[var(--accent)]" />
-                <div>
-                  <p className="font-medium text-[var(--ink)]">Locations</p>
-                  <p>{draftProfile.locations}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Palette size={18} className="mt-1 text-[var(--accent)]" />
-                <div>
-                  <p className="font-medium text-[var(--ink)]">Default style</p>
-                  <p>{getResumeStyle(draftProfile.resumeDefaultStyle).label}</p>
-                </div>
-              </div>
-            </div>
-          </div>}
-
-          {!workspace.leftRailCollapsed && workspace.appliedRecords.length > 0 && (
-            <div className="mt-6 rounded-[1.7rem] border border-[var(--border-soft)] bg-white p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Applications</p>
-              <div className="mt-4 space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-[var(--muted)]">Applied</span>
-                  <span className="font-semibold text-[var(--ink)]">{workspace.appliedRecords.length}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[var(--muted)]">With follow-up</span>
-                  <span className="font-semibold text-[var(--ink)]">
-                    {workspace.appliedRecords.filter((r) => r.followUp && r.followUp !== "off").length}
-                  </span>
-                </div>
-                {workspace.appliedRecords.length > 0 && (
-                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface)]">
-                    <div
-                      className="h-full rounded-full bg-[var(--accent)]"
-                      style={{
-                        width: `${Math.min(100, (workspace.appliedRecords.filter((r) => r.followUp && r.followUp !== "off").length / workspace.appliedRecords.length) * 100)}%`,
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </aside>
+        <LeftRail />
 
         <main className="border-b border-[var(--border-soft)] px-5 py-6 lg:border-r lg:border-b-0 lg:px-6 xl:px-8">
           <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border-soft)] pb-5">
@@ -987,298 +926,8 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
             </div>
           )}
 
-          {isSettingsOpen && (
-            <section className="mt-6 rounded-[1.9rem] border border-[var(--border-soft)] bg-white p-5 shadow-[0_25px_55px_-40px_rgba(18,40,38,0.3)]">
-              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border-soft)] pb-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Account settings</p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--ink)]">Keep your HunterAgent identity clean.</h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsSettingsOpen(false)}
-                  className="rounded-full border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-2 text-sm font-semibold text-[var(--ink)]"
-                >
-                  Close
-                </button>
-              </div>
+          <SettingsModal />
 
-              <div className="mt-5 grid gap-5 xl:grid-cols-2">
-                <div className="rounded-[1.6rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
-                  <p className="text-sm font-semibold text-[var(--ink)]">Edit name</p>
-                  <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-                    This is the name shown in your dashboard.
-                  </p>
-                  <label className="mt-4 block">
-                    <span className="mb-2 block text-sm font-medium text-[var(--ink)]">Display name</span>
-                    <input
-                      value={settingsName}
-                      onChange={(event) => setSettingsName(event.target.value)}
-                      className="w-full rounded-2xl border border-[var(--border-soft)] bg-white px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)]"
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={handleSettingsNameSave}
-                    disabled={isSavingSettings}
-                    className="mt-4 inline-flex items-center rounded-full bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    Save name
-                  </button>
-                </div>
-
-                <form onSubmit={handlePasswordChange} className="rounded-[1.6rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
-                  <p className="text-sm font-semibold text-[var(--ink)]">Change password</p>
-                  <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-                    Keep the same baseline here too: at least 6 characters, with one number or symbol.
-                  </p>
-                  <label className="mt-4 block">
-                    <span className="mb-2 block text-sm font-medium text-[var(--ink)]">Current password</span>
-                    <input
-                      type="password"
-                      value={currentPassword}
-                      onChange={(event) => setCurrentPassword(event.target.value)}
-                      autoComplete="current-password"
-                      className="w-full rounded-2xl border border-[var(--border-soft)] bg-white px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)]"
-                    />
-                  </label>
-                  <label className="mt-4 block">
-                    <span className="mb-2 block text-sm font-medium text-[var(--ink)]">New password</span>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(event) => setNewPassword(event.target.value)}
-                      autoComplete="new-password"
-                      className="w-full rounded-2xl border border-[var(--border-soft)] bg-white px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--accent)]"
-                    />
-                  </label>
-                  <button
-                    type="submit"
-                    disabled={isSavingSettings}
-                    className="mt-4 inline-flex items-center rounded-full border border-[var(--border-strong)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--ink)] disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    Update password
-                  </button>
-                </form>
-              </div>
-
-              <div className="mt-5 rounded-[1.7rem] border border-[var(--border-soft)] bg-[var(--surface)] p-5">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--ink)]">Job search settings</p>
-                    <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--muted)]">
-                      These settings shape which roles get matched and whether your daily email is active.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handlePreferenceSave}
-                    disabled={isSavingPreferences}
-                    className="inline-flex items-center rounded-full bg-[var(--accent)] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {isSavingPreferences ? "Saving…" : "Save settings"}
-                  </button>
-                </div>
-
-                <div className="mt-5 grid gap-5 xl:grid-cols-2">
-                  <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-white p-4">
-                    <p className="text-sm font-semibold text-[var(--ink)]">Brief status</p>
-                    <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-                      Pause your daily email if you need a break. Your settings and history are kept.
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setDraftProfile((current) => ({ ...current, briefsPaused: false }))}
-                        className={cn(
-                          "rounded-full px-4 py-2 text-sm font-medium",
-                          !draftProfile.briefsPaused ? "bg-[var(--accent)] text-white" : "border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--ink)]",
-                        )}
-                      >
-                        Daily briefs on
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDraftProfile((current) => ({ ...current, briefsPaused: true }))}
-                        className={cn(
-                          "rounded-full px-4 py-2 text-sm font-medium",
-                          draftProfile.briefsPaused ? "bg-amber-600 text-white" : "border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--ink)]",
-                        )}
-                      >
-                        Pause briefs
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-white p-4">
-                    <p className="text-sm font-semibold text-[var(--ink)]">Recipient and timing</p>
-                    <div className="mt-4 grid gap-4 md:grid-cols-2">
-                      <label className="grid gap-2 text-sm md:col-span-2">
-                        <span className="font-medium text-[var(--ink)]">Daily brief recipient</span>
-                        <input
-                          type="email"
-                          className="rounded-[1.2rem] border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[var(--ink)] outline-none"
-                          value={draftProfile.recipientEmail}
-                          onChange={(event) => setDraftProfile((current) => ({ ...current, recipientEmail: event.target.value }))}
-                        />
-                      </label>
-                      <label className="grid gap-2 text-sm">
-                        <span className="font-medium text-[var(--ink)]">Daily brief time</span>
-                        <input
-                          className="rounded-[1.2rem] border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[var(--ink)] outline-none"
-                          value={draftProfile.briefTime}
-                          onChange={(event) => setDraftProfile((current) => ({ ...current, briefTime: event.target.value }))}
-                        />
-                      </label>
-                      <label className="grid gap-2 text-sm">
-                        <span className="font-medium text-[var(--ink)]">Timezone</span>
-                        <input
-                          className="rounded-[1.2rem] border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[var(--ink)] outline-none"
-                          value={draftProfile.timezone}
-                          onChange={(event) => setDraftProfile((current) => ({ ...current, timezone: event.target.value }))}
-                        />
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-white p-4 xl:col-span-2">
-                    <div className="grid gap-5 xl:grid-cols-2">
-                      <div className="grid gap-4">
-                        <label className="grid gap-2 text-sm">
-                          <span className="font-medium text-[var(--ink)]">Locations</span>
-                          <input
-                            className="rounded-[1.2rem] border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[var(--ink)] outline-none"
-                            value={draftProfile.locations}
-                            onChange={(event) => setDraftProfile((current) => ({ ...current, locations: event.target.value }))}
-                          />
-                        </label>
-                        <label className="grid gap-2 text-sm">
-                          <span className="font-medium text-[var(--ink)]">Salary or rate range</span>
-                          <input
-                            className="rounded-[1.2rem] border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[var(--ink)] outline-none"
-                            value={draftProfile.salary}
-                            onChange={(event) => setDraftProfile((current) => ({ ...current, salary: event.target.value }))}
-                          />
-                        </label>
-                        <label className="grid gap-2 text-sm">
-                          <span className="font-medium text-[var(--ink)]">Excluded companies</span>
-                          <textarea
-                            className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[var(--ink)] outline-none"
-                            value={draftProfile.excludedCompanies.join(", ")}
-                            onChange={(event) =>
-                              setDraftProfile((current) => ({
-                                ...current,
-                                excludedCompanies: parsePreferenceList(event.target.value),
-                              }))
-                            }
-                          />
-                        </label>
-                      </div>
-
-                      <div className="grid gap-4">
-                        <div className="grid gap-2 text-sm">
-                          <span className="font-medium text-[var(--ink)]">Work types</span>
-                          <div className="flex flex-wrap gap-2">
-                            {["Full-time", "Part-time", "Contract"].map((type) => {
-                              const active = draftProfile.workTypes.includes(type);
-                              return (
-                                <button
-                                  key={type}
-                                  type="button"
-                                  onClick={() =>
-                                    setDraftProfile((current) => ({
-                                      ...current,
-                                      workTypes: active
-                                        ? current.workTypes.filter((item) => item !== type)
-                                        : [...current.workTypes, type],
-                                    }))
-                                  }
-                                  className={cn(
-                                    "rounded-full px-4 py-2 text-sm font-medium",
-                                    active ? "bg-[var(--accent)] text-white" : "border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--ink)]",
-                                  )}
-                                >
-                                  {type}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                        <div className="grid gap-2 text-sm">
-                          <span className="font-medium text-[var(--ink)]">Workplace</span>
-                          <div className="flex flex-wrap gap-2">
-                            {WORKPLACE_MODE_OPTIONS.map((option) => {
-                              const active = draftProfile.workplaceModes.includes(option.id);
-                              return (
-                                <button
-                                  key={option.id}
-                                  type="button"
-                                  onClick={() => toggleWorkplaceMode(option.id)}
-                                  className={cn(
-                                    "rounded-full px-4 py-2 text-sm font-medium",
-                                    active ? "bg-[var(--accent)] text-white" : "border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--ink)]",
-                                  )}
-                                >
-                                  {option.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                        <div className="grid gap-2 text-sm">
-                          <span className="font-medium text-[var(--ink)]">Remote work region</span>
-                          <div className="flex flex-wrap gap-2">
-                            {REMOTE_REGION_OPTIONS.map((option) => {
-                              const active = draftProfile.remoteRegions.includes(option.id);
-                              return (
-                                <button
-                                  key={option.id}
-                                  type="button"
-                                  onClick={() => toggleRemoteRegion(option.id)}
-                                  className={cn(
-                                    "rounded-full px-4 py-2 text-sm font-medium",
-                                    active ? "bg-[var(--accent)] text-white" : "border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--ink)]",
-                                  )}
-                                >
-                                  {option.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                        <label className="grid gap-2 text-sm">
-                          <span className="font-medium text-[var(--ink)]">Special preferences</span>
-                          <textarea
-                            className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[var(--ink)] outline-none"
-                            value={draftProfile.specialPreferences.join(", ")}
-                            onChange={(event) =>
-                              setDraftProfile((current) => ({
-                                ...current,
-                                specialPreferences: parsePreferenceList(event.target.value),
-                              }))
-                            }
-                          />
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {(settingsError || settingsNotice) && (
-                <div
-                  className={cn(
-                    "mt-5 rounded-2xl px-4 py-3 text-sm",
-                    settingsError
-                      ? "border border-rose-200 bg-rose-50 text-rose-700"
-                      : "border border-emerald-200 bg-emerald-50 text-emerald-700",
-                  )}
-                >
-                  {settingsError ?? settingsNotice}
-                </div>
-              )}
-            </section>
-          )}
 
           {workspace.onboardingComplete && !draftProfile.recipientEmail.trim() && (
             <div className="mt-6 rounded-[1.8rem] border border-[var(--amber-border)] bg-[var(--amber-soft)] px-5 py-4 text-sm leading-7 text-[var(--ink)]">
@@ -1300,374 +949,8 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
             </div>
           )}
 
-          {workspace.flowPhase === "onboarding" && (
-            <section className="mt-6 grid gap-6 2xl:grid-cols-[1.25fr_0.95fr]">
-              <div className="rounded-[1.9rem] border border-[var(--border-soft)] bg-[var(--surface)] p-5 shadow-[0_25px_55px_-40px_rgba(18,40,38,0.3)]">
-                <div className="flex flex-wrap items-center gap-3 border-b border-[var(--border-soft)] pb-4">
-                  {ONBOARDING_STEPS.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setDraftStep(item.id)}
-                      className={cn(
-                        "rounded-full px-4 py-2 text-sm font-medium transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                        draftStep === item.id ? "bg-[var(--accent)] text-white" : item.id < draftStep ? "bg-white text-[var(--ink)]" : "bg-transparent text-[var(--muted)]",
-                      )}
-                    >
-                      {item.id}. {item.label}
-                    </button>
-                  ))}
-                </div>
+          <OnboardingWizard />
 
-                {draftStep === 1 && (
-                  <div className="mt-5 grid gap-5 md:grid-cols-2">
-                    <label className="grid gap-2 text-sm">
-                      <span className="font-medium text-[var(--ink)]">Name</span>
-                      <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.name} onChange={(event) => setDraftProfile((current) => ({ ...current, name: event.target.value }))} />
-                    </label>
-                    <label className="grid gap-2 text-sm">
-                      <span className="font-medium text-[var(--ink)]">Current title</span>
-                      <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.currentTitle} onChange={(event) => setDraftProfile((current) => ({ ...current, currentTitle: event.target.value }))} />
-                    </label>
-                    {draftProfile.targetRoles.map((role, index) => (
-                      <label key={index} className="grid gap-2 text-sm">
-                        <span className="font-medium text-[var(--ink)]">Target role {index + 1}</span>
-                        <input
-                          className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none"
-                          value={role}
-                          onChange={(event) =>
-                            setDraftProfile((current) => {
-                              const next = [...current.targetRoles];
-                              next[index] = event.target.value;
-                              return { ...current, targetRoles: next };
-                            })
-                          }
-                        />
-                      </label>
-                    ))}
-                  </div>
-                )}
-
-                {draftStep === 2 && (
-                  <div className="mt-5 grid gap-5 md:grid-cols-2">
-                    <label className="grid gap-2 text-sm md:col-span-2">
-                      <span className="font-medium text-[var(--ink)]">Locations</span>
-                      <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.locations} onChange={(event) => setDraftProfile((current) => ({ ...current, locations: event.target.value }))} />
-                    </label>
-                    <label className="grid gap-2 text-sm">
-                      <span className="font-medium text-[var(--ink)]">Salary or rate range</span>
-                      <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.salary} onChange={(event) => setDraftProfile((current) => ({ ...current, salary: event.target.value }))} />
-                    </label>
-                    <label className="grid gap-2 text-sm">
-                      <span className="font-medium text-[var(--ink)]">Core strength</span>
-                      <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.coreStrength} onChange={(event) => setDraftProfile((current) => ({ ...current, coreStrength: event.target.value }))} />
-                    </label>
-                    <div className="grid gap-2 text-sm md:col-span-2">
-                      <span className="font-medium text-[var(--ink)]">Work types</span>
-                      <div className="flex flex-wrap gap-2">
-                        {["Full-time", "Part-time", "Contract"].map((type) => {
-                          const active = draftProfile.workTypes.includes(type);
-                          return (
-                            <button
-                              key={type}
-                              type="button"
-                              onClick={() =>
-                                setDraftProfile((current) => ({
-                                  ...current,
-                                  workTypes: active
-                                    ? current.workTypes.filter((item) => item !== type)
-                                    : [...current.workTypes, type],
-                                }))
-                              }
-                              className={cn(
-                                "rounded-full px-4 py-2 text-sm font-medium transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                                active ? "bg-[var(--accent)] text-white" : "border border-[var(--border-strong)] bg-white text-[var(--ink)]",
-                              )}
-                            >
-                              {type}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    <div className="grid gap-2 text-sm md:col-span-2">
-                      <span className="font-medium text-[var(--ink)]">Workplace</span>
-                      <div className="flex flex-wrap gap-2">
-                        {WORKPLACE_MODE_OPTIONS.map((option) => {
-                          const active = draftProfile.workplaceModes.includes(option.id);
-                          return (
-                            <button
-                              key={option.id}
-                              type="button"
-                              onClick={() => toggleWorkplaceMode(option.id)}
-                              className={cn(
-                                "rounded-full px-4 py-2 text-sm font-medium transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                                active ? "bg-[var(--accent)] text-white" : "border border-[var(--border-strong)] bg-white text-[var(--ink)]",
-                              )}
-                            >
-                              {option.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    <div className="grid gap-2 text-sm md:col-span-2">
-                      <span className="font-medium text-[var(--ink)]">Remote region</span>
-                      <div className="flex flex-wrap gap-2">
-                        {REMOTE_REGION_OPTIONS.map((option) => {
-                          const active = draftProfile.remoteRegions.includes(option.id);
-                          return (
-                            <button
-                              key={option.id}
-                              type="button"
-                              onClick={() => toggleRemoteRegion(option.id)}
-                              className={cn(
-                                "rounded-full px-4 py-2 text-sm font-medium transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                                active ? "bg-[var(--accent)] text-white" : "border border-[var(--border-strong)] bg-white text-[var(--ink)]",
-                              )}
-                            >
-                              {option.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <span className="text-xs leading-6 text-[var(--muted)]">Used when a role is remote and the posting limits which regions can apply.</span>
-                    </div>
-                    <label className="grid gap-2 text-sm md:col-span-2">
-                      <span className="font-medium text-[var(--ink)]">Excluded companies</span>
-                      <textarea
-                        className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none"
-                        value={draftProfile.excludedCompanies.join(", ")}
-                        onChange={(event) =>
-                          setDraftProfile((current) => ({
-                            ...current,
-                            excludedCompanies: parsePreferenceList(event.target.value),
-                          }))
-                        }
-                        placeholder="Comma-separated, e.g. Meta, Agency Inc"
-                      />
-                    </label>
-                    <label className="grid gap-2 text-sm md:col-span-2">
-                      <span className="font-medium text-[var(--ink)]">Special preferences</span>
-                      <textarea
-                        className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none"
-                        value={draftProfile.specialPreferences.join(", ")}
-                        onChange={(event) =>
-                          setDraftProfile((current) => ({
-                            ...current,
-                            specialPreferences: parsePreferenceList(event.target.value),
-                          }))
-                        }
-                        placeholder="Comma-separated, e.g. B2B SaaS, 4-day week, healthcare AI"
-                      />
-                    </label>
-                  </div>
-                )}
-
-                {draftStep === 3 && (
-                  <div className="mt-5 grid gap-6">
-                    <div className="grid gap-3 text-sm">
-                      <span className="font-medium text-[var(--ink)]">Resume source</span>
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {[
-                          ["upload", "I already have a CV", "Upload or import a base resume and let HunterAgent tailor from it."],
-                          ["guided", "Create one for me", "Answer a few essentials and HunterAgent builds the first base resume from scratch."],
-                        ].map(([value, label, note]) => {
-                          const active = draftProfile.resumeMode === value;
-                          return (
-                            <button
-                              key={value}
-                              type="button"
-                              onClick={() => setDraftProfile((current) => ({ ...current, resumeMode: value as Profile["resumeMode"] }))}
-                              className={cn(
-                                "rounded-[1.5rem] border px-4 py-4 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                                active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border-strong)] bg-white",
-                              )}
-                            >
-                              <p className="font-semibold text-[var(--ink)]">{label}</p>
-                              <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{note}</p>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {draftProfile.resumeMode === "upload" ? (
-                      <label className="grid gap-2 text-sm">
-                        <span className="font-medium text-[var(--ink)]">Master CV file</span>
-                        <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.cvFile} onChange={(event) => setDraftProfile((current) => ({ ...current, cvFile: event.target.value }))} />
-                        <span className="text-xs leading-6 text-[var(--muted)]">This becomes the base resume HunterAgent tailors for each selected role.</span>
-                      </label>
-                    ) : (
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <label className="grid gap-2 text-sm md:col-span-2">
-                          <span className="font-medium text-[var(--ink)]">Professional summary</span>
-                          <textarea className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.guidedResume.professionalSummary} onChange={(event) => setDraftProfile((current) => ({ ...current, guidedResume: { ...current.guidedResume, professionalSummary: event.target.value } }))} />
-                        </label>
-                        <label className="grid gap-2 text-sm">
-                          <span className="font-medium text-[var(--ink)]">Recent impact</span>
-                          <textarea className="min-h-28 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.guidedResume.recentImpact} onChange={(event) => setDraftProfile((current) => ({ ...current, guidedResume: { ...current.guidedResume, recentImpact: event.target.value } }))} />
-                        </label>
-                        <label className="grid gap-2 text-sm">
-                          <span className="font-medium text-[var(--ink)]">Experience snapshot</span>
-                          <textarea className="min-h-28 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.guidedResume.experienceSnapshot} onChange={(event) => setDraftProfile((current) => ({ ...current, guidedResume: { ...current.guidedResume, experienceSnapshot: event.target.value } }))} />
-                        </label>
-                        <label className="grid gap-2 text-sm">
-                          <span className="font-medium text-[var(--ink)]">Education</span>
-                          <textarea className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.guidedResume.education} onChange={(event) => setDraftProfile((current) => ({ ...current, guidedResume: { ...current.guidedResume, education: event.target.value } }))} />
-                        </label>
-                        <label className="grid gap-2 text-sm">
-                          <span className="font-medium text-[var(--ink)]">Skills</span>
-                          <textarea className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.guidedResume.skills} onChange={(event) => setDraftProfile((current) => ({ ...current, guidedResume: { ...current.guidedResume, skills: event.target.value } }))} />
-                        </label>
-                      </div>
-                    )}
-
-                    <div className="grid gap-3 text-sm">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="font-medium text-[var(--ink)]">Default resume style</span>
-                        <span className="text-xs text-[var(--muted)]">Used first, overridable per job later</span>
-                      </div>
-                      <div className="grid gap-3 md:grid-cols-2">
-                        {RESUME_STYLES.map((style) => {
-                          const active = draftProfile.resumeDefaultStyle === style.id;
-                          return (
-                            <button
-                              key={style.id}
-                              type="button"
-                              onClick={() => setDraftProfile((current) => ({ ...current, resumeDefaultStyle: style.id }))}
-                              className={cn(
-                                "rounded-[1.55rem] border p-4 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.99]",
-                                active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border-soft)] bg-white",
-                              )}
-                            >
-                              <div className="flex items-center justify-between gap-3">
-                                <h4 className="text-base font-semibold text-[var(--ink)]">{style.label}</h4>
-                                <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", active ? "bg-[var(--accent)] text-white" : "bg-[var(--surface)] text-[var(--muted)]")}>Default</span>
-                              </div>
-                              <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{style.blurb}</p>
-                              <p className="mt-2 text-xs leading-6 text-[var(--muted)]">Best for: {style.bestFor}</p>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="grid gap-3 text-sm">
-                      <span className="font-medium text-[var(--ink)]">Work sample links</span>
-                      {draftProfile.workSampleLinks.map((link, index) => (
-                        <label key={index} className="grid gap-2 text-sm">
-                          <span className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">Link {index + 1}</span>
-                          <input
-                            className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none"
-                            value={link}
-                            onChange={(event) =>
-                              setDraftProfile((current) => {
-                                const next = [...current.workSampleLinks];
-                                next[index] = event.target.value;
-                                return { ...current, workSampleLinks: next };
-                              })
-                            }
-                          />
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {draftStep === 4 && (
-                  <div className="mt-5 grid gap-5 md:grid-cols-2">
-                    <label className="grid gap-2 text-sm md:col-span-2">
-                      <span className="font-medium text-[var(--ink)]">Daily brief recipient</span>
-                      <input
-                        type="email"
-                        className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none"
-                        value={draftProfile.recipientEmail}
-                        onChange={(event) => setDraftProfile((current) => ({ ...current, recipientEmail: event.target.value }))}
-                        placeholder="you@example.com"
-                      />
-                      <span className="text-xs leading-6 text-[var(--muted)]">HunterAgent sends the daily brief here, then waits for reply selections from the same inbox.</span>
-                    </label>
-                    <label className="grid gap-2 text-sm">
-                      <span className="font-medium text-[var(--ink)]">Daily brief time</span>
-                      <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.briefTime} onChange={(event) => setDraftProfile((current) => ({ ...current, briefTime: event.target.value }))} />
-                      <span className="text-xs leading-6 text-[var(--muted)]">Every later daily brief lands at this local time.</span>
-                    </label>
-                    <label className="grid gap-2 text-sm">
-                      <span className="font-medium text-[var(--ink)]">Timezone</span>
-                      <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.timezone} onChange={(event) => setDraftProfile((current) => ({ ...current, timezone: event.target.value }))} />
-                    </label>
-                    <div className="grid gap-3 text-sm md:col-span-2">
-                      <span className="font-medium text-[var(--ink)]">First shortlist</span>
-                      <button
-                        type="button"
-                        onClick={() => setDraftProfile((current) => ({ ...current, firstBrief: "now" }))}
-                        className={cn(
-                          "rounded-[1.3rem] border px-4 py-3 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                          draftProfile.firstBrief === "now" ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]" : "border-[var(--border-strong)] bg-white text-[var(--muted)]",
-                        )}
-                      >
-                        Send the first brief immediately
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDraftProfile((current) => ({ ...current, firstBrief: "scheduled" }))}
-                        className={cn(
-                          "rounded-[1.3rem] border px-4 py-3 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                          draftProfile.firstBrief === "scheduled" ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]" : "border-[var(--border-strong)] bg-white text-[var(--muted)]",
-                        )}
-                      >
-                        Wait until the scheduled time
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-soft)] pt-5">
-                  <button
-                    type="button"
-                    onClick={() => setDraftStep((current) => Math.max(1, current - 1))}
-                    disabled={draftStep === 1}
-                    className="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--ink)] disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Back
-                  </button>
-                  {draftStep < ONBOARDING_STEPS.length ? (
-                    <button
-                      type="button"
-                      onClick={() => setDraftStep((current) => Math.min(ONBOARDING_STEPS.length, current + 1))}
-                      className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                    >
-                      Continue
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleFinishOnboarding}
-                      className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                    >
-                      Finish setup
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="rounded-[1.9rem] border border-[var(--border-soft)] bg-white p-5 shadow-[0_25px_55px_-40px_rgba(18,40,38,0.3)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Preview</p>
-                <div className="mt-4 rounded-[1.6rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
-                  <h3 className="text-xl font-semibold tracking-tight text-[var(--ink)]">
-                    Resume source: {draftProfile.resumeMode === "upload" ? "Uploaded base CV" : "HunterAgent guided builder"}
-                  </h3>
-                  <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-                    Default style is {getResumeStyle(draftProfile.resumeDefaultStyle).label}. The first brief will {draftProfile.firstBrief === "now" ? "arrive now" : `wait until ${draftProfile.briefTime}`}, and every later brief lands at {draftProfile.briefTime} {draftProfile.timezone} in {draftProfile.recipientEmail || "your chosen inbox"}.
-                  </p>
-                </div>
-                <div className="mt-5 rounded-[1.6rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4 text-sm leading-7 text-[var(--muted)]">
-                  Even without a CV, the user can finish onboarding. HunterAgent uses the guided resume input as the base document, then tailors from that once the first reply arrives.
-                </div>
-              </div>
-            </section>
-          )}
 
           {workspace.flowPhase === "waiting" && (
             <section className="mt-6 grid gap-6 xl:grid-cols-[1.05fr_1.15fr]">
@@ -1930,441 +1213,10 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
           )}
         </main>
 
-        <section className="bg-[var(--surface)] px-5 py-6 lg:px-6 xl:px-7">
-          {workspace.flowPhase !== "studio" || !activeRole || !activePack ? (
-            <div className="rounded-[1.9rem] border border-[var(--border-soft)] bg-white p-5 shadow-[0_25px_55px_-40px_rgba(18,40,38,0.3)]">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Workspace preview</p>
-              <h3 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--ink)]">
-                {workspace.flowPhase === "onboarding"
-                  ? "The studio wakes up after the first inbound reply."
-                  : workspace.flowPhase === "waiting"
-                    ? "The dashboard is ready for the first brief."
-                    : workspace.flowPhase === "brief"
-                      ? "Paste the inbound email and the studio will fill in here."
-                      : "Real generation is running through the server routes."}
-              </h3>
-              <div className="mt-5 grid gap-3">
-                {[1, 2, 3].map((item) => (
-                  <div key={item} className="skeleton-bar h-24 rounded-[1.5rem]" />
-                ))}
-              </div>
-              <div className="mt-5 rounded-[1.5rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4 text-sm leading-7 text-[var(--muted)]">
-                {workspace.flowPhase === "processing"
-                  ? `${PROCESSING_STAGES[generationStage]}…`
-                  : "Select roles from your email to start building your application materials. Your CV, cover letter, and follow-up draft will appear here."}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="rounded-[1.9rem] border border-[var(--border-soft)] bg-white p-5 shadow-[0_25px_55px_-40px_rgba(18,40,38,0.3)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Application studio</p>
-                <div className="mt-4 border-b border-[var(--border-soft)] pb-4">
-                  <h3 className="text-2xl font-semibold tracking-tight text-[var(--ink)]">{activeRole.company}</h3>
-                  <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                    {activeRole.title} · {activeRole.location} · {activeRole.employment} · Posted {activeRole.posted}
-                  </p>
-                </div>
+        <StudioPanel />
 
-                <div className="mt-5 flex flex-wrap gap-2 text-xs font-medium">
-                  {visibleStudioTabs.map(([value, label]) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => handleStudioTab(value)}
-                      className={cn(
-                        "rounded-full px-3.5 py-2 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                        workspace.studioTab === value ? "bg-[var(--accent)] text-white" : "border border-[var(--border-soft)] bg-white text-[var(--muted)]",
-                      )}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {([
-                    ["balanced", "Balanced"],
-                    ["direct", "More direct"],
-                    ["warm", "Warmer"],
-                  ] as Array<[Tone, string]>).map(([value, label]) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => void handleToneChange(value)}
-                      className={cn(
-                        "rounded-full px-3.5 py-2 text-xs font-medium transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                        workspace.tone === value ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "bg-[var(--surface)] text-[var(--muted)]",
-                      )}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="mt-6 rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Refinement prompt</p>
-                      <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-                        Adjust only what needs changing. Use this to edit just the current section without rewriting the whole pack.
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-[var(--muted)]">
-                        Active target: {targetLabel(targetFromStudioTab(workspace.studioTab))}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleClearPrompt}
-                        className="rounded-full border border-[var(--border-soft)] bg-white px-3 py-1 text-[11px] font-medium text-[var(--muted)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                      >
-                        Clear prompt
-                      </button>
-                    </div>
-                  </div>
-                  <textarea
-                    value={editInstruction}
-                    onChange={(event) => setEditInstruction(event.target.value)}
-                    placeholder="Example: Make the cover letter more direct and emphasize growth work."
-                    className="mt-4 min-h-28 w-full rounded-[1.2rem] border border-[var(--border-soft)] bg-white px-4 py-3 text-sm leading-7 text-[var(--ink)] outline-none transition focus:border-[var(--accent)]"
-                  />
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {EDIT_PROMPT_SUGGESTIONS.map((suggestion) => (
-                      <button
-                        key={suggestion}
-                        type="button"
-                        onClick={() => handleSuggestionClick(suggestion)}
-                        className="rounded-full border border-[var(--border-soft)] bg-white px-3.5 py-2 text-xs font-medium text-[var(--muted)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
-                  {promptHistory.length > 0 && (
-                    <div className="mt-4 border-t border-[var(--border-soft)] pt-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--muted)]">Recent for this role and section</p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {promptHistory.map((entry) => (
-                          <button
-                            key={entry}
-                            type="button"
-                            onClick={() => setEditInstruction(entry)}
-                            className="rounded-full border border-[var(--border-soft)] bg-white px-3.5 py-2 text-xs font-medium text-[var(--muted)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                          >
-                            {entry}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {workspace.studioTab === "cv" && (
-                  <div className="mt-6 space-y-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="flex flex-wrap gap-2 text-xs font-medium">
-                        {([
-                          ["preview", "Preview"],
-                          ["content", "Content"],
-                        ] as Array<[CvViewMode, string]>).map(([mode, label]) => (
-                          <button
-                            key={mode}
-                            type="button"
-                            onClick={() => void handleCvViewMode(mode)}
-                            className={cn(
-                              "rounded-full px-3.5 py-2 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                              workspace.cvViewMode === mode ? "bg-[var(--accent)] text-white" : "border border-[var(--border-soft)] bg-white text-[var(--muted)]",
-                            )}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleExportCvPreview}
-                        className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-soft)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                      >
-                        <PaperPlaneTilt size={16} />
-                        Export PDF
-                      </button>
-                    </div>
-
-                    {workspace.cvViewMode === "preview" ? (
-                      <CvPreview profile={draftProfile} pack={activePack} role={activeRole} styleId={effectiveStyle} />
-                    ) : (
-                      <>
-                        <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
-                          <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Resume summary</p>
-                              <p className="mt-3 text-sm leading-7 text-[var(--muted)]">{activePack.cvSummary}</p>
-                            </div>
-                            <div className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[var(--muted)]">
-                              {activePack.resumeSourceType === "upload" ? "Uploaded base CV" : "Guided base resume"}
-                            </div>
-                          </div>
-                        </div>
-
-                        {activePack.cvBullets.map((bullet) => (
-                          <div key={bullet} className="rounded-[1.4rem] border border-[var(--border-soft)] bg-white p-4 text-sm leading-7 text-[var(--muted)]">
-                            {bullet}
-                          </div>
-                        ))}
-                      </>
-                    )}
-
-                    <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Design reference</p>
-                          <p className="mt-2 text-sm leading-7 text-[var(--muted)]">Keep this tucked away unless you want to change the visual direction.</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setDesignReferenceOpen((current) => !current)}
-                          className="rounded-full border border-[var(--border-soft)] bg-white px-4 py-2 text-xs font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                        >
-                          {designReferenceOpen ? "Collapse" : "Open"}
-                        </button>
-                      </div>
-
-                      {designReferenceOpen && (
-                        <div className="mt-4 space-y-4">
-                          <div className="grid gap-3 sm:grid-cols-2">
-                            {RESUME_STYLES.map((style) => {
-                              const active = effectiveStyle === style.id;
-                              return (
-                                <button
-                                  key={style.id}
-                                  type="button"
-                                  onClick={() => void handleRoleStyle(style.id)}
-                                  className={cn(
-                                    "rounded-[1.45rem] border p-4 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.99]",
-                                    active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border-soft)] bg-white",
-                                  )}
-                                >
-                                  <div className="flex items-center justify-between gap-3">
-                                    <h4 className="font-semibold text-[var(--ink)]">{style.label}</h4>
-                                    <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", active ? "bg-[var(--accent)] text-white" : "bg-[var(--surface)] text-[var(--muted)]")}>{active ? "Current" : "Use"}</span>
-                                  </div>
-                                  <div className="mt-3 rounded-[1rem] border border-[var(--border-soft)] p-3">
-                                    <div className="h-3 w-20 rounded-full" style={{ backgroundColor: style.id === "creative" ? "#c67a3f" : "#0f6a62" }} />
-                                    <div className="mt-3 h-2 w-28 rounded-full bg-[rgba(20,32,30,0.18)]" />
-                                    <div className="mt-2 h-2 w-full rounded-full bg-[rgba(20,32,30,0.12)]" />
-                                    <div className="mt-2 h-2 w-4/5 rounded-full bg-[rgba(20,32,30,0.12)]" />
-                                  </div>
-                                  <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{style.blurb}</p>
-                                  <p className="mt-2 text-xs leading-6 text-[var(--muted)]">Best for: {style.bestFor}</p>
-                                </button>
-                              );
-                            })}
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => void handleMakeDefaultStyle(effectiveStyle)}
-                            className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                          >
-                            <Palette size={16} />
-                            Make {getResumeStyle(effectiveStyle).label} the default style
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {workspace.studioTab === "letter" && (
-                  <div className="mt-6 rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4 text-sm leading-7 whitespace-pre-line text-[var(--muted)]">
-                    {activePack.letter}
-                  </div>
-                )}
-
-                {workspace.studioTab === "workSamples" && (
-                  <div className="mt-6 space-y-3">
-                    {activePack.workSampleSelections.length === 0 ? (
-                      <div className="rounded-[1.4rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4 text-sm leading-7 text-[var(--muted)]">
-                        No work samples needed for this role — your CV and cover letter are the strongest application here.
-                      </div>
-                    ) : activePack.workSampleSelections.map((item) => (
-                      <div key={`${item.title}-${item.note}`} className="rounded-[1.4rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <h4 className="font-semibold text-[var(--ink)]">{item.title}</h4>
-                            {item.href && <p className="mt-2 text-xs font-mono text-[var(--accent)]">{item.href}</p>}
-                          </div>
-                          <div className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-[var(--muted)]">Selected proof</div>
-                        </div>
-                        <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{item.note}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {workspace.studioTab === "pack" && (
-                  <div className="mt-6 space-y-4">
-                    <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4 text-sm leading-7 text-[var(--muted)]">
-                      {activePack.reasoning}
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {[
-                        `Resume · ${getResumeStyle(activePack.resumeStyleUsed).label}`,
-                        `Cover letter · ${workspace.tone}`,
-                        showWorkSamplesTab ? `Work samples · ${activePack.workSampleSelections.length} picks` : "Work samples · not in scope",
-                        `Provider · ${activePack.provider}`,
-                      ].map((item) => (
-                        <div key={item} className="rounded-[1.4rem] border border-[var(--border-soft)] bg-white px-4 py-4 text-sm font-medium text-[var(--ink)]">
-                          {item}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {trustExplanation && (
-                  <div className="mt-6 rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Trust layer</p>
-                        <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-                          See how this CV, cover letter, and work sample selection were put together.
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setTrustPanelOpen((current) => !current)}
-                        className="rounded-full border border-[var(--border-soft)] bg-white px-4 py-2 text-xs font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                      >
-                        {trustPanelOpen ? "Hide trust details" : "Open trust details"}
-                      </button>
-                    </div>
-
-                    {trustPanelOpen && (
-                      <div className="mt-4">
-                        <TrustExplanationPanel explanation={trustExplanation} />
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() => void handleEditCurrentTabOnly()}
-                    disabled={isGenerating}
-                    className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] disabled:cursor-not-allowed disabled:opacity-45 enabled:hover:-translate-y-0.5 enabled:active:translate-y-[1px] enabled:active:scale-[0.98]"
-                  >
-                    <PencilSimple size={16} weight="fill" />
-                    {isGenerating ? "Updating" : `Edit ${targetLabel(targetFromStudioTab(workspace.studioTab))} only`}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleSharpenPack()}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                  >
-                    <Sparkle size={16} weight="fill" />
-                    Sharpen pack
-                  </button>
-                </div>
-
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={handleMarkApplied}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                  >
-                    <CheckCircle size={16} weight="fill" />
-                    Mark applied
-                  </button>
-                </div>
-
-                <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                  {([
-                    ["cv", "Edit CV only"],
-                    ["letter", "Edit cover letter only"],
-                    ...(showWorkSamplesTab ? ([["workSamples", "Edit work samples only"]] as Array<[PackTarget, string]>) : []),
-                  ] as Array<[PackTarget, string]>).map(([target, label]) => (
-                    <button
-                      key={target}
-                      type="button"
-                      onClick={() => void handleSectionEdit(target)}
-                      disabled={isGenerating}
-                      className={cn(
-                        "inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] disabled:cursor-not-allowed disabled:opacity-45 enabled:hover:-translate-y-0.5 enabled:active:translate-y-[1px] enabled:active:scale-[0.98]",
-                        workspace.studioTab === target
-                          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                          : "border-[var(--border-soft)] bg-white text-[var(--ink)]",
-                      )}
-                    >
-                      <Sparkle size={16} />
-                      {label}
-                    </button>
-                  ))}
-                </div>
-
-                {activePack.provider === "fallback" && (
-                  <div className="mt-4 rounded-[1.45rem] border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-4 text-sm leading-7 text-[var(--muted)]">
-                    These materials were generated using our fallback engine. They&apos;re a solid starting point — review and edit before sending.
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-[1.9rem] border border-[var(--border-soft)] bg-white p-5 shadow-[0_25px_55px_-40px_rgba(18,40,38,0.3)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Applied timeline</p>
-                {appliedDetails.length === 0 ? (
-                  <div className="mt-4 rounded-[1.5rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4 text-sm leading-7 text-[var(--muted)]">
-                    No applications logged yet. Mark a role as applied from the studio to track it here.
-                  </div>
-                ) : (
-                  <div className="mt-4 space-y-4">
-                    {appliedDetails.map((item) => (
-                      <div key={item.roleId} className="rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
-                        <div className="flex flex-wrap items-start justify-between gap-3">
-                          <div>
-                            <h4 className="text-lg font-semibold tracking-tight text-[var(--ink)]">{item.role.company}</h4>
-                            <p className="mt-1 text-sm text-[var(--muted)]">{item.role.title} · Applied {formatAppliedDate(item.appliedAt)}</p>
-                          </div>
-                          <div className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[var(--muted)]">
-                            {getResumeStyle(item.resumeStyleUsed).label} · {item.provider}
-                          </div>
-                        </div>
-                        <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-                          Follow-up is {item.followUp === "off" ? "off" : `${item.followUp} days`}. {item.followUpDueAt ? `Due ${formatAppliedDate(item.followUpDueAt)}.` : "Enable a reminder when you want the nudge."}
-                        </p>
-                        <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium">
-                          {([
-                            ["off", "Follow-up off"],
-                            ["7", "Remind in 7 days"],
-                            ["14", "Remind in 14 days"],
-                          ] as Array<[AppliedRecord["followUp"], string]>).map(([value, label]) => (
-                            <button
-                              key={value}
-                              type="button"
-                              onClick={() => void handleFollowUpPlan(item.roleId, value)}
-                              className={cn(
-                                "rounded-full px-3.5 py-2 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                                item.followUp === value ? "bg-[var(--accent)] text-white" : "border border-[var(--border-soft)] bg-white text-[var(--muted)]",
-                              )}
-                            >
-                              {label}
-                            </button>
-                          ))}
-                        </div>
-                        {item.followUpDraft && (
-                          <div className="mt-4 rounded-[1.4rem] border border-[var(--border-soft)] bg-white p-4 text-sm leading-7 whitespace-pre-line text-[var(--muted)]">
-                            {item.followUpDraft}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </section>
       </div>
     </div>
+    </HunterAgentProvider>
   );
 }

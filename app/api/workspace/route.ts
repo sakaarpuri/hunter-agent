@@ -5,6 +5,7 @@ import { buildScheduledBriefStatus } from "@/lib/agentmail";
 import { prepareFreshBrief, sendPreparedBrief } from "@/lib/hunteragent-briefs";
 import { readWorkspaceState, updateWorkspaceState } from "@/lib/hunteragent-store";
 import { CvViewMode, ResumeStyleId, StudioTab, Tone, WorkspaceState } from "@/lib/hunteragent-types";
+import { sanitizeProfile } from "@/lib/sanitize";
 
 export const runtime = "nodejs";
 
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
     | { action: "set_default_style"; style: ResumeStyleId }
     | { action: "set_role_style"; roleId: number; style: ResumeStyleId }
     | { action: "mark_applied"; roleId: number }
+    | { action: "set_active_brief"; briefId: string }
     | { action: "reset_workspace" };
 
   const nextState = await updateWorkspaceState((state) => {
@@ -56,12 +58,12 @@ export async function POST(request: Request) {
 
     switch (body.action) {
       case "sync_draft": {
-        state.profile = body.profile;
+        state.profile = sanitizeProfile(body.profile as unknown as Record<string, unknown>) as unknown as typeof body.profile;
         state.onboardingStep = body.onboardingStep;
         return state;
       }
       case "update_profile": {
-        state.profile = body.profile;
+        state.profile = sanitizeProfile(body.profile as unknown as Record<string, unknown>) as unknown as typeof body.profile;
         state.generationStatus = body.profile.briefsPaused
           ? "Daily briefs are paused. Resume them whenever you want HunterAgent to start scouting again."
           : state.generationStatus;
@@ -163,6 +165,15 @@ export async function POST(request: Request) {
         const firstRole = getRoleFromCatalog(body.roleId, state.roleCatalog);
         if (firstRole) {
           state.activeRoleId = firstRole.id;
+        }
+        return state;
+      }
+      case "set_active_brief": {
+        const brief = state.briefs.find((item) => item.id === body.briefId);
+        if (brief) {
+          state.activeBriefId = body.briefId;
+          state.flowPhase = brief.status === "ready" || brief.selectedRoleIds.length > 0 ? "studio" : brief.sentAt ? "brief" : "waiting";
+          state.activeRoleId = brief.selectedRoleIds[0] ?? state.activeRoleId;
         }
         return state;
       }

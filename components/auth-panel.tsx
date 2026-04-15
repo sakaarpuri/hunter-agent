@@ -14,7 +14,7 @@ function cn(...parts: Array<string | false | null | undefined>) {
 async function postJson<T>(url: string, body: unknown) {
   const response = await fetch(url, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", "x-requested-with": "XMLHttpRequest" },
     body: JSON.stringify(body),
   });
 

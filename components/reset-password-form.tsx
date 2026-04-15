@@ -7,7 +7,7 @@ import { ArrowLeft, CheckCircle, LockKey, Warning } from "@phosphor-icons/react"
 async function postJson<T>(url: string, body: unknown) {
   const response = await fetch(url, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", "x-requested-with": "XMLHttpRequest" },
     body: JSON.stringify(body),
   });
   const payload = (await response.json()) as T | { error?: string };

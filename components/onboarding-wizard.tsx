@@ -1,0 +1,469 @@
+"use client";
+
+import { useState } from "react";
+import {
+  REMOTE_REGION_OPTIONS,
+  RESUME_STYLES,
+  WORKPLACE_MODE_OPTIONS,
+  getResumeStyle,
+  parsePreferenceList,
+} from "@/lib/hunteragent-data";
+import type { Profile } from "@/lib/hunteragent-types";
+import { useHunterAgent } from "./hunteragent-context";
+
+function cn(...parts: Array<string | false | null | undefined>) {
+  return parts.filter(Boolean).join(" ");
+}
+
+const ONBOARDING_STEPS = [
+  { id: 1, label: "Profile" },
+  { id: 2, label: "Preferences" },
+  { id: 3, label: "Resume Setup" },
+  { id: 4, label: "Delivery" },
+] as const;
+
+export function OnboardingWizard() {
+  const {
+    workspace,
+    draftProfile,
+    setDraftProfile,
+    draftStep,
+    setDraftStep,
+    handleFinishOnboarding,
+    toggleWorkplaceMode,
+    toggleRemoteRegion,
+    isSavingDraft,
+  } = useHunterAgent();
+
+  const [cvImporting, setCvImporting] = useState(false);
+  const [cvImportError, setCvImportError] = useState<string | null>(null);
+
+  if (workspace.flowPhase !== "onboarding") return null;
+
+  return (
+    <section className="mt-6 grid gap-6 2xl:grid-cols-[1.25fr_0.95fr]">
+      <div className="rounded-[1.9rem] border border-[var(--border-soft)] bg-[var(--surface)] p-5 shadow-[0_25px_55px_-40px_rgba(18,40,38,0.3)]">
+        <div className="flex flex-wrap items-center gap-3 border-b border-[var(--border-soft)] pb-4">
+          {ONBOARDING_STEPS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setDraftStep(item.id)}
+              className={cn(
+                "rounded-full px-4 py-2 text-sm font-medium transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
+                draftStep === item.id ? "bg-[var(--accent)] text-white" : item.id < draftStep ? "bg-white text-[var(--ink)]" : "bg-transparent text-[var(--muted)]",
+              )}
+            >
+              {item.id}. {item.label}
+            </button>
+          ))}
+        </div>
+
+        {draftStep === 1 && (
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            {/* CV import */}
+            <div className="rounded-[1.7rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4 md:col-span-2">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-[var(--ink)]">Import from CV</p>
+                  <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+                    Upload a PDF or text file and we'll fill in your profile fields automatically.
+                  </p>
+                </div>
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept=".pdf,.txt"
+                    className="sr-only"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setCvImporting(true);
+                      setCvImportError(null);
+                      try {
+                        const fd = new FormData();
+                        fd.append("file", file);
+                        const res = await fetch("/api/parse-cv", { method: "POST", body: fd });
+                        const data = await res.json() as { ok?: boolean; profile?: Record<string, unknown>; error?: string };
+                        if (!res.ok || !data.profile) throw new Error(data.error ?? "Import failed.");
+                        const p = data.profile;
+                        setDraftProfile((prev) => ({
+                          ...prev,
+                          name: typeof p.name === "string" && p.name ? p.name : prev.name,
+                          currentTitle: typeof p.currentTitle === "string" && p.currentTitle ? p.currentTitle : prev.currentTitle,
+                          targetRoles: Array.isArray(p.targetRoles) && (p.targetRoles as string[]).length
+                            ? (p.targetRoles as string[])
+                            : prev.targetRoles,
+                          locations: typeof p.locations === "string" && p.locations ? p.locations : prev.locations,
+                          coreStrength: typeof p.coreStrength === "string" && p.coreStrength ? p.coreStrength : prev.coreStrength,
+                        }));
+                      } catch (err) {
+                        setCvImportError(err instanceof Error ? err.message : "Import failed.");
+                      } finally {
+                        setCvImporting(false);
+                      }
+                    }}
+                  />
+                  <span className={cn(
+                    "inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition-all duration-300",
+                    cvImporting
+                      ? "border-[var(--border-soft)] bg-[var(--surface)] text-[var(--muted)] cursor-not-allowed"
+                      : "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)] hover:-translate-y-0.5"
+                  )}>
+                    {cvImporting ? "Importing…" : "Choose file"}
+                  </span>
+                </label>
+              </div>
+              {cvImportError && (
+                <p className="mt-3 text-sm text-rose-600">{cvImportError}</p>
+              )}
+            </div>
+
+            <label className="grid gap-2 text-sm">
+              <span className="font-medium text-[var(--ink)]">Name</span>
+              <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.name} onChange={(event) => setDraftProfile((current) => ({ ...current, name: event.target.value }))} />
+            </label>
+            <label className="grid gap-2 text-sm">
+              <span className="font-medium text-[var(--ink)]">Current title</span>
+              <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.currentTitle} onChange={(event) => setDraftProfile((current) => ({ ...current, currentTitle: event.target.value }))} />
+            </label>
+            {draftProfile.targetRoles.map((role, index) => (
+              <label key={index} className="grid gap-2 text-sm">
+                <span className="font-medium text-[var(--ink)]">Target role {index + 1}</span>
+                <input
+                  className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none"
+                  value={role}
+                  onChange={(event) =>
+                    setDraftProfile((current) => {
+                      const next = [...current.targetRoles];
+                      next[index] = event.target.value;
+                      return { ...current, targetRoles: next };
+                    })
+                  }
+                />
+              </label>
+            ))}
+          </div>
+        )}
+
+        {draftStep === 2 && (
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            <label className="grid gap-2 text-sm md:col-span-2">
+              <span className="font-medium text-[var(--ink)]">Locations</span>
+              <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.locations} onChange={(event) => setDraftProfile((current) => ({ ...current, locations: event.target.value }))} />
+            </label>
+            <label className="grid gap-2 text-sm">
+              <span className="font-medium text-[var(--ink)]">Salary or rate range</span>
+              <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.salary} onChange={(event) => setDraftProfile((current) => ({ ...current, salary: event.target.value }))} />
+            </label>
+            <label className="grid gap-2 text-sm">
+              <span className="font-medium text-[var(--ink)]">Core strength</span>
+              <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.coreStrength} onChange={(event) => setDraftProfile((current) => ({ ...current, coreStrength: event.target.value }))} />
+            </label>
+            <div className="grid gap-2 text-sm md:col-span-2">
+              <span className="font-medium text-[var(--ink)]">Work types</span>
+              <div className="flex flex-wrap gap-2">
+                {["Full-time", "Part-time", "Contract"].map((type) => {
+                  const active = draftProfile.workTypes.includes(type);
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() =>
+                        setDraftProfile((current) => ({
+                          ...current,
+                          workTypes: active
+                            ? current.workTypes.filter((item) => item !== type)
+                            : [...current.workTypes, type],
+                        }))
+                      }
+                      className={cn(
+                        "rounded-full px-4 py-2 text-sm font-medium transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
+                        active ? "bg-[var(--accent)] text-white" : "border border-[var(--border-strong)] bg-white text-[var(--ink)]",
+                      )}
+                    >
+                      {type}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="grid gap-2 text-sm md:col-span-2">
+              <span className="font-medium text-[var(--ink)]">Workplace</span>
+              <div className="flex flex-wrap gap-2">
+                {WORKPLACE_MODE_OPTIONS.map((option) => {
+                  const active = draftProfile.workplaceModes.includes(option.id);
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => toggleWorkplaceMode(option.id)}
+                      className={cn(
+                        "rounded-full px-4 py-2 text-sm font-medium transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
+                        active ? "bg-[var(--accent)] text-white" : "border border-[var(--border-strong)] bg-white text-[var(--ink)]",
+                      )}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="grid gap-2 text-sm md:col-span-2">
+              <span className="font-medium text-[var(--ink)]">Remote region</span>
+              <div className="flex flex-wrap gap-2">
+                {REMOTE_REGION_OPTIONS.map((option) => {
+                  const active = draftProfile.remoteRegions.includes(option.id);
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => toggleRemoteRegion(option.id)}
+                      className={cn(
+                        "rounded-full px-4 py-2 text-sm font-medium transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
+                        active ? "bg-[var(--accent)] text-white" : "border border-[var(--border-strong)] bg-white text-[var(--ink)]",
+                      )}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <span className="text-xs leading-6 text-[var(--muted)]">Used when a role is remote and the posting limits which regions can apply.</span>
+            </div>
+            <label className="grid gap-2 text-sm md:col-span-2">
+              <span className="font-medium text-[var(--ink)]">Excluded companies</span>
+              <textarea
+                className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none"
+                value={draftProfile.excludedCompanies.join(", ")}
+                onChange={(event) =>
+                  setDraftProfile((current) => ({
+                    ...current,
+                    excludedCompanies: parsePreferenceList(event.target.value),
+                  }))
+                }
+                placeholder="Comma-separated, e.g. Meta, Agency Inc"
+              />
+            </label>
+            <label className="grid gap-2 text-sm md:col-span-2">
+              <span className="font-medium text-[var(--ink)]">Special preferences</span>
+              <textarea
+                className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none"
+                value={draftProfile.specialPreferences.join(", ")}
+                onChange={(event) =>
+                  setDraftProfile((current) => ({
+                    ...current,
+                    specialPreferences: parsePreferenceList(event.target.value),
+                  }))
+                }
+                placeholder="Comma-separated, e.g. B2B SaaS, 4-day week, healthcare AI"
+              />
+            </label>
+          </div>
+        )}
+
+        {draftStep === 3 && (
+          <div className="mt-5 grid gap-6">
+            <div className="grid gap-3 text-sm">
+              <span className="font-medium text-[var(--ink)]">Resume source</span>
+              <div className="grid gap-3 md:grid-cols-2">
+                {[
+                  ["upload", "I already have a CV", "Upload or import a base resume and let HunterAgent tailor from it."],
+                  ["guided", "Create one for me", "Answer a few essentials and HunterAgent builds the first base resume from scratch."],
+                ].map(([value, label, note]) => {
+                  const active = draftProfile.resumeMode === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setDraftProfile((current) => ({ ...current, resumeMode: value as Profile["resumeMode"] }))}
+                      className={cn(
+                        "rounded-[1.5rem] border px-4 py-4 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
+                        active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border-strong)] bg-white",
+                      )}
+                    >
+                      <p className="font-semibold text-[var(--ink)]">{label}</p>
+                      <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{note}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {draftProfile.resumeMode === "upload" ? (
+              <label className="grid gap-2 text-sm">
+                <span className="font-medium text-[var(--ink)]">Master CV file</span>
+                <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.cvFile} onChange={(event) => setDraftProfile((current) => ({ ...current, cvFile: event.target.value }))} />
+                <span className="text-xs leading-6 text-[var(--muted)]">This becomes the base resume HunterAgent tailors for each selected role.</span>
+              </label>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="grid gap-2 text-sm md:col-span-2">
+                  <span className="font-medium text-[var(--ink)]">Professional summary</span>
+                  <textarea className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.guidedResume.professionalSummary} onChange={(event) => setDraftProfile((current) => ({ ...current, guidedResume: { ...current.guidedResume, professionalSummary: event.target.value } }))} />
+                </label>
+                <label className="grid gap-2 text-sm">
+                  <span className="font-medium text-[var(--ink)]">Recent impact</span>
+                  <textarea className="min-h-28 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.guidedResume.recentImpact} onChange={(event) => setDraftProfile((current) => ({ ...current, guidedResume: { ...current.guidedResume, recentImpact: event.target.value } }))} />
+                </label>
+                <label className="grid gap-2 text-sm">
+                  <span className="font-medium text-[var(--ink)]">Experience snapshot</span>
+                  <textarea className="min-h-28 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.guidedResume.experienceSnapshot} onChange={(event) => setDraftProfile((current) => ({ ...current, guidedResume: { ...current.guidedResume, experienceSnapshot: event.target.value } }))} />
+                </label>
+                <label className="grid gap-2 text-sm">
+                  <span className="font-medium text-[var(--ink)]">Education</span>
+                  <textarea className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.guidedResume.education} onChange={(event) => setDraftProfile((current) => ({ ...current, guidedResume: { ...current.guidedResume, education: event.target.value } }))} />
+                </label>
+                <label className="grid gap-2 text-sm">
+                  <span className="font-medium text-[var(--ink)]">Skills</span>
+                  <textarea className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.guidedResume.skills} onChange={(event) => setDraftProfile((current) => ({ ...current, guidedResume: { ...current.guidedResume, skills: event.target.value } }))} />
+                </label>
+              </div>
+            )}
+
+            <div className="grid gap-3 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-medium text-[var(--ink)]">Default resume style</span>
+                <span className="text-xs text-[var(--muted)]">Used first, overridable per job later</span>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {RESUME_STYLES.map((style) => {
+                  const active = draftProfile.resumeDefaultStyle === style.id;
+                  return (
+                    <button
+                      key={style.id}
+                      type="button"
+                      onClick={() => setDraftProfile((current) => ({ ...current, resumeDefaultStyle: style.id }))}
+                      className={cn(
+                        "rounded-[1.55rem] border p-4 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.99]",
+                        active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border-soft)] bg-white",
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <h4 className="text-base font-semibold text-[var(--ink)]">{style.label}</h4>
+                        <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", active ? "bg-[var(--accent)] text-white" : "bg-[var(--surface)] text-[var(--muted)]")}>Default</span>
+                      </div>
+                      <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{style.blurb}</p>
+                      <p className="mt-2 text-xs leading-6 text-[var(--muted)]">Best for: {style.bestFor}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid gap-3 text-sm">
+              <span className="font-medium text-[var(--ink)]">Work sample links</span>
+              {draftProfile.workSampleLinks.map((link, index) => (
+                <label key={index} className="grid gap-2 text-sm">
+                  <span className="text-xs uppercase tracking-[0.24em] text-[var(--muted)]">Link {index + 1}</span>
+                  <input
+                    className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none"
+                    value={link}
+                    onChange={(event) =>
+                      setDraftProfile((current) => {
+                        const next = [...current.workSampleLinks];
+                        next[index] = event.target.value;
+                        return { ...current, workSampleLinks: next };
+                      })
+                    }
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {draftStep === 4 && (
+          <div className="mt-5 grid gap-5 md:grid-cols-2">
+            <label className="grid gap-2 text-sm md:col-span-2">
+              <span className="font-medium text-[var(--ink)]">Daily brief recipient</span>
+              <input
+                type="email"
+                className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none"
+                value={draftProfile.recipientEmail}
+                onChange={(event) => setDraftProfile((current) => ({ ...current, recipientEmail: event.target.value }))}
+                placeholder="you@example.com"
+              />
+              <span className="text-xs leading-6 text-[var(--muted)]">HunterAgent sends the daily brief here, then waits for reply selections from the same inbox.</span>
+            </label>
+            <label className="grid gap-2 text-sm">
+              <span className="font-medium text-[var(--ink)]">Daily brief time</span>
+              <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.briefTime} onChange={(event) => setDraftProfile((current) => ({ ...current, briefTime: event.target.value }))} />
+              <span className="text-xs leading-6 text-[var(--muted)]">Every later daily brief lands at this local time.</span>
+            </label>
+            <label className="grid gap-2 text-sm">
+              <span className="font-medium text-[var(--ink)]">Timezone</span>
+              <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.timezone} onChange={(event) => setDraftProfile((current) => ({ ...current, timezone: event.target.value }))} />
+            </label>
+            <div className="grid gap-3 text-sm md:col-span-2">
+              <span className="font-medium text-[var(--ink)]">First shortlist</span>
+              <button
+                type="button"
+                onClick={() => setDraftProfile((current) => ({ ...current, firstBrief: "now" }))}
+                className={cn(
+                  "rounded-[1.3rem] border px-4 py-3 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
+                  draftProfile.firstBrief === "now" ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]" : "border-[var(--border-strong)] bg-white text-[var(--muted)]",
+                )}
+              >
+                Send the first brief immediately
+              </button>
+              <button
+                type="button"
+                onClick={() => setDraftProfile((current) => ({ ...current, firstBrief: "scheduled" }))}
+                className={cn(
+                  "rounded-[1.3rem] border px-4 py-3 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
+                  draftProfile.firstBrief === "scheduled" ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--ink)]" : "border-[var(--border-strong)] bg-white text-[var(--muted)]",
+                )}
+              >
+                Wait until the scheduled time
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--border-soft)] pt-5">
+          <button
+            type="button"
+            onClick={() => setDraftStep((current) => Math.max(1, current - 1))}
+            disabled={draftStep === 1}
+            className="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--ink)] disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Back
+          </button>
+          {draftStep < ONBOARDING_STEPS.length ? (
+            <button
+              type="button"
+              onClick={() => setDraftStep((current) => Math.min(ONBOARDING_STEPS.length, current + 1))}
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
+            >
+              Continue
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleFinishOnboarding}
+              className="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
+            >
+              Finish setup
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-[1.9rem] border border-[var(--border-soft)] bg-white p-5 shadow-[0_25px_55px_-40px_rgba(18,40,38,0.3)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Preview</p>
+        <div className="mt-4 rounded-[1.6rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
+          <h3 className="text-xl font-semibold tracking-tight text-[var(--ink)]">
+            Resume source: {draftProfile.resumeMode === "upload" ? "Uploaded base CV" : "HunterAgent guided builder"}
+          </h3>
+          <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
+            Default style is {getResumeStyle(draftProfile.resumeDefaultStyle).label}. The first brief will {draftProfile.firstBrief === "now" ? "arrive now" : `wait until ${draftProfile.briefTime}`}, and every later brief lands at {draftProfile.briefTime} {draftProfile.timezone} in {draftProfile.recipientEmail || "your chosen inbox"}.
+          </p>
+        </div>
+        <div className="mt-5 rounded-[1.6rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4 text-sm leading-7 text-[var(--muted)]">
+          Even without a CV, the user can finish onboarding. HunterAgent uses the guided resume input as the base document, then tailors from that once the first reply arrives.
+        </div>
+      </div>
+    </section>
+  );
+}
