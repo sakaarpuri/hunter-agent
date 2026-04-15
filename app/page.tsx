@@ -76,7 +76,7 @@ export default function Home() {
       <main className="relative z-10">
         {/* Hero */}
         <section className="px-4 pb-14 pt-16 sm:px-6 lg:px-8 lg:pb-20 lg:pt-24">
-          <div className="mx-auto grid max-w-[1400px] items-start gap-12 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16">
+          <div className="mx-auto grid max-w-[1400px] items-center gap-12 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16">
             {/* Left — headline */}
             <div className="max-w-[44rem]">
               <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-white/85 px-4 py-2 text-sm font-medium text-[var(--muted)] shadow-[0_18px_38px_-28px_rgba(20,43,40,0.24)] backdrop-blur-sm">
@@ -122,10 +122,8 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right — feature cards, pushed down to align with lower hero content */}
-            <div className="lg:pt-48">
-              <FeatureCards />
-            </div>
+            {/* Right — feature cards, vertically centred with hero left col */}
+            <FeatureCards />
           </div>
         </section>
 

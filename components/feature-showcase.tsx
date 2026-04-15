@@ -10,12 +10,12 @@ const SHADOW_3D =
 
 // rotateX(-2deg): near-flat backward lean — removes top/bottom width distortion
 // rotateY(-16deg): right face visible (viewer slightly to the right)
-const TILT = "perspective(560px) rotateX(-2deg) rotateY(-11deg)";
+const TILT = "perspective(560px) rotateX(-1deg) rotateY(-6deg)";
 
 // Build the stacked / entry transform for each card index.
 function entryTransform(index: number) {
   if (index === 0) return TILT;
-  return `perspective(560px) translateX(calc(-${index * 100}% - ${index * 20}px)) rotateX(-2deg) rotateY(-11deg)`;
+  return `perspective(560px) translateX(calc(-${index * 100}% - ${index * 20}px)) rotateX(-1deg) rotateY(-6deg)`;
 }
 
 // ─── Typing text ───────────────────────────────────────────────────────────────
@@ -340,8 +340,8 @@ export function FeatureCards() {
     return () => clearTimeout(t);
   }, []);
 
-  // Each card after the first overlaps the previous by 14px
-  const OVERLAP = 14;
+  // Each card after the first overlaps the previous by 8px
+  const OVERLAP = 8;
 
   return (
     <div className="flex">
