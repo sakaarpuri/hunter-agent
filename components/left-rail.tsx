@@ -196,9 +196,9 @@ export function LeftRail() {
             <span>First brief</span>
             <span className="text-[var(--ink)]">{draftProfile.firstBrief === "now" ? "Send now" : "Scheduled"}</span>
           </div>
-          <div className="flex items-center justify-between gap-3">
-            <span>Recipient</span>
-            <span className="text-[var(--ink)]">{draftProfile.recipientEmail || "Not set"}</span>
+          <div className="flex items-center justify-between gap-2">
+            <span className="shrink-0">Recipient</span>
+            <span className="min-w-0 truncate text-right text-[var(--ink)]">{draftProfile.recipientEmail || "Not set"}</span>
           </div>
           <div className="flex items-center justify-between gap-3">
             <span>Draft autosave</span>

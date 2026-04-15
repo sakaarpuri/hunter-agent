@@ -25,15 +25,34 @@ async function parseProfileFromText(text: string): Promise<Record<string, unknow
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
   if (!apiKey) {
-    // Heuristic fallback without AI
+    // Heuristic fallback without AI — extract meaningful fields from raw text
     const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
-    return {
-      name: lines[0] ?? "",
-      currentTitle: lines[1] ?? "",
-      targetRoles: [],
-      locations: "",
-      coreStrength: text.slice(0, 300),
-    };
+
+    // Name: first short line (likely a header) — not a section label
+    const nameLine = lines.find((l) => l.length < 60 && !/^(summary|profile|experience|education|skills|work|contact|objective)/i.test(l)) ?? "";
+
+    // Current title: second distinct short line
+    const titleLine = lines.filter((l) => l !== nameLine && l.length < 80 && !/^(summary|profile|experience|education|skills|work|contact)/i.test(l))[0] ?? "";
+
+    // Core strength: look for a SUMMARY / PROFILE / OBJECTIVE section body
+    const summaryIdx = lines.findIndex((l) => /^(summary|professional summary|profile|objective|about)/i.test(l));
+    const coreStrength = summaryIdx !== -1
+      ? lines.slice(summaryIdx + 1, summaryIdx + 4).join(" ").slice(0, 200)
+      : "";
+
+    // Target roles: look for job titles in an EXPERIENCE section
+    const expIdx = lines.findIndex((l) => /^(experience|work experience|employment)/i.test(l));
+    const targetRoles: string[] = [];
+    if (expIdx !== -1) {
+      for (const l of lines.slice(expIdx + 1, expIdx + 10)) {
+        if (l.length < 70 && /designer|developer|manager|lead|strategist|writer|marketer|analyst|engineer/i.test(l)) {
+          targetRoles.push(l);
+          if (targetRoles.length >= 2) break;
+        }
+      }
+    }
+
+    return { name: nameLine, currentTitle: titleLine, targetRoles, locations: "", coreStrength };
   }
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {

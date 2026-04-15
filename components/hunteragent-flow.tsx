@@ -191,6 +191,8 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
           onboardingStep: draftStep,
         });
         setWorkspace(nextState);
+        const v = (nextState as { stateVersion?: number }).stateVersion;
+        if (v !== undefined) lastKnownVersion.current = v;
       } catch (error) {
         setClientError(error instanceof Error ? error.message : "Could not save the draft.");
       } finally {
@@ -428,6 +430,8 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
       onboardingStep: draftStep,
     });
     setWorkspace(nextState);
+    const v = (nextState as { stateVersion?: number }).stateVersion;
+    if (v !== undefined) lastKnownVersion.current = v;
     return nextState;
   }
 

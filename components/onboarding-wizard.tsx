@@ -35,6 +35,8 @@ export function OnboardingWizard() {
 
   const [cvImporting, setCvImporting] = useState(false);
   const [cvImportError, setCvImportError] = useState<string | null>(null);
+  const [cvPreviewUrl, setCvPreviewUrl] = useState<string | null>(null);
+  const [cvFileName, setCvFileName] = useState<string | null>(null);
 
   // Pre-populate recipient email with the signed-in user's email if not already set
   useEffect(() => {
@@ -86,6 +88,14 @@ export function OnboardingWizard() {
                       if (!file) return;
                       setCvImporting(true);
                       setCvImportError(null);
+                      // Show local preview immediately
+                      if (cvPreviewUrl) URL.revokeObjectURL(cvPreviewUrl);
+                      if (file.type === "application/pdf") {
+                        setCvPreviewUrl(URL.createObjectURL(file));
+                      } else {
+                        setCvPreviewUrl(null);
+                      }
+                      setCvFileName(file.name);
                       try {
                         const fd = new FormData();
                         fd.append("file", file);
@@ -98,7 +108,7 @@ export function OnboardingWizard() {
                           name: typeof p.name === "string" && p.name ? p.name : prev.name,
                           currentTitle: typeof p.currentTitle === "string" && p.currentTitle ? p.currentTitle : prev.currentTitle,
                           targetRoles: Array.isArray(p.targetRoles) && (p.targetRoles as string[]).length
-                            ? (p.targetRoles as string[])
+                            ? (p.targetRoles as string[]).slice(0, 3)
                             : prev.targetRoles,
                           locations: typeof p.locations === "string" && p.locations ? p.locations : prev.locations,
                           coreStrength: typeof p.coreStrength === "string" && p.coreStrength ? p.coreStrength : prev.coreStrength,
@@ -122,6 +132,22 @@ export function OnboardingWizard() {
               </div>
               {cvImportError && (
                 <p className="mt-3 text-sm text-rose-600">{cvImportError}</p>
+              )}
+              {cvFileName && !cvImportError && (
+                <div className="mt-4">
+                  <p className="mb-2 text-xs font-medium text-[var(--muted)]">{cvFileName}</p>
+                  {cvPreviewUrl ? (
+                    <iframe
+                      src={cvPreviewUrl}
+                      className="h-[340px] w-full rounded-[1.1rem] border border-[var(--border-soft)] bg-white"
+                      title="CV preview"
+                    />
+                  ) : (
+                    <div className="flex h-16 items-center justify-center rounded-[1.1rem] border border-[var(--border-soft)] bg-white text-sm text-[var(--muted)]">
+                      Text file imported — fields filled above.
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
