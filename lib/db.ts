@@ -19,7 +19,54 @@ function requireDatabaseUrl() {
   if (!value) {
     throw new Error("Missing DATABASE_URL. Add your Supabase transaction pooler URL before starting HunterAgent.");
   }
-  return value;
+
+  // Validate parsability. If it fails, the password likely contains unencoded
+  // special characters (@ # / ?) — percent-encode the user:password segment.
+  try {
+    new URL(value);
+    return value;
+  } catch {
+    // Attempt auto-fix: re-encode the password portion between :// and the last @
+    // e.g. postgres://user:p@ss#word@host:5432/db → postgres://user:p%40ss%23word@host:5432/db
+    const schemeEnd = value.indexOf("://");
+    if (schemeEnd !== -1) {
+      const afterScheme = value.slice(schemeEnd + 3);
+      const atIndex = afterScheme.lastIndexOf("@");
+      if (atIndex !== -1) {
+        const userInfo = afterScheme.slice(0, atIndex);
+        const hostAndRest = afterScheme.slice(atIndex + 1);
+        const colonIndex = userInfo.indexOf(":");
+        if (colonIndex !== -1) {
+          const user = userInfo.slice(0, colonIndex);
+          const pass = userInfo.slice(colonIndex + 1);
+          const encodedPass = encodeURIComponent(pass);
+          const fixed = `${value.slice(0, schemeEnd + 3)}${user}:${encodedPass}@${hostAndRest}`;
+          try {
+            new URL(fixed);
+            return fixed;
+          } catch {
+            // fall through to the error below
+          }
+        }
+      }
+    }
+
+    // Detect unfilled template placeholders like [project-ref] or [region]
+    if (/\[[^\]]+\]/.test(value)) {
+      throw new Error(
+        "DATABASE_URL still contains template placeholders (e.g. [project-ref], [region]). " +
+        "Go to Supabase → Settings → Database → Connection string (Transaction pooler) " +
+        "and copy the full URL with your real project reference and region."
+      );
+    }
+
+    throw new Error(
+      "DATABASE_URL is not a valid URL. If your Supabase password contains special characters " +
+      "(@, #, /, ?, etc.) they must be percent-encoded. " +
+      "Go to Supabase → Settings → Database → Connection string and copy the URL exactly as shown, " +
+      "or manually replace @ with %40, # with %23, etc. in the password portion."
+    );
+  }
 }
 
 function getSql() {
