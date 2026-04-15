@@ -98,6 +98,7 @@ export function StudioPanel() {
   } = useHunterAgent();
 
   function handleExportPlainText() {
+    if (!activePack) return;
     const lines: string[] = [];
     lines.push(draftProfile.name);
     if (draftProfile.currentTitle) lines.push(draftProfile.currentTitle);
