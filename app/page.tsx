@@ -75,14 +75,11 @@ export default function Home() {
       <main className="relative z-10">
         {/* Hero */}
         <section className="px-4 pb-14 pt-10 sm:px-6 lg:px-8 lg:pb-24 lg:pt-14">
-          <div className="mx-auto grid min-h-[100dvh] max-w-[1400px] items-center gap-12 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16">
+          <div className="mx-auto grid max-w-[1400px] items-center gap-12 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16">
             <div className="max-w-[44rem]">
-              <div className="relative inline-flex">
-                <div className="pointer-events-none absolute inset-[-5px] animate-[spin_12s_linear_infinite] rounded-full border border-dashed border-[rgba(18,108,100,0.22)]" />
-                <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-white/85 px-4 py-2 text-sm font-medium text-[var(--muted)] shadow-[0_18px_38px_-28px_rgba(20,43,40,0.24)] backdrop-blur-sm">
-                  <Sparkle size={16} weight="duotone" className="text-[var(--accent)]" />
-                  5 top matches in your inbox, every morning
-                </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-white/85 px-4 py-2 text-sm font-medium text-[var(--muted)] shadow-[0_18px_38px_-28px_rgba(20,43,40,0.24)] backdrop-blur-sm">
+                <Sparkle size={16} weight="duotone" className="text-[var(--accent)]" />
+                5 top matches in your inbox, every morning
               </div>
               <h1 className="mt-8 text-5xl font-semibold tracking-[-0.06em] text-[var(--ink)] md:text-7xl md:leading-[0.94]">
                 Stop searching job boards every day.
@@ -260,24 +257,24 @@ export default function Home() {
         {/* Dashboard preview */}
         <section className="px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
           <div className="mx-auto max-w-[1400px]">
-            <div className="mb-8 flex flex-wrap items-end justify-between gap-5">
-              <div className="reveal">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
-                  Your dashboard
-                </p>
-                <h2 className="mt-3 text-4xl font-semibold tracking-[-0.05em] text-[var(--ink)] md:text-5xl">
+            <div className="reveal mb-8">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
+                Your dashboard
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-5">
+                <h2 className="text-4xl font-semibold tracking-[-0.05em] text-[var(--ink)] md:text-5xl">
                   Where your applications come together.
                 </h2>
+                <Link
+                  href="/dashboard"
+                  className="inline-flex shrink-0 items-center gap-3 rounded-full border border-[var(--border-strong)] bg-white pl-5 pr-2 py-2 text-sm font-semibold text-[var(--ink)] transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:scale-[0.98]"
+                >
+                  Open dashboard
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--ink)]/8">
+                    <ArrowRight size={14} weight="bold" />
+                  </span>
+                </Link>
               </div>
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center gap-3 rounded-full border border-[var(--border-strong)] bg-white pl-5 pr-2 py-2 text-sm font-semibold text-[var(--ink)] transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:scale-[0.98]"
-              >
-                Open dashboard
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--ink)]/8">
-                  <ArrowRight size={14} weight="bold" />
-                </span>
-              </Link>
             </div>
             <div className="overflow-hidden rounded-[2rem]" style={{ height: "calc(720px * 0.72)" }}>
               <div style={{ transform: "scale(0.72)", transformOrigin: "top left", width: "calc(100% / 0.72)" }}>
