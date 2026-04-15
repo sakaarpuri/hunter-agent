@@ -9,12 +9,11 @@ async function extractTextFromFile(file: File): Promise<string> {
   const buffer = Buffer.from(bytes);
 
   if (file.name.endsWith(".pdf")) {
-    // pdf-parse v2: class-based API, accepts { data: Buffer } directly
+    // Use lib path directly to skip pdf-parse v1's test-file loader that crashes in Next.js.
+    // pdf-parse v2 (class-based) was tried but requires DOMMatrix (browser-only) — not viable in Node.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { PDFParse } = require("pdf-parse") as { PDFParse: new (opts: { data: Buffer }) => { getText: () => Promise<{ text: string }>; destroy: () => Promise<void> } };
-    const parser = new PDFParse({ data: buffer });
-    const result = await parser.getText();
-    await parser.destroy();
+    const pdfParse = require("pdf-parse/lib/pdf-parse.js") as (buf: Buffer) => Promise<{ text: string }>;
+    const result = await pdfParse(buffer);
     return result.text;
   }
 

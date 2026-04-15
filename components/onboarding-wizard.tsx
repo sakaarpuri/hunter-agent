@@ -353,12 +353,6 @@ export function OnboardingWizard() {
           <h3 className="text-xl font-semibold tracking-tight text-[var(--ink)]">
             Resume source: {draftProfile.resumeMode === "upload" ? "Uploaded base CV" : "HunterAgent guided builder"}
           </h3>
-          <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-            Default style is {getResumeStyle(draftProfile.resumeDefaultStyle).label}. The first brief will {draftProfile.firstBrief === "now" ? "arrive now" : `wait until ${draftProfile.briefTime}`}, and every later brief lands at {draftProfile.briefTime} {draftProfile.timezone} in {draftProfile.recipientEmail || "your chosen inbox"}.
-          </p>
-        </div>
-        <div className="mt-5 rounded-[1.6rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4 text-sm leading-7 text-[var(--muted)]">
-          Even without a CV, the user can finish onboarding. HunterAgent uses the guided resume input as the base document, then tailors from that once the first reply arrives.
         </div>
       </div>
     </section>
