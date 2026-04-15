@@ -237,21 +237,6 @@ export function SettingsModal() {
                     onChange={(event) => setDraftProfile((current) => ({ ...current, salary: event.target.value }))}
                   />
                 </label>
-                <label className="grid gap-2 text-sm">
-                  <span className="font-medium text-[var(--ink)]">Excluded companies</span>
-                  <textarea
-                    placeholder="e.g. Google, Meta, Amazon"
-                    className="min-h-24 rounded-[1.2rem] border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[var(--ink)] outline-none"
-                    value={draftProfile.excludedCompanies.join(", ")}
-                    onChange={(event) =>
-                      setDraftProfile((current) => ({
-                        ...current,
-                        excludedCompanies: parsePreferenceList(event.target.value),
-                      }))
-                    }
-                  />
-                  <span className="text-xs text-[var(--muted)]">Companies listed here won&apos;t appear in future briefs.</span>
-                </label>
               </div>
 
               <div className="grid gap-4">
