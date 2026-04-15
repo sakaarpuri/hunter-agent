@@ -43,8 +43,10 @@ const timingNotes = [
 export default function Home() {
   return (
     <div className="relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[36rem] bg-[radial-gradient(circle_at_top_left,rgba(18,108,100,0.18),transparent_42%),radial-gradient(circle_at_top_right,rgba(164,126,77,0.12),transparent_28%)]" />
-      <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(18,42,39,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(18,42,39,0.05)_1px,transparent_1px)] [background-size:84px_84px]" />
+      {/* Ambient gradient orbs */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[56rem] bg-[radial-gradient(ellipse_70%_55%_at_-8%_-8%,rgba(18,108,100,0.24),transparent),radial-gradient(ellipse_55%_45%_at_108%_-4%,rgba(164,126,77,0.16),transparent),radial-gradient(ellipse_38%_28%_at_52%_104%,rgba(18,108,100,0.08),transparent)]" />
+      {/* Dot grid */}
+      <div className="pointer-events-none absolute inset-0 [background-image:radial-gradient(circle,rgba(18,42,39,0.13)_1px,transparent_1px)] [background-size:28px_28px]" />
 
       <header className="relative z-10 px-4 pt-5 sm:px-6 lg:px-8">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between rounded-full border border-white/70 bg-white/80 px-5 py-3 shadow-[0_20px_55px_-34px_rgba(20,43,40,0.28)] backdrop-blur-md">
@@ -75,9 +77,12 @@ export default function Home() {
         <section className="px-4 pb-14 pt-10 sm:px-6 lg:px-8 lg:pb-24 lg:pt-14">
           <div className="mx-auto grid min-h-[100dvh] max-w-[1400px] items-center gap-12 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16">
             <div className="max-w-[44rem]">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-white/85 px-4 py-2 text-sm font-medium text-[var(--muted)] shadow-[0_18px_38px_-28px_rgba(20,43,40,0.24)] backdrop-blur-sm">
-                <Sparkle size={16} weight="duotone" />
-                5 top matches in your inbox, every morning
+              <div className="relative inline-flex">
+                <div className="pointer-events-none absolute inset-[-5px] animate-[spin_12s_linear_infinite] rounded-full border border-dashed border-[rgba(18,108,100,0.22)]" />
+                <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-white/85 px-4 py-2 text-sm font-medium text-[var(--muted)] shadow-[0_18px_38px_-28px_rgba(20,43,40,0.24)] backdrop-blur-sm">
+                  <Sparkle size={16} weight="duotone" className="text-[var(--accent)]" />
+                  5 top matches in your inbox, every morning
+                </div>
               </div>
               <h1 className="mt-8 text-5xl font-semibold tracking-[-0.06em] text-[var(--ink)] md:text-7xl md:leading-[0.94]">
                 Stop searching job boards every day.
@@ -152,8 +157,10 @@ export default function Home() {
                     className={`reveal ${delayClass} rounded-[2rem] border border-[var(--border-soft)] bg-[var(--surface)] p-1.5 shadow-[0_28px_60px_-42px_rgba(20,43,40,0.22)] transition-transform duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5`}
                   >
                     <div className="rounded-[calc(2rem-0.375rem)] bg-white p-6 h-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-soft)] text-[var(--accent)]">
-                        <Icon size={22} weight="duotone" />
+                      <div className="inline-flex rounded-[1.15rem] border border-[rgba(18,108,100,0.14)] bg-gradient-to-br from-[rgba(18,108,100,0.12)] to-[rgba(18,108,100,0.02)] p-[5px] shadow-[0_6px_16px_-8px_rgba(18,108,100,0.22)]">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-[calc(1.15rem-5px)] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.95)] text-[var(--accent)]">
+                          <Icon size={20} weight="duotone" />
+                        </div>
                       </div>
                       <h3 className="mt-5 text-xl font-semibold tracking-tight text-[var(--ink)]">
                         {item.title}
