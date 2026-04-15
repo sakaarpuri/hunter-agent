@@ -293,15 +293,24 @@ export function OnboardingWizard() {
               />
               <span className="text-xs leading-6 text-[var(--muted)]">HunterAgent sends the daily brief here, then waits for reply selections from the same inbox.</span>
             </label>
-            <label className="grid gap-2 text-sm">
-              <span className="font-medium text-[var(--ink)]">Daily brief time</span>
-              <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.briefTime} onChange={(event) => setDraftProfile((current) => ({ ...current, briefTime: event.target.value }))} />
-              <span className="text-xs leading-6 text-[var(--muted)]">Every later daily brief lands at this local time.</span>
-            </label>
-            <label className="grid gap-2 text-sm">
-              <span className="font-medium text-[var(--ink)]">Timezone</span>
-              <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.timezone} onChange={(event) => setDraftProfile((current) => ({ ...current, timezone: event.target.value }))} />
-            </label>
+            <div className="grid gap-2 text-sm md:col-span-2">
+              <span className="font-medium text-[var(--ink)]">Brief schedule</span>
+              <div className="flex gap-2">
+                <input
+                  type="time"
+                  className="w-32 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none"
+                  value={draftProfile.briefTime}
+                  onChange={(event) => setDraftProfile((current) => ({ ...current, briefTime: event.target.value }))}
+                />
+                <input
+                  className="min-w-0 flex-1 rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none"
+                  value={draftProfile.timezone}
+                  onChange={(event) => setDraftProfile((current) => ({ ...current, timezone: event.target.value }))}
+                  placeholder="Europe/London"
+                />
+              </div>
+              <span className="text-xs leading-6 text-[var(--muted)]">Time and timezone your brief lands every morning.</span>
+            </div>
             <div className="grid gap-3 text-sm md:col-span-2">
               <span className="font-medium text-[var(--ink)]">First shortlist</span>
               {/* Send immediately — checkbox style, checked by default */}

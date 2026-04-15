@@ -112,6 +112,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
   const [clientError, setClientError] = useState<string | null>(null);
   const [editInstruction, setEditInstruction] = useState("");
   const [designReferenceOpen, setDesignReferenceOpen] = useState(false);
+  const [showAllBriefRoles, setShowAllBriefRoles] = useState(false);
   const [trustPanelOpen, setTrustPanelOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsName, setSettingsName] = useState(user.fullName);
@@ -1018,107 +1019,119 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                 </div>
 
                 <div className="mt-5 rounded-[1.6rem] border border-[var(--border-soft)] bg-white p-4 text-sm leading-7 text-[var(--muted)] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
-                  I found 10 roles that fit {draftProfile.name.split(" ")[0]}&apos;s profile today. Reply with the numbers or company names you want me to prepare, then check the dashboard in about {estimateMinutes(activeBrief.selectedRoleIds.length || 1)}.
+                  {activeBrief.selectedRoleIds.length > 0
+                    ? `${activeBrief.selectedRoleIds.length} role${activeBrief.selectedRoleIds.length > 1 ? "s" : ""} selected for ${draftProfile.name.split(" ")[0]}. Materials are being prepared — check your dashboard in about ${estimateMinutes(activeBrief.selectedRoleIds.length)}.`
+                    : `I found ${activeBrief.topRoleIds.length} priority roles and ${activeBrief.roleIds.length - activeBrief.topRoleIds.length} more matches for ${draftProfile.name.split(" ")[0]} today. Reply with the numbers you want prepared.`}
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium text-[var(--muted)]">
                   <span className="rounded-full border border-[var(--border-soft)] bg-white px-3 py-2">
                     To: {(activeBrief.recipientEmail ?? draftProfile.recipientEmail) || "not set"}
                   </span>
-                  <span className="rounded-full border border-[var(--border-soft)] bg-white px-3 py-2">
-                    {activeBrief.outboundThreadId ? "Thread linked" : "No outbound thread yet"}
-                  </span>
                 </div>
 
-                <div className="mt-5 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Top picks</p>
-                      <p className="text-xs font-medium text-[var(--accent)]">Numbers or names both parse</p>
-                    </div>
-                    <div className="mt-3 space-y-3">
-                      {workspace.roleCatalog.filter((role) => activeBrief.topRoleIds.includes(role.id)).map((role) => (
-                        <article key={role.id} className="rounded-[1.55rem] border border-[var(--border-soft)] bg-white p-4 shadow-[0_18px_45px_-36px_rgba(14,34,32,0.45)]">
-                          <div className="flex gap-4">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface)] font-mono text-xs text-[var(--accent)]">
-                              {formatRoleCode(role.id)}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div>
-                                  <p className="text-sm text-[var(--muted)]">{role.company}</p>
-                                  <h4 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ink)]">{role.title}</h4>
+                {/* Role list — selected only once picked, all top picks before that */}
+                <div className="mt-5">
+                  {(() => {
+                    const hasSelected = activeBrief.selectedRoleIds.length > 0;
+                    const displayRoles = hasSelected && !showAllBriefRoles
+                      ? workspace.roleCatalog.filter((r) => activeBrief.selectedRoleIds.includes(r.id))
+                      : workspace.roleCatalog.filter((r) => activeBrief.topRoleIds.includes(r.id));
+                    const extraRoles = workspace.roleCatalog.filter((r) => activeBrief.roleIds.includes(r.id) && !activeBrief.topRoleIds.includes(r.id));
+                    return (
+                      <>
+                        <div className="mb-3 flex items-center justify-between">
+                          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
+                            {hasSelected && !showAllBriefRoles ? "Your picks" : "Priority roles"}
+                          </p>
+                          {hasSelected && (
+                            <button type="button" onClick={() => setShowAllBriefRoles((v) => !v)} className="text-xs font-medium text-[var(--accent)] hover:underline">
+                              {showAllBriefRoles ? "Show selected only" : `See all ${activeBrief.topRoleIds.length + extraRoles.length} from today`}
+                            </button>
+                          )}
+                        </div>
+                        <div className="space-y-3">
+                          {displayRoles.map((role) => (
+                            <article key={role.id} className="rounded-[1.55rem] border border-[var(--border-soft)] bg-white p-4 shadow-[0_18px_45px_-36px_rgba(14,34,32,0.45)]">
+                              <div className="flex gap-4">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--surface)] font-mono text-xs text-[var(--accent)]">
+                                  {formatRoleCode(role.id)}
                                 </div>
-                                <div className="rounded-full bg-[var(--surface)] px-3 py-1 text-[11px] font-medium text-[var(--muted)]">{role.employment}</div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex flex-wrap items-start justify-between gap-3">
+                                    <div>
+                                      <p className="text-sm text-[var(--muted)]">{role.company}</p>
+                                      <h4 className="mt-1 text-lg font-semibold tracking-tight text-[var(--ink)]">{role.title}</h4>
+                                    </div>
+                                    <div className="rounded-full bg-[var(--surface)] px-3 py-1 text-[11px] font-medium text-[var(--muted)]">{role.employment}</div>
+                                  </div>
+                                  <div className="mt-3 flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
+                                    <MapPin size={13} weight="duotone" />
+                                    {role.location} · Posted {role.posted}
+                                  </div>
+                                  <p className="mt-3 text-sm leading-6 text-[var(--muted)]">Why it fits: {role.fit}</p>
+                                </div>
                               </div>
-                              <div className="mt-3 flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
-                                <MapPin size={13} weight="duotone" />
-                                {role.location} · Posted {role.posted}
+                            </article>
+                          ))}
+                          {showAllBriefRoles && extraRoles.length > 0 && (
+                            <div className="rounded-[1.6rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4">
+                              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">More from today</p>
+                              <div className="grid gap-2 text-sm text-[var(--muted)]">
+                                {extraRoles.map((role) => (
+                                  <div key={role.id} className="flex items-start gap-3 rounded-2xl bg-white/70 px-3 py-2.5">
+                                    <span className="font-mono text-[11px] text-[var(--accent)]">{formatRoleCode(role.id)}</span>
+                                    <span>{role.title} — {role.company}</span>
+                                  </div>
+                                ))}
                               </div>
-                              <p className="mt-3 text-sm leading-6 text-[var(--muted)]">Why it fits: {role.fit}</p>
                             </div>
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </div>
+                          )}
+                        </div>
 
-                  <div className="space-y-5">
-                    <div className="rounded-[1.6rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">More from today’s shortlist</p>
-                      <div className="mt-3 grid gap-2 text-sm text-[var(--muted)]">
-                        {workspace.roleCatalog.filter((role) => activeBrief.roleIds.includes(role.id) && !activeBrief.topRoleIds.includes(role.id)).map((role) => (
-                          <div key={role.id} className="flex items-start gap-3 rounded-2xl bg-white/70 px-3 py-2.5">
-                            <span className="font-mono text-[11px] text-[var(--accent)]">{formatRoleCode(role.id)}</span>
-                            <span>{role.title} — {role.company}</span>
+                        {/* Reply picker — only shown when no roles selected yet */}
+                        {!hasSelected && (
+                          <div className="mt-6 rounded-[1.6rem] border border-[var(--border-soft)] bg-white p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+                            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Choose your roles</p>
+                            <p className="mt-1 text-sm text-[var(--muted)]">Type the role numbers or company names you want prepared — just like replying to the email.</p>
+                            <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium">
+                              {["1, 4", "1", "2", "1 and 3", "all of them"].map((sample) => (
+                                <button
+                                  key={sample}
+                                  type="button"
+                                  onClick={() => setReplyInput(sample)}
+                                  className={cn(
+                                    "rounded-full border px-3 py-2 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:scale-[0.98]",
+                                    replyInput === sample
+                                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                                      : "border-[var(--border-soft)] bg-[var(--surface)] text-[var(--muted)]"
+                                  )}
+                                >
+                                  {sample}
+                                </button>
+                              ))}
+                            </div>
+                            <textarea
+                              className="mt-3 w-full rounded-[1.2rem] border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-sm text-[var(--ink)] outline-none"
+                              rows={2}
+                              value={replyInput}
+                              onChange={(event) => setReplyInput(event.target.value)}
+                              placeholder="e.g. 1, 4 or BrightPath Studio"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleInboundReplySubmit}
+                              disabled={isSubmittingReply || isGenerating}
+                              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] disabled:cursor-not-allowed disabled:opacity-45 enabled:hover:-translate-y-0.5 enabled:active:translate-y-[1px] enabled:active:scale-[0.98]"
+                            >
+                              <PaperPlaneTilt size={16} weight="fill" />
+                              {isSubmittingReply ? "Selecting…" : "Confirm selection"}
+                            </button>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="rounded-[1.6rem] border border-[var(--border-soft)] bg-white p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Inbound email parser</p>
-                        <span className="rounded-full bg-[var(--surface)] px-3 py-1 text-[11px] font-medium text-[var(--muted)]">
-                          {activeBrief.inboundRecords.length} replies logged
-                        </span>
-                      </div>
-                      <label className="mt-3 grid gap-2 text-sm">
-                        <span className="font-medium text-[var(--ink)]">Raw inbound reply</span>
-                        <textarea
-                          className="min-h-28 rounded-[1.2rem] border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[var(--ink)] outline-none"
-                          value={replyInput}
-                          onChange={(event) => setReplyInput(event.target.value)}
-                        />
-                        <span className="text-xs leading-6 text-[var(--muted)]">Paste the actual body text the email layer receives. HunterAgent strips quoted text, parses numbers or company names, and stores the result in the brief record.</span>
-                      </label>
-                      <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium">
-                        {[
-                          "1, 4",
-                          "BrightPath and Hollow Arc",
-                          "2 only please",
-                        ].map((sample) => (
-                          <button
-                            key={sample}
-                            type="button"
-                            onClick={() => setReplyInput(sample)}
-                            className="rounded-full border border-[var(--border-soft)] bg-[var(--surface)] px-3 py-2 text-[var(--muted)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                          >
-                            {sample}
-                          </button>
-                        ))}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleInboundReplySubmit}
-                        disabled={isSubmittingReply || isGenerating}
-                        className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] disabled:cursor-not-allowed disabled:opacity-45 enabled:hover:-translate-y-0.5 enabled:active:translate-y-[1px] enabled:active:scale-[0.98]"
-                      >
-                        <PaperPlaneTilt size={16} weight="fill" />
-                        {isSubmittingReply ? "Parsing inbound email" : "Parse inbound email"}
-                      </button>
-                    </div>
-                  </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 
