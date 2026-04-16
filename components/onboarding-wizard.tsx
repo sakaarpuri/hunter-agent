@@ -38,11 +38,14 @@ export function OnboardingWizard() {
   const [cvPreviewUrl, setCvPreviewUrl] = useState<string | null>(null);
   const [cvFileName, setCvFileName] = useState<string | null>(null);
 
-  // Pre-populate recipient email with the signed-in user's email if not already set
+  // Pre-populate recipient email and browser timezone on first mount
   useEffect(() => {
-    if (!draftProfile.recipientEmail && user?.email) {
-      setDraftProfile((current) => ({ ...current, recipientEmail: user.email }));
-    }
+    const detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    setDraftProfile((current) => ({
+      ...current,
+      ...((!current.recipientEmail && user?.email) ? { recipientEmail: user.email } : {}),
+      ...(detectedTz && current.timezone === "Europe/London" ? { timezone: detectedTz } : {}),
+    }));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -184,7 +187,7 @@ export function OnboardingWizard() {
           <div className="mt-5 grid gap-5 md:grid-cols-2">
             <label className="grid gap-2 text-sm md:col-span-2">
               <span className="font-medium text-[var(--ink)]">Locations</span>
-              <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" value={draftProfile.locations} onChange={(event) => setDraftProfile((current) => ({ ...current, locations: event.target.value }))} />
+              <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" placeholder="e.g. London, Remote, Berlin" value={draftProfile.locations} onChange={(event) => setDraftProfile((current) => ({ ...current, locations: event.target.value }))} />
             </label>
             <label className="grid gap-2 text-sm">
               <span className="font-medium text-[var(--ink)]">Salary or rate range</span>
@@ -276,7 +279,7 @@ export function OnboardingWizard() {
                     specialPreferences: parsePreferenceList(event.target.value),
                   }))
                 }
-                placeholder="Comma-separated, e.g. B2B SaaS, 4-day week, healthcare AI"
+                placeholder="e.g. B2B SaaS only, no consulting firms, Series A–C startups, 4-day week, health tech, mission-driven, no relocation"
               />
             </label>
           </div>
