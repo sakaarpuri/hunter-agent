@@ -72,9 +72,11 @@ const ONBOARDING_STEPS = [
 ] as const;
 
 const PROCESSING_STAGES = [
-  "Analysing the roles you selected",
-  "Drafting your resume and cover letter",
-  "Selecting the best supporting materials",
+  "Reading each role's requirements and matching them to your profile",
+  "Writing your tailored CV — adjusting emphasis for each role",
+  "Drafting a role-specific cover letter",
+  "Choosing the strongest work samples to include",
+  "Finalising and running a quality check",
 ] as const;
 
 const EDIT_PROMPT_SUGGESTIONS = ["Make it more direct", "Focus on growth work", "Sound more senior"] as const;
@@ -103,7 +105,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
   const [workspace, setWorkspace] = useState<WorkspaceState | null>(null);
   const [draftProfile, setDraftProfile] = useState<Profile>(initialProfile);
   const [draftStep, setDraftStep] = useState(1);
-  const [replyInput, setReplyInput] = useState("1, 4");
+  const [replyInput, setReplyInput] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
@@ -356,7 +358,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
           : "Preferences saved. HunterAgent will use these settings for future briefs.",
       );
     } catch (error) {
-      setSettingsError(error instanceof Error ? error.message : "Could not save the scouting preferences.");
+      setSettingsError(error instanceof Error ? error.message : "Your settings couldn't be saved. Try again.");
     } finally {
       setIsSavingPreferences(false);
     }
@@ -402,7 +404,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
       try {
         await runWorkspaceAction({ action: "set_prompt_draft", key: promptKey, value: editInstruction });
       } catch (error) {
-        setClientError(error instanceof Error ? error.message : "Could not save the refinement prompt.");
+        setClientError(error instanceof Error ? error.message : "Your edit instruction couldn't be saved.");
       }
     }, 260);
 
@@ -481,7 +483,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
       const nextState = await runWorkspaceAction({ action: "reset_workspace" });
       setDraftProfile(nextState.profile);
       setDraftStep(nextState.onboardingStep);
-      setReplyInput("1, 4");
+      setReplyInput("");
     } catch (error) {
       setClientError(error instanceof Error ? error.message : "Could not reset the workspace.");
     }
@@ -584,7 +586,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
         await generatePacks();
       }
     } catch (error) {
-      setClientError(error instanceof Error ? error.message : "Could not parse the inbound email.");
+      setClientError(error instanceof Error ? error.message : "We couldn't read your reply. Try again.");
     } finally {
       setIsSubmittingReply(false);
     }
@@ -884,22 +886,23 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
               </h1>
               <div className="mt-2">
                 <span className="inline-flex items-center rounded-full border border-[var(--border-soft)] bg-[var(--surface)] px-3 py-1 text-xs font-medium text-[var(--muted)]">
-                  {workspace.flowPhase === "onboarding" ? `Step ${draftStep} of 4` : `${draftProfile.briefTime} ${draftProfile.timezone}`}
+                  {workspace.flowPhase === "onboarding" ? `Step ${draftStep} of 3` : `${draftProfile.briefTime} ${draftProfile.timezone}`}
                 </span>
               </div>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--muted)]">
                 {workspace.flowPhase === "onboarding" &&
-                  "Set the profile, resume source, design direction, and delivery rhythm once. HunterAgent keeps the discovery loop in email and the deeper work in the dashboard."}
-                {workspace.flowPhase === "waiting" &&
+                  "Tell us about you, upload your CV, and choose when your daily roles arrive. After that, your inbox handles the search and your dashboard handles the applications."}
+                {workspace.flowPhase === "waiting" && (
                   draftProfile.briefsPaused
-                    ? "Daily briefs are paused. Keep shaping the workspace, then resume the scout in settings whenever you want HunterAgent sending again."
-                    : `The first brief is scheduled for ${draftProfile.briefTime} ${draftProfile.timezone}. Send it now for the walkthrough or leave it queued for the selected time.`}
+                    ? "Your daily email is paused. Resume it any time from Settings when you're ready to start receiving roles again."
+                    : `Your first brief is scheduled for ${draftProfile.briefTime}. When it arrives, your matched roles will appear in this dashboard and in your inbox — reply from email to trigger the AI, or select roles directly here.`
+                )}
                 {workspace.flowPhase === "brief" &&
-                  "The brief record below mirrors the email that went out. Paste the inbound reply as raw text and HunterAgent will parse it into selected roles and brief history."}
+                  "Your daily email is shown below. Choose the roles you want prepared and we'll build your CV, cover letter, and application materials."}
                 {workspace.flowPhase === "processing" &&
-                  `The inbound reply is parsed and the selected roles are being turned into real packs. ${isGenerating ? PROCESSING_STAGES[generationStage] : workspace.generationStatus ?? "Generation is underway."}`}
+                  `The AI is building your application materials now. ${isGenerating ? PROCESSING_STAGES[generationStage] + "…" : workspace.generationStatus ?? "This usually takes 2–5 minutes."}`}
                 {workspace.flowPhase === "studio" &&
-                  "Each role now has a real pack record. Adjust style or tone, regenerate when needed, mark the role applied, then switch on follow-up when it is worth nudging."}
+                  "Your application materials are ready. Adjust the tone or style, edit any section, mark a role applied, and set a follow-up reminder when you want one."}
               </p>
               {workspace.generationStatus && workspace.flowPhase !== "onboarding" && (
                 <p className="mt-2 text-xs text-[var(--muted)]">{workspace.generationStatus}</p>
@@ -963,7 +966,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                   First brief queued for {draftProfile.briefTime}.
                 </h3>
                 <p className="mt-4 text-sm leading-7 text-[var(--muted)]">
-                  The current workspace state is already persisted. Refreshing the page keeps the onboarding choices, the scheduled brief, and the resume setup exactly where they are. When it sends, HunterAgent delivers to {draftProfile.recipientEmail || "your chosen inbox"}.
+                  HunterAgent will search for your top matches and send them to {draftProfile.recipientEmail || "your inbox"}. Once the brief arrives, matched roles also appear right here in your dashboard — you don&apos;t need to wait for email to see them.
                 </p>
                 <div className="mt-6 grid gap-3 sm:grid-cols-2">
                   <button
@@ -976,7 +979,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setDraftStep(4)}
+                    onClick={() => setDraftStep(3)}
                     className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
                   >
                     <PencilSimple size={16} />
@@ -989,12 +992,13 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Tomorrow’s rhythm</p>
                 <div className="mt-5 grid gap-3">
                   {[
-                    `Brief lands at ${draftProfile.briefTime} in ${draftProfile.recipientEmail || "your chosen inbox"}.`,
-                    "Reply to your email with the roles you want — we'll pick them up automatically.",
-                    "Selected roles move straight into real CV, letter, and follow-up generation.",
-                  ].map((line) => (
-                    <div key={line} className="rounded-[1.5rem] bg-[var(--surface)] px-4 py-4 text-sm leading-7 text-[var(--muted)]">
-                      {line}
+                    { step: "1", text: `Your brief lands at ${draftProfile.briefTime}. Matched roles appear in your inbox and in this dashboard at the same time.` },
+                    { step: "2", text: "Pick the roles you want — reply to the email with numbers, or select them directly here. That triggers the AI." },
+                    { step: "3", text: "Your tailored CV and cover letter are ready in this dashboard within minutes. No editing needed to get started." },
+                  ].map(({ step, text }) => (
+                    <div key={step} className="flex items-start gap-3 rounded-[1.5rem] bg-[var(--surface)] px-4 py-4 text-sm leading-7 text-[var(--muted)]">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[0.65rem] font-bold text-[var(--accent)]">{step}</span>
+                      {text}
                     </div>
                   ))}
                 </div>
@@ -1007,7 +1011,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
               <div className="rounded-[1.9rem] border border-[var(--border-soft)] bg-[var(--surface)] p-5 shadow-[0_25px_55px_-40px_rgba(18,40,38,0.3)]">
                 <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border-soft)] pb-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Brief record</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Today's roles</p>
                     <h3 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--ink)]">
                       Top 5 first, five more in the same email.
                     </h3>
@@ -1182,7 +1186,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                                       ? "bg-[var(--surface)] text-[var(--muted)]"
                                       : "bg-[var(--surface-2)] text-[var(--muted)]",
                                 )}>
-                                  {applied ? "Applied" : pack ? `Ready · ${pack.provider}` : PROCESSING_STAGES[generationStage]}
+                                  {applied ? "Applied" : pack ? (pack.provider === "fallback" ? "Ready · template" : "Ready · AI") : PROCESSING_STAGES[generationStage]}
                                 </div>
                               </div>
                               <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{role.summary}</p>
@@ -1203,7 +1207,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                       ) : (
                         activeBrief.inboundRecords.map((record) => (
                           <div key={record.id} className="rounded-[1.45rem] border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-4 text-sm text-[var(--muted)]">
-                            <div className="font-mono text-xs text-[var(--accent)]">{formatClock(record.receivedAt)} · {record.source}</div>
+                            <div className="font-mono text-xs text-[var(--accent)]">{formatClock(record.receivedAt)} · {record.source === "webhook" ? "via email" : "via dashboard"}</div>
                             <p className="mt-2 font-medium text-[var(--ink)]">{record.normalizedReply}</p>
                             <div className="mt-3 flex flex-wrap gap-2">
                               {record.selectedRoleIds.length > 0 ? record.selectedRoleIds.map((roleId) => (

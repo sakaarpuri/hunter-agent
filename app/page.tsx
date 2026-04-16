@@ -81,7 +81,7 @@ export default function Home() {
             <div className="max-w-[44rem]">
               <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-white/85 px-4 py-2 text-sm font-medium text-[var(--muted)] shadow-[0_18px_38px_-28px_rgba(20,43,40,0.24)] backdrop-blur-sm">
                 <Sparkle size={16} weight="duotone" className="text-[var(--accent)]" />
-                Your AI job search agent
+                5 top matches in your inbox, every morning
               </div>
               <h1 className="mt-8 text-5xl font-semibold tracking-[-0.06em] text-[var(--ink)] md:text-7xl md:leading-[0.94]">
                 Job searching shouldn&apos;t feel like a job.

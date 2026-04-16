@@ -154,6 +154,14 @@ export function StudioPanel() {
         <div className="space-y-6">
           <div className="rounded-[1.9rem] border border-[var(--border-soft)] bg-white p-5 shadow-[0_25px_55px_-40px_rgba(18,40,38,0.3)]">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Application studio</p>
+
+            {activePack.reasoning && (
+              <div className="mt-4 rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-4">
+                <p className="text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">Why we tailored it this way</p>
+                <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{activePack.reasoning}</p>
+              </div>
+            )}
+
             <div className="mt-4 border-b border-[var(--border-soft)] pb-4">
               <h3 className="text-2xl font-semibold tracking-tight text-[var(--ink)]">{activeRole.company}</h3>
               <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
