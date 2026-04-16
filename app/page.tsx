@@ -59,7 +59,7 @@ export default function Home() {
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">
                 HunterAgent
               </p>
-              <p className="text-sm text-[var(--muted)]">Your daily job search, automated</p>
+              <p className="text-sm text-[var(--muted)]">AI-powered job search agent</p>
             </div>
           </Link>
           <div className="flex items-center gap-3">
@@ -81,15 +81,13 @@ export default function Home() {
             <div className="max-w-[44rem]">
               <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-white/85 px-4 py-2 text-sm font-medium text-[var(--muted)] shadow-[0_18px_38px_-28px_rgba(20,43,40,0.24)] backdrop-blur-sm">
                 <Sparkle size={16} weight="duotone" className="text-[var(--accent)]" />
-                5 top matches in your inbox, every morning
+                Your AI job search agent
               </div>
               <h1 className="mt-8 text-5xl font-semibold tracking-[-0.06em] text-[var(--ink)] md:text-7xl md:leading-[0.94]">
-                Stop searching job boards every day.
+                Job searching shouldn&apos;t feel like a job.
               </h1>
               <p className="mt-6 max-w-[40rem] text-lg leading-8 text-[var(--muted)] md:text-xl md:leading-9">
-                Get 5 curated roles in your inbox every morning. Reply with the ones
-                you want — a tailored CV, cover letter, and work samples will be ready
-                in your dashboard within minutes.
+                HunterAgent is an AI agent that finds your top 5 matched roles every morning and writes a tailored CV and cover letter for each one you choose — ready in your dashboard in minutes.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
@@ -115,8 +113,8 @@ export default function Home() {
                   How it works differently
                 </p>
                 <ul className="mt-4 space-y-3 text-sm leading-7 text-[var(--muted)]">
-                  <li className="flex gap-3"><CheckCircle size={18} weight="fill" className="mt-1 shrink-0 text-[var(--accent)]" /> Your email shows today&apos;s top matches. Reply with numbers — done.</li>
-                  <li className="flex gap-3"><CheckCircle size={18} weight="fill" className="mt-1 shrink-0 text-[var(--accent)]" /> Your dashboard builds role-specific CVs, cover letters, and application materials.</li>
+                  <li className="flex gap-3"><CheckCircle size={18} weight="fill" className="mt-1 shrink-0 text-[var(--accent)]" /> AI matches 5 roles to your profile daily. Reply with numbers — done.</li>
+                  <li className="flex gap-3"><CheckCircle size={18} weight="fill" className="mt-1 shrink-0 text-[var(--accent)]" /> AI writes a role-specific CV and cover letter for each job you pick.</li>
                   <li className="flex gap-3"><CheckCircle size={18} weight="fill" className="mt-1 shrink-0 text-[var(--accent)]" /> Follow-up reminders are optional — you turn them on after you apply.</li>
                 </ul>
               </div>
