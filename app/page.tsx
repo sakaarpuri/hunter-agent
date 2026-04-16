@@ -294,9 +294,9 @@ export default function Home() {
                 </Link>
               </div>
             </div>
-            <div className="flex justify-center overflow-hidden rounded-[2rem]" style={{ height: "calc(720px * 0.72)" }}>
-              <div style={{ transform: "scale(0.72)", transformOrigin: "top center", width: "calc(100% / 0.72)", flexShrink: 0 }}>
-                <DashboardPreview />
+            <div className="overflow-hidden rounded-[2rem]" style={{ height: "calc(720px * 0.72)" }}>
+              <div style={{ transform: "scale(0.72)", transformOrigin: "top left", width: "calc(100% / 0.72)" }}>
+                <DashboardPreview fullPage />
               </div>
             </div>
           </div>
@@ -305,7 +305,7 @@ export default function Home() {
         {/* Footer CTA */}
         <section className="px-4 pb-16 pt-8 sm:px-6 lg:px-8 lg:pb-24">
           <div className="mx-auto max-w-[1400px] rounded-[2.4rem] border border-[var(--border-soft)] bg-[var(--ink)] px-6 py-10 text-white shadow-[0_32px_80px_-42px_rgba(7,17,16,0.6)] sm:px-8 lg:px-10">
-            <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
+            <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
                   Simple by design
