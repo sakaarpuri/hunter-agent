@@ -293,6 +293,9 @@ export default function Home() {
                   </span>
                 </Link>
               </div>
+              <p className="mt-5 max-w-2xl text-lg leading-8 text-[var(--muted)]">
+                No job board tabs. No copy-pasting CVs. No forgetting to follow up. HunterAgent handles the repetitive parts so you can focus on the conversations that matter.
+              </p>
             </div>
             <div className="overflow-hidden rounded-[2rem]" style={{ height: "calc(720px * 0.72)" }}>
               <div style={{ transform: "scale(0.72)", transformOrigin: "top left", width: "calc(100% / 0.72)" }}>
@@ -313,11 +316,6 @@ export default function Home() {
                 <h2 className="mt-3 text-4xl font-semibold tracking-[-0.05em] md:text-5xl">
                   Daily email to discover jobs. Dashboard to tailor CV and track applications.
                 </h2>
-                <p className="mt-5 max-w-2xl text-base leading-8 text-white/72">
-                  No job board tabs. No copy-pasting CVs. No forgetting to follow up.
-                  HunterAgent handles the repetitive parts so you can focus on the
-                  conversations that matter.
-                </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <Link
