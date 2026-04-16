@@ -14,23 +14,23 @@ import { FeatureCards } from "@/components/feature-showcase";
 
 const workflow = [
   {
-    title: "5 top roles, every morning",
-    body: "HunterAgent searches for full-time, part-time, and contract jobs daily. Your 5 top matches land in your inbox every morning — no job board tabs, no manual searching.",
+    title: "5 curated roles land in your inbox",
+    body: "Every morning HunterAgent searches live job listings and picks your top 5 matches based on your profile — full-time, part-time, or contract. No job board tabs, no manual searching.",
     icon: MagnifyingGlass,
   },
   {
-    title: "You pick the ones worth pursuing",
-    body: "The email keeps it simple: top 5 first, 5 more below. Reply with numbers or company names. That's your entire input for the day.",
+    title: "Reply with the ones you want",
+    body: "Just reply to the email with numbers or company names — \"1, 3\" or \"BrightPath\". That single reply is your entire input for the day. Nothing else to click or fill in.",
     icon: EnvelopeSimpleOpen,
   },
   {
-    title: "We build your application materials",
-    body: "A tailored CV, cover letter, and optional work samples are ready in your dashboard within minutes — specific to each role you picked.",
+    title: "Your tailored CV is ready in minutes",
+    body: "For each role you replied with, HunterAgent writes a role-specific CV and cover letter — matched to that job description. Open your dashboard and they're already there.",
     icon: FlowArrow,
   },
   {
-    title: "Follow up when you're ready",
-    body: "After you apply, you can turn on a 7 or 14-day reminder. It's opt-in — no automated nudges unless you want them.",
+    title: "Apply, then follow up on your terms",
+    body: "Mark a role applied from the dashboard. Optionally set a 7 or 14-day follow-up reminder. Everything is opt-in — no automated emails on your behalf unless you ask.",
     icon: CalendarDots,
   },
 ];
@@ -154,13 +154,11 @@ export default function Home() {
                   How it works
                 </p>
                 <h2 className="mt-3 max-w-2xl text-4xl font-semibold tracking-[-0.05em] text-[var(--ink)] md:text-5xl">
-                  From search to application in minutes.
+                  Reply to an email. Your CV is tailored and waiting.
                 </h2>
               </div>
               <p className="max-w-2xl text-base leading-8 text-[var(--muted)]">
-                We handle the daily searching. You spend 30 seconds choosing roles.
-                Your dashboard builds the applications — CVs, cover letters, and
-                work samples tailored to each role you picked.
+                You don&apos;t rewrite your CV for every role. HunterAgent does it for you — automatically, for each job you choose. Your only input is a one-line email reply.
               </p>
             </div>
 
