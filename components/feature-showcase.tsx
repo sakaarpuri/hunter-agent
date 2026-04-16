@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-const SCENE_H = "h-96";
+const SCENE_H = "h-[19rem]";
 
 // Teal core fading to cyan at the outer edge — brand-anchored gradient side face
 const SHADOW_3D =
@@ -340,8 +340,8 @@ export function FeatureCards() {
     return () => clearTimeout(t);
   }, []);
 
-  // Each card after the first overlaps the previous by 8px
-  const OVERLAP = 8;
+  // Each card after the first overlaps the previous by 4px
+  const OVERLAP = 4;
 
   return (
     <div className="flex">
@@ -364,14 +364,14 @@ export function FeatureCards() {
         >
           <div className="rounded-[calc(1.4rem-0.125rem)] bg-white p-2 shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]">
             {card.scene}
-            <div className="mt-2 px-0.5 pb-1">
-              <p className="truncate text-[0.58rem] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+            <div className="mt-3 px-1.5 pb-2">
+              <p className="truncate text-[0.6rem] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
                 {card.label}
               </p>
-              <h3 className="mt-0.5 text-[0.72rem] font-semibold leading-[1.3] tracking-tight text-[var(--ink)]">
+              <h3 className="mt-1 text-[0.76rem] font-semibold leading-[1.3] tracking-tight text-[var(--ink)]">
                 {card.title}
               </h3>
-              <p className="mt-1 text-[0.62rem] leading-[1.5] text-[var(--muted)]">
+              <p className="mt-1.5 text-[0.65rem] leading-[1.55] text-[var(--muted)]">
                 {card.body}
               </p>
             </div>

@@ -296,8 +296,8 @@ export default function Home() {
                 </Link>
               </div>
             </div>
-            <div className="overflow-hidden rounded-[2rem]" style={{ height: "calc(720px * 0.72)" }}>
-              <div style={{ transform: "scale(0.72)", transformOrigin: "top left", width: "calc(100% / 0.72)" }}>
+            <div className="flex justify-center overflow-hidden rounded-[2rem]" style={{ height: "calc(720px * 0.72)" }}>
+              <div style={{ transform: "scale(0.72)", transformOrigin: "top center", width: "calc(100% / 0.72)", flexShrink: 0 }}>
                 <DashboardPreview />
               </div>
             </div>
@@ -313,7 +313,7 @@ export default function Home() {
                   Simple by design
                 </p>
                 <h2 className="mt-3 text-4xl font-semibold tracking-[-0.05em] md:text-5xl">
-                  Email to pick. Dashboard to apply.
+                  Daily email to discover jobs. Dashboard to tailor CV and track applications.
                 </h2>
                 <p className="mt-5 max-w-2xl text-base leading-8 text-white/72">
                   No job board tabs. No copy-pasting CVs. No forgetting to follow up.
