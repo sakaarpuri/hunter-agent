@@ -6,7 +6,7 @@ import {
   Sparkle,
 } from "@phosphor-icons/react/dist/ssr";
 
-const roles = [
+const topRoles = [
   {
     id: 1,
     company: "BrightPath Studio",
@@ -44,6 +44,29 @@ const roles = [
   },
 ];
 
+const wildcardRoles = [
+  {
+    id: 6,
+    company: "Wanderdesk",
+    title: "Remote Experience Designer",
+    meta: "Fully remote / Travel-friendly / Contract",
+    note: "A wildcard: design rituals for a distributed team that operates across 12 time zones.",
+  },
+  {
+    id: 7,
+    company: "Atlas Journal",
+    title: "Editorial Director",
+    meta: "Lisbon / Nomad-friendly / Full-time",
+    note: "A stretch pick: lead content for a slow-travel magazine with a fast-growing digital audience.",
+  },
+  {
+    id: 8,
+    company: "Basecamp Collective",
+    title: "Community & Content Lead",
+    meta: "Remote / Part-time",
+    note: "A surprise: blend community building with storytelling for an outdoor adventure brand.",
+  },
+];
 
 export function MockEmailBrief() {
   return (
@@ -55,7 +78,7 @@ export function MockEmailBrief() {
             Daily brief
           </p>
           <h3 className="mt-2 text-lg font-semibold tracking-tight text-[var(--ink)]">
-            Your 5 top roles for today
+            5 top roles + 3 wildcards today
           </h3>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--muted)] shadow-sm">
@@ -67,23 +90,24 @@ export function MockEmailBrief() {
       <div className="mb-5 rounded-[1.4rem] border border-[var(--border-soft)] bg-[var(--surface)]/90 p-4 text-sm leading-6 text-[var(--muted)] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
         <p className="font-medium text-[var(--ink)]">Hi there,</p>
         <p className="mt-2">
-          I found 5 roles that fit your profile today. Reply with the numbers or
-          names you want me to prepare, then check your dashboard in about 2 to 10
-          minutes depending on how many roles you choose.
+          5 roles matched your profile today, plus 3 wildcards — a mix of stretch
+          picks and surprise roles. Reply with the numbers or names you want me to
+          prepare. Dashboard updates in 2–10 minutes.
         </p>
       </div>
 
+      {/* Top 5 */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
             Top picks
           </p>
           <div className="flex items-center gap-1 text-xs font-medium text-[var(--accent)]">
-            Reply with numbers or names, e.g. 1, 4 or BrightPath →
+            Reply e.g. 1, 4 or BrightPath →
             <ArrowRight size={14} />
           </div>
         </div>
-        {roles.map((role, index) => (
+        {topRoles.map((role, index) => (
           <article
             key={role.id}
             className="group rounded-[1.4rem] border border-[var(--border-soft)] bg-white/95 p-3 shadow-[0_18px_45px_-36px_rgba(14,34,32,0.45)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5"
@@ -96,14 +120,53 @@ export function MockEmailBrief() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
-                    <h4 className="text-sm font-semibold tracking-tight text-[var(--ink)]">
-                      {role.title}
-                    </h4>
+                    <h4 className="text-sm font-semibold tracking-tight text-[var(--ink)]">{role.title}</h4>
                     <p className="text-xs text-[var(--muted)]">{role.company}</p>
                   </div>
                   <div className="flex items-center gap-1 rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] font-medium text-[var(--muted)]">
                     <Briefcase size={10} weight="fill" />
-                    Selected
+                    Matched
+                  </div>
+                </div>
+                <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[var(--muted)]">
+                  <MapPin size={11} weight="duotone" />
+                  {role.meta}
+                </div>
+                <p className="mt-1.5 text-xs leading-5 text-[var(--muted)]">{role.note}</p>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      {/* 3 wildcards */}
+      <div className="mt-4 space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-amber-600">
+            <Sparkle size={12} weight="fill" />
+            Wildcards
+          </div>
+          <p className="text-[10px] text-[var(--muted)]">Stretch picks — reply with 6, 7, or 8</p>
+        </div>
+        {wildcardRoles.map((role, index) => (
+          <article
+            key={role.id}
+            className="group rounded-[1.4rem] border border-amber-100 bg-amber-50/60 p-3 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5"
+            style={{ animationDelay: `${(index + 5) * 90}ms` }}
+          >
+            <div className="flex gap-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-sm font-semibold text-amber-700">
+                {role.id}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <h4 className="text-sm font-semibold tracking-tight text-[var(--ink)]">{role.title}</h4>
+                    <p className="text-xs text-[var(--muted)]">{role.company}</p>
+                  </div>
+                  <div className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+                    <Sparkle size={9} weight="fill" />
+                    Wildcard
                   </div>
                 </div>
                 <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[var(--muted)]">

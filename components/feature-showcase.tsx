@@ -342,8 +342,8 @@ export function FeatureCards() {
 
   // Each card after the first overlaps the previous by 4px
   const OVERLAP = 4;
-  // Card 0 lowest, card 1 middle, card 2 highest (ascending left-to-right)
-  const Y_OFFSETS = [48, 24, 0];
+  // Card 0 lowest (envelope), card 1 middle, card 2 highest — ascending left-to-right
+  const Y_OFFSETS = [0, 24, 48];
 
   return (
     <div className="flex items-end">

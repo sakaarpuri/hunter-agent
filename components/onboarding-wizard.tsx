@@ -279,7 +279,7 @@ export function OnboardingWizard() {
                     specialPreferences: parsePreferenceList(event.target.value),
                   }))
                 }
-                placeholder="e.g. B2B SaaS only, no consulting firms, Series A–C startups, 4-day week, health tech, mission-driven, no relocation"
+                placeholder="e.g. surprise me with a travel or adventure role, B2B SaaS only, no consulting, Series A–C, 4-day week, mission-driven, include digital nomad roles"
               />
             </label>
           </div>
