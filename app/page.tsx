@@ -20,7 +20,7 @@ const workflow = [
   },
   {
     title: "Reply with the ones you want",
-    body: "Just reply to the email with numbers or company names — \"1, 3\" or \"BrightPath\". That single reply is your entire input for the day. Nothing else to click or fill in.",
+    body: "Just reply to the email with numbers — \"1, 4\" picks your top choices, \"6\" picks a wildcard. Numbers 1–5 are top picks, 6–8 are wildcards. One-line reply, nothing else needed.",
     icon: EnvelopeSimpleOpen,
   },
   {
@@ -84,7 +84,7 @@ export default function Home() {
                 5 top matches in your inbox, every morning
               </div>
               <h1 className="mt-8 text-5xl font-semibold tracking-[-0.06em] text-[var(--ink)] md:text-7xl md:leading-[0.94]">
-                Job searching shouldn&apos;t feel like a job.
+                The effortless way to land your next job.
               </h1>
               <p className="mt-6 max-w-[40rem] text-lg leading-8 text-[var(--muted)] md:text-xl md:leading-9">
                 HunterAgent is an AI agent that finds your top 5 matched roles every morning and writes a tailored CV and cover letter for each one you choose — ready in your dashboard in minutes.

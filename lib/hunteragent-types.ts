@@ -9,6 +9,7 @@ export type PackTarget = "cv" | "letter" | "workSamples" | "pack";
 export type PackIntent = "refresh" | "sharpen" | "edit";
 export type ProofMode = "none" | "optional" | "recommended" | "required";
 export type CvViewMode = "preview" | "content";
+export type MaterialsMode = "ai" | "self";
 export type WorkplaceMode = "remote" | "hybrid" | "on-site";
 export type RemoteRegion = "worldwide" | "uk" | "europe" | "us" | "timezone-compatible";
 
@@ -62,6 +63,7 @@ export type Profile = {
   timezone: string;
   firstBrief: "now" | "scheduled";
   resumeDefaultStyle: ResumeStyleId;
+  materialsMode: MaterialsMode;
 };
 
 export type ResumeStyleOption = {

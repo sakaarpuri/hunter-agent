@@ -155,7 +155,7 @@ export function StudioPanel() {
           <div className="rounded-[1.9rem] border border-[var(--border-soft)] bg-white p-5 shadow-[0_25px_55px_-40px_rgba(18,40,38,0.3)]">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Application studio</p>
 
-            {activePack.reasoning && (
+            {activePack.reasoning && draftProfile.materialsMode !== "self" && (
               <div className="mt-4 rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-4">
                 <p className="text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">Why we tailored it this way</p>
                 <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{activePack.reasoning}</p>
@@ -169,6 +169,28 @@ export function StudioPanel() {
               </p>
             </div>
 
+            {draftProfile.materialsMode === "self" && (
+              <div className="mt-5 rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Your materials</p>
+                <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
+                  You&apos;re in self-managed mode. Upload your CV and cover letter for this role to keep a record of exactly what you submitted. You can still mark it applied and set follow-up reminders below.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <label className="cursor-pointer rounded-[1.3rem] border border-dashed border-[var(--border-strong)] bg-white p-4 text-center transition-colors hover:border-[var(--accent)]">
+                    <input type="file" accept=".pdf,.doc,.docx" className="sr-only" />
+                    <p className="text-sm font-medium text-[var(--ink)]">Upload CV</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">PDF or Word</p>
+                  </label>
+                  <label className="cursor-pointer rounded-[1.3rem] border border-dashed border-[var(--border-strong)] bg-white p-4 text-center transition-colors hover:border-[var(--accent)]">
+                    <input type="file" accept=".pdf,.doc,.docx" className="sr-only" />
+                    <p className="text-sm font-medium text-[var(--ink)]">Upload cover letter</p>
+                    <p className="mt-1 text-xs text-[var(--muted)]">PDF or Word</p>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {draftProfile.materialsMode !== "self" && (<>
             <div className="mt-5 flex flex-wrap gap-2 text-xs font-medium">
               {visibleStudioTabs.map(([value, label]) => (
                 <button
@@ -460,27 +482,30 @@ export function StudioPanel() {
                 )}
               </div>
             )}
+            </>)}
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => void handleEditCurrentTabOnly()}
-                disabled={isGenerating}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] disabled:cursor-not-allowed disabled:opacity-45 enabled:hover:-translate-y-0.5 enabled:active:translate-y-[1px] enabled:active:scale-[0.98]"
-              >
-                <PencilSimple size={16} weight="fill" />
-                {isGenerating ? "Updating" : `Edit ${targetLabel(targetFromStudioTab(workspace.studioTab))} only`}
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleSharpenPack()}
-                disabled={isGenerating}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] disabled:cursor-not-allowed disabled:opacity-45 enabled:hover:-translate-y-0.5 enabled:active:translate-y-[1px] enabled:active:scale-[0.98]"
-              >
-                <Sparkle size={16} weight="fill" />
-                Regenerate all
-              </button>
-            </div>
+            {draftProfile.materialsMode !== "self" && (
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => void handleEditCurrentTabOnly()}
+                  disabled={isGenerating}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] disabled:cursor-not-allowed disabled:opacity-45 enabled:hover:-translate-y-0.5 enabled:active:translate-y-[1px] enabled:active:scale-[0.98]"
+                >
+                  <PencilSimple size={16} weight="fill" />
+                  {isGenerating ? "Updating" : `Edit ${targetLabel(targetFromStudioTab(workspace.studioTab))} only`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSharpenPack()}
+                  disabled={isGenerating}
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] disabled:cursor-not-allowed disabled:opacity-45 enabled:hover:-translate-y-0.5 enabled:active:translate-y-[1px] enabled:active:scale-[0.98]"
+                >
+                  <Sparkle size={16} weight="fill" />
+                  Regenerate all
+                </button>
+              </div>
+            )}
 
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <button
@@ -494,31 +519,33 @@ export function StudioPanel() {
               </button>
             </div>
 
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
-              {([
-                ["cv", "Edit CV only"],
-                ["letter", "Edit cover letter only"],
-                ...(showWorkSamplesTab ? ([["workSamples", "Edit work samples only"]] as Array<[PackTarget, string]>) : []),
-              ] as Array<[PackTarget, string]>).map(([target, label]) => (
-                <button
-                  key={target}
-                  type="button"
-                  onClick={() => void handleSectionEdit(target)}
-                  disabled={isGenerating}
-                  className={cn(
-                    "inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] disabled:cursor-not-allowed disabled:opacity-45 enabled:hover:-translate-y-0.5 enabled:active:translate-y-[1px] enabled:active:scale-[0.98]",
-                    workspace.studioTab === target
-                      ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                      : "border-[var(--border-soft)] bg-white text-[var(--ink)]",
-                  )}
-                >
-                  <Sparkle size={16} />
-                  {label}
-                </button>
-              ))}
-            </div>
+            {draftProfile.materialsMode !== "self" && (
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                {([
+                  ["cv", "Edit CV only"],
+                  ["letter", "Edit cover letter only"],
+                  ...(showWorkSamplesTab ? ([["workSamples", "Edit work samples only"]] as Array<[PackTarget, string]>) : []),
+                ] as Array<[PackTarget, string]>).map(([target, label]) => (
+                  <button
+                    key={target}
+                    type="button"
+                    onClick={() => void handleSectionEdit(target)}
+                    disabled={isGenerating}
+                    className={cn(
+                      "inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] disabled:cursor-not-allowed disabled:opacity-45 enabled:hover:-translate-y-0.5 enabled:active:translate-y-[1px] enabled:active:scale-[0.98]",
+                      workspace.studioTab === target
+                        ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                        : "border-[var(--border-soft)] bg-white text-[var(--ink)]",
+                    )}
+                  >
+                    <Sparkle size={16} />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
 
-            {activePack.provider === "fallback" && (
+            {activePack.provider === "fallback" && draftProfile.materialsMode !== "self" && (
               <div className="mt-4 rounded-[1.45rem] border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-4 text-sm leading-7 text-[var(--muted)]">
                 These materials were built automatically from your profile. They&apos;re a solid starting point — review and edit before sending.
               </div>

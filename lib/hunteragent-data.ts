@@ -262,6 +262,7 @@ export const initialProfile: Profile = {
   timezone: "Europe/London",
   firstBrief: "now",
   resumeDefaultStyle: "modern",
+  materialsMode: "ai" as const,
 };
 
 export function estimateMinutes(count: number) {

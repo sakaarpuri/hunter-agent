@@ -1025,7 +1025,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                 <div className="mt-5 rounded-[1.6rem] border border-[var(--border-soft)] bg-white p-4 text-sm leading-7 text-[var(--muted)] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
                   {activeBrief.selectedRoleIds.length > 0
                     ? `${activeBrief.selectedRoleIds.length} role${activeBrief.selectedRoleIds.length > 1 ? "s" : ""} selected for ${draftProfile.name.split(" ")[0]}. Materials are being prepared — check your dashboard in about ${estimateMinutes(activeBrief.selectedRoleIds.length)}.`
-                    : `I found ${activeBrief.topRoleIds.length} priority roles and ${activeBrief.roleIds.length - activeBrief.topRoleIds.length} more matches for ${draftProfile.name.split(" ")[0]} today. Reply with the numbers you want prepared.`}
+                    : `I found ${activeBrief.topRoleIds.length} priority roles and ${activeBrief.roleIds.length - activeBrief.topRoleIds.length} wildcards for ${draftProfile.name.split(" ")[0]} today. Reply to the email with numbers 1–${activeBrief.roleIds.length}, or select directly below.`}
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium text-[var(--muted)]">
@@ -1096,10 +1096,10 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                         {/* Reply picker — only shown when no roles selected yet */}
                         {!hasSelected && (
                           <div className="mt-6 rounded-[1.6rem] border border-[var(--border-soft)] bg-white p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-                            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Choose your roles</p>
-                            <p className="mt-1 text-sm text-[var(--muted)]">Type the role numbers or company names you want prepared — just like replying to the email.</p>
+                            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Reply with numbers 1–8</p>
+                            <p className="mt-1 text-sm text-[var(--muted)]">Top picks are 1–5, wildcards are 6–8. Type any combination — this works exactly like replying to the email.</p>
                             <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium">
-                              {["1, 4", "1", "2", "1 and 3", "all of them"].map((sample) => (
+                              {["1", "1, 4", "1–3", "6", "1, 6, 7", "all of them"].map((sample) => (
                                 <button
                                   key={sample}
                                   type="button"

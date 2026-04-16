@@ -90,9 +90,9 @@ export function MockEmailBrief() {
       <div className="mb-5 rounded-[1.4rem] border border-[var(--border-soft)] bg-[var(--surface)]/90 p-4 text-sm leading-6 text-[var(--muted)] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
         <p className="font-medium text-[var(--ink)]">Hi there,</p>
         <p className="mt-2">
-          5 roles matched your profile today, plus 3 wildcards — a mix of stretch
-          picks and surprise roles. Reply with the numbers or names you want me to
-          prepare. Dashboard updates in 2–10 minutes.
+          5 roles matched your profile today, plus 3 wildcards. To choose: just
+          reply with numbers. Top picks are 1–5, wildcards are 6–8. Type something
+          like "1, 4" or "1–3" — that's all you need. Dashboard updates in 2–10 minutes.
         </p>
       </div>
 
@@ -183,9 +183,9 @@ export function MockEmailBrief() {
       <div className="mt-5 flex items-center justify-between gap-4 rounded-[1.4rem] bg-[var(--accent)] px-4 py-3 text-sm font-medium text-white shadow-[0_18px_45px_-28px_rgba(18,108,100,0.9)]">
         <div className="flex items-center gap-2">
           <Sparkle size={16} weight="fill" />
-          Reply to choose roles — full details in your dashboard.
+          Just reply with numbers like "1, 4" or "1–3". Nothing else needed.
         </div>
-        <span className="rounded-full bg-white/14 px-3 py-1 text-xs">Open your dashboard</span>
+        <span className="rounded-full bg-white/14 px-3 py-1 text-xs">Open dashboard →</span>
       </div>
     </div>
   );

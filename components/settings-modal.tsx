@@ -187,6 +187,35 @@ export function SettingsModal() {
           </div>
 
           <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-white p-4">
+            <p className="text-sm font-semibold text-[var(--ink)]">Application materials</p>
+            <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
+              Choose whether HunterAgent writes your CV and cover letter, or you manage your own materials and use the dashboard for tracking.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setDraftProfile((current) => ({ ...current, materialsMode: "ai" as const }))}
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm font-medium",
+                  draftProfile.materialsMode !== "self" ? "bg-[var(--accent)] text-white" : "border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--ink)]",
+                )}
+              >
+                AI writes my materials
+              </button>
+              <button
+                type="button"
+                onClick={() => setDraftProfile((current) => ({ ...current, materialsMode: "self" as const }))}
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm font-medium",
+                  draftProfile.materialsMode === "self" ? "bg-[var(--accent)] text-white" : "border border-[var(--border-strong)] bg-[var(--surface)] text-[var(--ink)]",
+                )}
+              >
+                I manage my own
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-white p-4">
             <p className="text-sm font-semibold text-[var(--ink)]">Recipient and timing</p>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <label className="grid gap-2 text-sm md:col-span-2">

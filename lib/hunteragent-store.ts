@@ -47,6 +47,7 @@ function ensureWorkspaceState(state: WorkspaceState) {
     excludedCompanies: state.profile?.excludedCompanies ?? initialProfile.excludedCompanies,
     specialPreferences: state.profile?.specialPreferences ?? initialProfile.specialPreferences,
     briefsPaused: state.profile?.briefsPaused ?? initialProfile.briefsPaused,
+    materialsMode: state.profile?.materialsMode ?? initialProfile.materialsMode,
   };
   state.roleCatalog = state.roleCatalog?.length ? state.roleCatalog : createInitialWorkspaceState().roleCatalog;
   state.briefs = (state.briefs ?? []).map(normalizeBrief);

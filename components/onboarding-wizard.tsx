@@ -185,6 +185,37 @@ export function OnboardingWizard() {
 
         {draftStep === 2 && (
           <div className="mt-5 grid gap-5 md:grid-cols-2">
+            <div className="grid gap-3 text-sm md:col-span-2">
+              <span className="font-medium text-[var(--ink)]">Application materials</span>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={() => setDraftProfile((current) => ({ ...current, materialsMode: "ai" as const }))}
+                  className={cn(
+                    "rounded-[1.3rem] border p-4 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:scale-[0.98]",
+                    draftProfile.materialsMode !== "self"
+                      ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                      : "border-[var(--border-soft)] bg-white",
+                  )}
+                >
+                  <p className="font-semibold text-[var(--ink)]">AI writes them for me</p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--muted)]">HunterAgent tailors your CV and cover letter to each role you pick. Ready in minutes.</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDraftProfile((current) => ({ ...current, materialsMode: "self" as const }))}
+                  className={cn(
+                    "rounded-[1.3rem] border p-4 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:scale-[0.98]",
+                    draftProfile.materialsMode === "self"
+                      ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                      : "border-[var(--border-soft)] bg-white",
+                  )}
+                >
+                  <p className="font-semibold text-[var(--ink)]">I&apos;ll handle my own</p>
+                  <p className="mt-1 text-xs leading-5 text-[var(--muted)]">Use the dashboard to track applications only. You can still upload your CV and cover letter per role to record what you submitted.</p>
+                </button>
+              </div>
+            </div>
             <label className="grid gap-2 text-sm md:col-span-2">
               <span className="font-medium text-[var(--ink)]">Locations</span>
               <input className="rounded-[1.2rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--ink)] outline-none" placeholder="e.g. London, Remote, Berlin" value={draftProfile.locations} onChange={(event) => setDraftProfile((current) => ({ ...current, locations: event.target.value }))} />
