@@ -157,7 +157,7 @@ export default function Home() {
                   Reply to an email. Your CV is tailored and waiting.
                 </h2>
               </div>
-              <p className="max-w-2xl text-base leading-8 text-[var(--muted)]">
+              <p className="max-w-2xl text-lg leading-8 text-[var(--muted)]">
                 You don&apos;t rewrite your CV for every role. HunterAgent does it for you — automatically, for each job you choose. Your only input is a one-line email reply.
               </p>
             </div>
@@ -177,10 +177,10 @@ export default function Home() {
                           <Icon size={20} weight="duotone" />
                         </div>
                       </div>
-                      <h3 className="mt-5 text-xl font-semibold tracking-tight text-[var(--ink)]">
+                      <h3 className="mt-5 text-2xl font-semibold tracking-tight text-[var(--ink)]">
                         {item.title}
                       </h3>
-                      <p className="mt-3 text-sm leading-7 text-[var(--muted)]">{item.body}</p>
+                      <p className="mt-3 text-base leading-7 text-[var(--muted)]">{item.body}</p>
                     </div>
                   </article>
                 );

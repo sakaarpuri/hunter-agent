@@ -342,9 +342,11 @@ export function FeatureCards() {
 
   // Each card after the first overlaps the previous by 4px
   const OVERLAP = 4;
+  // Card 0 lowest, card 1 middle, card 2 highest (ascending left-to-right)
+  const Y_OFFSETS = [48, 24, 0];
 
   return (
-    <div className="flex">
+    <div className="flex items-end">
       {cards.map((card, index) => (
         <article
           key={card.title}
@@ -356,6 +358,7 @@ export function FeatureCards() {
             flex: "1 1 0",
             minWidth: 0,
             marginLeft: index > 0 ? -OVERLAP : 0,
+            marginBottom: Y_OFFSETS[index],
             transition: entered
               ? `transform 0.78s cubic-bezier(0.16, 1, 0.3, 1) ${index * 280}ms`
               : "none",
