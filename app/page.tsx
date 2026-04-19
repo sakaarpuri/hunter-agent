@@ -20,7 +20,7 @@ const workflow = [
   },
   {
     title: "Reply with the ones you want",
-    body: "Just reply to the email with numbers — \"1, 4\" picks your top choices, \"6\" picks a wildcard. Numbers 1–5 are top picks, 6–8 are wildcards. One-line reply, nothing else needed.",
+    body: "Reply to the email with the job numbers you want — type \"2 and 4\" to pick the second and fourth role. Top picks are 1–5, wildcards are 6–8. The AI builds your CV and cover letter for each one. Done.",
     icon: EnvelopeSimpleOpen,
   },
   {
@@ -138,7 +138,17 @@ export default function Home() {
                   Every morning at your chosen time. Reply with numbers or names — your dashboard does the rest.
                 </p>
               </div>
-              <MockEmailBrief />
+              <div
+                className="reveal-card-brief"
+                style={{
+                  boxShadow:
+                    "10px 3px 0 rgba(18,108,100,0.92), 18px 5px 0 rgba(10,148,128,0.58), 26px 7px 0 rgba(6,182,212,0.28)",
+                  borderRadius: "2rem",
+                  transformOrigin: "center center",
+                }}
+              >
+                <MockEmailBrief />
+              </div>
             </div>
           </div>
         </section>
@@ -295,9 +305,19 @@ export default function Home() {
                 No job board tabs. No copy-pasting CVs. No forgetting to follow up. HunterAgent handles the repetitive parts so you can focus on the conversations that matter.
               </p>
             </div>
-            <div className="overflow-hidden rounded-[2rem]" style={{ height: "calc(720px * 0.72)" }}>
-              <div style={{ transform: "scale(0.72)", transformOrigin: "top left", width: "calc(100% / 0.72)" }}>
-                <DashboardPreview fullPage />
+            <div
+              className="reveal-card-dashboard"
+              style={{
+                boxShadow:
+                  "14px 4px 0 rgba(18,108,100,0.92), 24px 6px 0 rgba(10,148,128,0.58), 32px 8px 0 rgba(6,182,212,0.28)",
+                borderRadius: "2rem",
+                transformOrigin: "center center",
+              }}
+            >
+              <div className="overflow-hidden rounded-[2rem]" style={{ height: "calc(720px * 0.72)" }}>
+                <div style={{ transform: "scale(0.72)", transformOrigin: "top left", width: "calc(100% / 0.72)" }}>
+                  <DashboardPreview fullPage />
+                </div>
               </div>
             </div>
           </div>

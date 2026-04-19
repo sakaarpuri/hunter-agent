@@ -1,41 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import {
-  ArrowClockwise,
-  ArrowLeft,
-  CalendarDots,
-  CaretLeft,
-  CaretRight,
-  CheckCircle,
   ClockCountdown,
-  EnvelopeSimple,
-  Folders,
-  GlobeHemisphereWest,
-  ListChecks,
   MapPin,
   PaperPlaneTilt,
-  Palette,
   PencilSimple,
   Sparkle,
-  Target,
-  UserCircle,
   WarningCircle,
 } from "@phosphor-icons/react";
 import type { AuthUser } from "@/lib/auth";
 import {
-  REMOTE_REGION_OPTIONS,
-  RESUME_STYLES,
-  WORKPLACE_MODE_OPTIONS,
   estimateMinutes,
-  formatAppliedDate,
   formatClock,
   formatRoleCode,
-  getResumeStyle,
   getRoleFromCatalog,
   initialProfile,
-  parsePreferenceList,
 } from "@/lib/hunteragent-data";
 import {
   AppliedRecord,
@@ -52,8 +32,7 @@ import {
   WorkplaceMode,
   WorkspaceState,
 } from "@/lib/hunteragent-types";
-import { buildCvPrintHtml, CvPreview, getCvExportMetadata } from "@/components/cv-preview";
-import { TrustExplanationPanel } from "@/components/trust-explanation-panel";
+import { buildCvPrintHtml, getCvExportMetadata } from "@/components/cv-preview";
 import { buildTrustExplanation } from "@/lib/hunteragent-trust";
 import { HunterAgentProvider } from "@/components/hunteragent-context";
 import { CommandPalette } from "@/components/command-palette";
@@ -64,13 +43,6 @@ import { OnboardingWizard } from "@/components/onboarding-wizard";
 import { ResumeSetupCard } from "@/components/resume-setup-card";
 import { StudioPanel } from "@/components/studio-panel";
 
-const ONBOARDING_STEPS = [
-  { id: 1, label: "Profile" },
-  { id: 2, label: "Preferences" },
-  { id: 3, label: "Resume Setup" },
-  { id: 4, label: "Delivery" },
-] as const;
-
 const PROCESSING_STAGES = [
   "Reading each role's requirements and matching them to your profile",
   "Writing your tailored CV — adjusting emphasis for each role",
@@ -78,8 +50,6 @@ const PROCESSING_STAGES = [
   "Choosing the strongest work samples to include",
   "Finalising and running a quality check",
 ] as const;
-
-const EDIT_PROMPT_SUGGESTIONS = ["Make it more direct", "Focus on growth work", "Sound more senior"] as const;
 
 function cn(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
@@ -526,13 +496,6 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
     if (tab === "cv") return "cv";
     if (tab === "letter") return "letter";
     if (tab === "workSamples") return "workSamples";
-    return "pack";
-  }
-
-  function targetLabel(target: PackTarget) {
-    if (target === "cv") return "CV";
-    if (target === "letter") return "cover letter";
-    if (target === "workSamples") return "work sample reasoning";
     return "pack";
   }
 
@@ -1011,7 +974,7 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
               <div className="rounded-[1.9rem] border border-[var(--border-soft)] bg-[var(--surface)] p-5 shadow-[0_25px_55px_-40px_rgba(18,40,38,0.3)]">
                 <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border-soft)] pb-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Today's roles</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Today&apos;s roles</p>
                     <h3 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--ink)]">
                       Top 5 first, five more in the same email.
                     </h3>
@@ -1096,8 +1059,8 @@ export function HunterAgentFlow({ user }: { user: AuthUser }) {
                         {/* Reply picker — only shown when no roles selected yet */}
                         {!hasSelected && (
                           <div className="mt-6 rounded-[1.6rem] border border-[var(--border-soft)] bg-white p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-                            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Reply with numbers 1–8</p>
-                            <p className="mt-1 text-sm text-[var(--muted)]">Top picks are 1–5, wildcards are 6–8. Type any combination — this works exactly like replying to the email.</p>
+                            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Select by job number</p>
+                            <p className="mt-1 text-sm text-[var(--muted)]">Type the numbers of the roles you want — e.g. &quot;2 and 4&quot; picks the second and fourth job. Top picks are 1–5, wildcards are 6–8. Same as replying to the email.</p>
                             <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium">
                               {["1", "1, 4", "1–3", "6", "1, 6, 7", "all of them"].map((sample) => (
                                 <button

@@ -10,7 +10,7 @@ const CSRF_PROTECTED_PATHS = [
   "/api/follow-up",
 ];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   if (request.method !== "POST" && request.method !== "PUT" && request.method !== "DELETE") {
     return NextResponse.next();
   }
@@ -22,7 +22,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Webhook route is authenticated by signature, not by browser CSRF
+  // Webhook route is authenticated by signature, not by browser CSRF.
   if (pathname.startsWith("/api/agentmail/webhook") || pathname.startsWith("/api/cron/")) {
     return NextResponse.next();
   }

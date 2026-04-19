@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import {
   REMOTE_REGION_OPTIONS,
   WORKPLACE_MODE_OPTIONS,
-  getResumeStyle,
   parsePreferenceList,
 } from "@/lib/hunteragent-data";
 import { useHunterAgent } from "./hunteragent-context";
@@ -30,7 +29,6 @@ export function OnboardingWizard() {
     handleFinishOnboarding,
     toggleWorkplaceMode,
     toggleRemoteRegion,
-    isSavingDraft,
   } = useHunterAgent();
 
   const [cvImporting, setCvImporting] = useState(false);
@@ -78,7 +76,7 @@ export function OnboardingWizard() {
                 <div>
                   <p className="text-sm font-semibold text-[var(--ink)]">Import from CV</p>
                   <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
-                    Upload a PDF or text file and we'll fill in your profile fields automatically.
+                    Upload a PDF or text file and we&apos;ll fill in your profile fields automatically.
                   </p>
                 </div>
                 <label className="cursor-pointer">

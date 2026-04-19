@@ -24,6 +24,12 @@ function extractNumbers(normalizedReply: string) {
   return [...new Set(matches.map((value) => Number(value)))];
 }
 
+function mapReplyPositionsToRoleIds(brief: BriefRecord, positions: number[]) {
+  return positions
+    .filter((position) => position >= 1 && position <= brief.roleIds.length)
+    .map((position) => brief.roleIds[position - 1]);
+}
+
 function findRoleMatches(normalizedReply: string, brief: BriefRecord, roles: Role[]) {
   const haystack = normalizedReply.toLowerCase();
   const selectedRoleIds = new Set<number>();
@@ -71,11 +77,16 @@ export function parseInboundReply(brief: BriefRecord, rawText: string, roles: Ro
     };
   }
 
-  const numericSelections = extractNumbers(normalizedReply).filter((id) => brief.roleIds.includes(id));
+  const numericSelections = mapReplyPositionsToRoleIds(brief, extractNumbers(normalizedReply));
   const fuzzyMatches = findRoleMatches(normalizedReply, brief, roles);
 
   const selectedRoleIds = [...new Set([...numericSelections, ...fuzzyMatches.selectedRoleIds])].sort((a, b) => a - b);
-  const matchedLabels = [...new Set([...selectedRoleIds.map((id) => `#${id}`), ...fuzzyMatches.matchedLabels])];
+  const matchedLabels = [...new Set([
+    ...extractNumbers(normalizedReply)
+      .filter((position) => position >= 1 && position <= brief.roleIds.length)
+      .map((position) => `#${position}`),
+    ...fuzzyMatches.matchedLabels,
+  ])];
 
   return {
     normalizedReply,

@@ -263,5 +263,14 @@ export async function discoverRoles(profile: Profile): Promise<{ roles: Role[]; 
     .sort((left, right) => scoreRole(right, profile) - scoreRole(left, profile))
     .slice(0, 10);
 
-  return { roles: fallbackRoles, usedFallback: true };
+  if (fallbackRoles.length > 0) {
+    return { roles: fallbackRoles, usedFallback: true };
+  }
+
+  return {
+    roles: DAILY_ROLES.map((role) => ({ ...role }))
+      .sort((left, right) => scoreRole(right, profile) - scoreRole(left, profile))
+      .slice(0, 10),
+    usedFallback: true,
+  };
 }

@@ -37,9 +37,19 @@ function buildBriefSubject() {
   return "Your 10 matched roles for today";
 }
 
+function getOrderedBriefRoles(brief: BriefRecord, roles: Role[]) {
+  return brief.roleIds
+    .map((id, index) => {
+      const role = roles.find((item) => item.id === id);
+      return role ? { role, position: index + 1 } : null;
+    })
+    .filter(Boolean) as Array<{ role: Role; position: number }>;
+}
+
 function buildBriefText(brief: BriefRecord, profile: Profile, roles: Role[]) {
-  const topRoles = roles.filter((role) => brief.topRoleIds.includes(role.id));
-  const moreRoles = roles.filter((role) => brief.roleIds.includes(role.id) && !brief.topRoleIds.includes(role.id));
+  const orderedRoles = getOrderedBriefRoles(brief, roles);
+  const topRoles = orderedRoles.filter(({ role }) => brief.topRoleIds.includes(role.id));
+  const moreRoles = orderedRoles.filter(({ role }) => !brief.topRoleIds.includes(role.id));
   const lines = [
     `Hi ${profile.name || "there"},`,
     "",
@@ -52,16 +62,16 @@ function buildBriefText(brief: BriefRecord, profile: Profile, roles: Role[]) {
     "",
   ];
 
-  for (const role of topRoles) {
-    lines.push(`${role.id}. ${role.title} — ${role.company}`);
+  for (const { role, position } of topRoles) {
+    lines.push(`${position}. ${role.title} — ${role.company}`);
     lines.push(`   ${role.location} / ${role.employment}`);
     lines.push(`   Why it fits: ${role.fit}`);
     lines.push("");
   }
 
   lines.push("More from today’s shortlist", "");
-  for (const role of moreRoles) {
-    lines.push(`${role.id}. ${role.title} — ${role.company}`);
+  for (const { role, position } of moreRoles) {
+    lines.push(`${position}. ${role.title} — ${role.company}`);
   }
 
   lines.push(
@@ -88,12 +98,13 @@ function buildBriefText(brief: BriefRecord, profile: Profile, roles: Role[]) {
 }
 
 function buildBriefHtml(brief: BriefRecord, profile: Profile, roles: Role[]) {
-  const topRoles = roles.filter((role) => brief.topRoleIds.includes(role.id));
-  const moreRoles = roles.filter((role) => brief.roleIds.includes(role.id) && !brief.topRoleIds.includes(role.id));
+  const orderedRoles = getOrderedBriefRoles(brief, roles);
+  const topRoles = orderedRoles.filter(({ role }) => brief.topRoleIds.includes(role.id));
+  const moreRoles = orderedRoles.filter(({ role }) => !brief.topRoleIds.includes(role.id));
   const appBaseUrl = getAppBaseUrl();
 
-  const renderRole = (role: Role, compact = false) => {
-    const title = `${role.id}. ${role.title} — ${role.company}`;
+  const renderRole = (role: Role, position: number, compact = false) => {
+    const title = `${position}. ${role.title} — ${role.company}`;
     if (compact) {
       return `<li style="margin:0 0 8px 0;">${escapeHtml(title)}</li>`;
     }
@@ -120,11 +131,11 @@ function buildBriefHtml(brief: BriefRecord, profile: Profile, roles: Role[]) {
       </div>
       <div style="padding:24px 28px;">
         <h2 style="margin:0 0 14px 0;font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#5c6a67;">Top picks</h2>
-        ${topRoles.map((role) => renderRole(role)).join("")}
+        ${topRoles.map(({ role, position }) => renderRole(role, position)).join("")}
 
         <h2 style="margin:22px 0 14px 0;font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:#5c6a67;">More from today’s shortlist</h2>
         <ul style="padding-left:20px;margin:0;color:#1f2d2b;font-size:14px;line-height:1.7;">
-          ${moreRoles.map((role) => renderRole(role, true)).join("")}
+          ${moreRoles.map(({ role, position }) => renderRole(role, position, true)).join("")}
         </ul>
 
         <div style="margin-top:24px;padding:16px 18px;border-radius:18px;background:#f3faf7;border:1px solid #d8ede5;">

@@ -31,7 +31,6 @@ export function CommandPalette({ commands, onClose }: Props) {
       cmd.description?.toLowerCase().includes(query.toLowerCase()),
   );
 
-  useEffect(() => { setActiveIndex(0); }, [query]);
   useEffect(() => { inputRef.current?.focus(); }, []);
 
   function handleKey(event: React.KeyboardEvent) {
@@ -59,7 +58,10 @@ export function CommandPalette({ commands, onClose }: Props) {
           <input
             ref={inputRef}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setActiveIndex(0);
+            }}
             placeholder="Search commands…"
             className="flex-1 bg-transparent text-sm text-[var(--ink)] outline-none placeholder:text-[var(--muted)]"
           />

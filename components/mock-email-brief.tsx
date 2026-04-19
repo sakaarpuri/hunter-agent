@@ -70,8 +70,13 @@ const wildcardRoles = [
 
 export function MockEmailBrief() {
   return (
-    <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-[rgba(255,255,255,0.8)] p-6 shadow-[0_24px_80px_-30px_rgba(27,58,53,0.25)] backdrop-blur-md sm:p-7">
+    <div
+      className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-[rgba(255,255,255,0.8)] p-6 shadow-[0_24px_80px_-30px_rgba(27,58,53,0.25)] backdrop-blur-md sm:p-7"
+      style={{ maxHeight: "50rem" }}
+    >
       <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-white/80" />
+
+      {/* Header */}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-soft)] pb-4">
         <div>
           <p className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
@@ -87,16 +92,19 @@ export function MockEmailBrief() {
         </div>
       </div>
 
+      {/* Body text */}
       <div className="mb-5 rounded-[1.4rem] border border-[var(--border-soft)] bg-[var(--surface)]/90 p-4 text-sm leading-6 text-[var(--muted)] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
         <p className="font-medium text-[var(--ink)]">Hi there,</p>
         <p className="mt-2">
-          5 roles matched your profile today, plus 3 wildcards. To choose: just
-          reply with numbers. Top picks are 1–5, wildcards are 6–8. Type something
-          like "1, 4" or "1–3" — that's all you need. Dashboard updates in 2–10 minutes.
+          5 roles matched your profile today, plus 3 wildcards. To select any of
+          them, just reply to this email with the job numbers — for example, type
+          &quot;2 and 4&quot; to pick the second and fourth role. The AI builds your CV and
+          cover letter for those two and they&apos;ll be waiting in your dashboard within
+          minutes. Top picks are numbered 1–5, wildcards 6–8.
         </p>
       </div>
 
-      {/* Top 5 */}
+      {/* Top picks — show 3 full + 4th peeking */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
@@ -107,7 +115,7 @@ export function MockEmailBrief() {
             <ArrowRight size={14} />
           </div>
         </div>
-        {topRoles.map((role, index) => (
+        {topRoles.slice(0, 4).map((role, index) => (
           <article
             key={role.id}
             className="group rounded-[1.4rem] border border-[var(--border-soft)] bg-white/95 p-3 shadow-[0_18px_45px_-36px_rgba(14,34,32,0.45)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5"
@@ -139,7 +147,7 @@ export function MockEmailBrief() {
         ))}
       </div>
 
-      {/* 3 wildcards */}
+      {/* Wildcards — show 1 full + 2nd peeking */}
       <div className="mt-4 space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-amber-600">
@@ -148,7 +156,7 @@ export function MockEmailBrief() {
           </div>
           <p className="text-[10px] text-[var(--muted)]">Stretch picks — reply with 6, 7, or 8</p>
         </div>
-        {wildcardRoles.map((role, index) => (
+        {wildcardRoles.slice(0, 2).map((role, index) => (
           <article
             key={role.id}
             className="group rounded-[1.4rem] border border-amber-100 bg-amber-50/60 p-3 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5"
@@ -180,13 +188,14 @@ export function MockEmailBrief() {
         ))}
       </div>
 
-      <div className="mt-5 flex items-center justify-between gap-4 rounded-[1.4rem] bg-[var(--accent)] px-4 py-3 text-sm font-medium text-white shadow-[0_18px_45px_-28px_rgba(18,108,100,0.9)]">
-        <div className="flex items-center gap-2">
-          <Sparkle size={16} weight="fill" />
-          Just reply with numbers like "1, 4" or "1–3". Nothing else needed.
-        </div>
-        <span className="rounded-full bg-white/14 px-3 py-1 text-xs">Open dashboard →</span>
-      </div>
+      {/* Gradient fade — trails off at the bottom */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-40"
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.97) 100%)",
+        }}
+      />
     </div>
   );
 }

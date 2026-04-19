@@ -332,13 +332,13 @@ const cards = [
 // ─── Inline card grid (no section wrapper — embeds in hero right col) ──────────
 
 export function FeatureCards() {
-  const [entered, setEntered] = useState(false);
+  const [entered, setEntered] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
 
   useEffect(() => {
-    if (window.innerWidth < 768) { setEntered(true); return; }
+    if (entered) return;
     const t = setTimeout(() => setEntered(true), 120);
     return () => clearTimeout(t);
-  }, []);
+  }, [entered]);
 
   // Each card after the first overlaps the previous by 4px
   const OVERLAP = 4;
@@ -390,18 +390,14 @@ export function FeatureCards() {
 export function FeatureShowcase() {
   // Once `entered` flips true each card transitions to its final TILT position.
   // Card 0 starts at final position; cards 1 & 2 start stacked behind card 0.
-  const [entered, setEntered] = useState(false);
+  const [entered, setEntered] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
 
   useEffect(() => {
-    // On mobile (single-column grid) skip the slide animation entirely
-    if (window.innerWidth < 768) {
-      setEntered(true);
-      return;
-    }
+    if (entered) return;
     // Short pause so the user sees card 0 before the others slide out
     const t = setTimeout(() => setEntered(true), 120);
     return () => clearTimeout(t);
-  }, []);
+  }, [entered]);
 
   return (
     <section className="px-4 pb-6 pt-3 sm:px-6 lg:px-8">

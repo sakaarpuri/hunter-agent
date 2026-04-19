@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { AuthError, clearSessionCookie, requireUser } from "@/lib/auth";
+import { clearSessionCookie, requireUser } from "@/lib/auth";
 import { deleteUser, getUserById } from "@/lib/db";
 
 export const runtime = "nodejs";

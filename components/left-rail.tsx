@@ -18,7 +18,7 @@ import {
   Target,
   UserCircle,
 } from "@phosphor-icons/react";
-import { getResumeStyle, formatClock } from "@/lib/hunteragent-data";
+import { getResumeStyle } from "@/lib/hunteragent-data";
 import { useHunterAgent } from "./hunteragent-context";
 
 function cn(...parts: Array<string | false | null | undefined>) {
