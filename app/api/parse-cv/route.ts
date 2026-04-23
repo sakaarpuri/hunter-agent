@@ -21,38 +21,63 @@ async function extractTextFromFile(file: File): Promise<string> {
   return new TextDecoder().decode(bytes);
 }
 
+function heuristicProfileFromText(text: string): Record<string, unknown> {
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+
+  const nameLine = lines.find((l) => l.length < 60 && !/^(summary|profile|experience|education|skills|work|contact|objective)/i.test(l)) ?? "";
+  const titleLine = lines.filter((l) => l !== nameLine && l.length < 80 && !/^(summary|profile|experience|education|skills|work|contact)/i.test(l))[0] ?? "";
+
+  const summaryIdx = lines.findIndex((l) => /^(summary|professional summary|profile|objective|about)/i.test(l));
+  const coreStrength = summaryIdx !== -1
+    ? lines.slice(summaryIdx + 1, summaryIdx + 4).join(" ").slice(0, 200)
+    : "";
+
+  const expIdx = lines.findIndex((l) => /^(experience|work experience|employment)/i.test(l));
+  const targetRoles: string[] = [];
+  if (expIdx !== -1) {
+    for (const l of lines.slice(expIdx + 1, expIdx + 10)) {
+      if (l.length < 70 && /designer|developer|manager|lead|strategist|writer|marketer|analyst|engineer/i.test(l)) {
+        targetRoles.push(l);
+        if (targetRoles.length >= 2) break;
+      }
+    }
+  }
+
+  return { name: nameLine, currentTitle: titleLine, targetRoles, locations: "", coreStrength };
+}
+
+function extractJsonObject(raw: string) {
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced?.[1]) {
+    return fenced[1].trim();
+  }
+
+  const firstBrace = raw.indexOf("{");
+  const lastBrace = raw.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    return raw.slice(firstBrace, lastBrace + 1);
+  }
+
+  return raw.trim();
+}
+
+function profileLooksUseful(profile: Record<string, unknown>) {
+  const fields = [
+    typeof profile.name === "string" ? profile.name.trim() : "",
+    typeof profile.currentTitle === "string" ? profile.currentTitle.trim() : "",
+    typeof profile.locations === "string" ? profile.locations.trim() : "",
+    typeof profile.coreStrength === "string" ? profile.coreStrength.trim() : "",
+    Array.isArray(profile.targetRoles) ? profile.targetRoles.filter(Boolean).join(" ").trim() : "",
+  ];
+
+  return fields.some(Boolean);
+}
+
 async function parseProfileFromText(text: string): Promise<Record<string, unknown>> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
   if (!apiKey) {
-    // Heuristic fallback without AI — extract meaningful fields from raw text
-    const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
-
-    // Name: first short line (likely a header) — not a section label
-    const nameLine = lines.find((l) => l.length < 60 && !/^(summary|profile|experience|education|skills|work|contact|objective)/i.test(l)) ?? "";
-
-    // Current title: second distinct short line
-    const titleLine = lines.filter((l) => l !== nameLine && l.length < 80 && !/^(summary|profile|experience|education|skills|work|contact)/i.test(l))[0] ?? "";
-
-    // Core strength: look for a SUMMARY / PROFILE / OBJECTIVE section body
-    const summaryIdx = lines.findIndex((l) => /^(summary|professional summary|profile|objective|about)/i.test(l));
-    const coreStrength = summaryIdx !== -1
-      ? lines.slice(summaryIdx + 1, summaryIdx + 4).join(" ").slice(0, 200)
-      : "";
-
-    // Target roles: look for job titles in an EXPERIENCE section
-    const expIdx = lines.findIndex((l) => /^(experience|work experience|employment)/i.test(l));
-    const targetRoles: string[] = [];
-    if (expIdx !== -1) {
-      for (const l of lines.slice(expIdx + 1, expIdx + 10)) {
-        if (l.length < 70 && /designer|developer|manager|lead|strategist|writer|marketer|analyst|engineer/i.test(l)) {
-          targetRoles.push(l);
-          if (targetRoles.length >= 2) break;
-        }
-      }
-    }
-
-    return { name: nameLine, currentTitle: titleLine, targetRoles, locations: "", coreStrength };
+    return heuristicProfileFromText(text);
   }
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -94,9 +119,10 @@ ${text.slice(0, 4000)}`,
   const raw = data.content[0]?.text ?? "{}";
 
   try {
-    return JSON.parse(raw) as Record<string, unknown>;
+    const parsed = JSON.parse(extractJsonObject(raw)) as Record<string, unknown>;
+    return profileLooksUseful(parsed) ? parsed : heuristicProfileFromText(text);
   } catch {
-    return {};
+    return heuristicProfileFromText(text);
   }
 }
 
