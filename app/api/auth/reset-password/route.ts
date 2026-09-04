@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { getPasswordResetTokenByHash, deletePasswordResetToken, updateUserPassword } from "@/lib/db";
+import { resetUserPasswordWithToken } from "@/lib/db";
 import { validatePassword } from "@/lib/auth";
+import { allowAuthAttempt, clientAddress } from "@/lib/auth-rate-limit";
 import bcrypt from "bcryptjs";
 
 function hashToken(token: string) {
@@ -23,21 +24,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const allowed = await allowAuthAttempt("password-reset", clientAddress(request), 10, 15 * 60);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Too many reset attempts. Try again in 15 minutes." },
+        { status: 429, headers: { "retry-after": "900" } },
+      );
+    }
+
     const tokenHash = hashToken(token);
-    const row = await getPasswordResetTokenByHash(tokenHash);
-
-    if (!row) {
-      return NextResponse.json({ error: "Reset link is invalid or has already been used." }, { status: 400 });
-    }
-
-    if (row.expires_at <= new Date().toISOString()) {
-      await deletePasswordResetToken(tokenHash);
-      return NextResponse.json({ error: "Reset link has expired. Request a new one." }, { status: 400 });
-    }
-
     const passwordHash = await bcrypt.hash(password, 10);
-    await updateUserPassword(row.user_id, passwordHash, new Date().toISOString());
-    await deletePasswordResetToken(tokenHash);
+    const now = new Date().toISOString();
+    const reset = await resetUserPasswordWithToken(tokenHash, passwordHash, now, now);
+    if (!reset) {
+      return NextResponse.json({ error: "Reset link is invalid or has expired." }, { status: 400 });
+    }
 
     return NextResponse.json({ ok: true });
   } catch {

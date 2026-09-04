@@ -2,6 +2,21 @@ import { Profile, WorkspaceState } from "@/lib/hunteragent-types";
 
 export const CRON_CADENCE_MINUTES = 15;
 
+// Discovery and delivery are independent. An initial search is allowed on any
+// day; subsequent default searches run Monday/Wednesday/Friday in local time.
+export function shouldDiscoverNow(profile: Profile, lastDiscoveryAt?: string | null, now = new Date()) {
+  if (profile.briefsPaused) return false;
+  if (!lastDiscoveryAt) return true;
+  const last = new Date(lastDiscoveryAt);
+  if (!Number.isFinite(last.getTime())) return true;
+  if (last.getTime() >= now.getTime()) return false;
+  if (dayKeyFor(last, profile.timezone) === dayKeyFor(now, profile.timezone)) return false;
+  if (profile.discoveryCadence === "daily") return true;
+  const local = getLocalParts(now, profile.timezone);
+  const weekday = new Date(Date.UTC(local.year, local.month - 1, local.day)).getUTCDay();
+  return [1, 3, 5].includes(weekday);
+}
+
 function getLocalParts(date: Date, timeZone: string) {
   const formatter = new Intl.DateTimeFormat("en-GB", {
     timeZone,

@@ -6,14 +6,34 @@ import type {
   ProofMode, ResumeStyleId, Role, StudioTab, Tone, WorkspaceState,
 } from "@/lib/hunteragent-types";
 import type { buildTrustExplanation } from "@/lib/hunteragent-trust";
+import { JOB_RETENTION_MS } from "@/lib/hunteragent-retention";
+
+export function suggestionExpiry(role: Role, now: number) {
+  const firstSeen = Date.parse(role.firstSeenAt ?? "");
+  const explicitExpiry = Date.parse(role.expiresAt ?? "");
+  const expires = Math.min(
+    Number.isFinite(firstSeen) ? firstSeen + JOB_RETENTION_MS : Infinity,
+    Number.isFinite(explicitExpiry) ? explicitExpiry : Infinity,
+  );
+  if (!Number.isFinite(expires)) return { expired: true, label: "Expiry unavailable; not selectable", expires: null };
+  return {
+    expired: expires <= now,
+    label: expires <= now
+      ? "Suggestion expired"
+      : `Suggestion expires ${new Date(expires).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`,
+    expires: new Date(expires).toISOString(),
+  };
+}
 
 export type TrustExplanation = ReturnType<typeof buildTrustExplanation>;
 
 export type HunterAgentContextValue = {
   // Auth
   user: AuthUser;
+  isDesignPreview?: boolean;
   // Workspace state
   workspace: WorkspaceState;
+  currentTime: number;
   draftProfile: Profile;
   setDraftProfile: React.Dispatch<React.SetStateAction<Profile>>;
   draftStep: number;
@@ -77,7 +97,7 @@ export type HunterAgentContextValue = {
   handleSuggestionClick: (suggestion: string) => void;
   handleEditCurrentTabOnly: () => void;
   handleClearPrompt: () => void;
-  handleInboundReplySubmit: () => Promise<void>;
+  handleInboundReplySubmit: (options?: { prepareMaterials?: boolean }) => Promise<void>;
   handleToneChange: (tone: Tone) => Promise<void>;
   handleStudioTab: (tab: StudioTab) => Promise<void>;
   handleCvViewMode: (mode: CvViewMode) => Promise<void>;

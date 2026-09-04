@@ -147,11 +147,11 @@ export function clearSessionCookie(response: NextResponse) {
 }
 
 export async function getCurrentUser(requestIp?: string | null) {
-  await pruneExpiredSessions(new Date().toISOString());
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (!token) return null;
 
+  await pruneExpiredSessions(new Date().toISOString());
   const session = await getSessionByTokenHash(hashToken(token));
   if (!session) return null;
 

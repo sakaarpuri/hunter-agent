@@ -1,0 +1,142 @@
+{
+  "title": "HunterAgent / Find your what if",
+  "durationSeconds": 18,
+  "heroPreview": {
+    "durationSeconds": 18,
+    "format": "1280x720",
+    "bytes": 1000315,
+    "posterBytes": 96849,
+    "clipIndices": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "audio": false,
+    "loop": true,
+    "renderScript": "scripts/build-hero-film.mjs",
+    "asset": "public/films/what-if-hero.mp4",
+    "poster": "public/films/what-if-hero-poster.jpg",
+    "treatment": "Four three-second career scenes, three-second reflection, three-second closing. Quarter-second crossfades, including the preview loop. Portrait boardroom composition is baked into a fixed canvas. Shared frame-synchronized HTML copy. No public production labels.",
+    "story": "media/what-if/story.json",
+    "portrait": {
+      "format": "540x960",
+      "bytes": 744607,
+      "asset": "public/films/what-if-hero-portrait.mp4"
+    }
+  },
+  "fps": 24,
+  "fullFilmRenderScript": "scripts/build-full-film.mjs",
+  "fullFilmTreatment": "Original copy, editorial layouts, animated title entrances, underlines and brand graphics. Three-second scenes, three-second reading hold, quarter-second full-composition dissolves. No production labels in public exports.",
+  "formats": [
+    "1920x1080",
+    "1080x1920"
+  ],
+  "footageModel": "kling3_0",
+  "imageModelRequested": "nano_banana_pro",
+  "imageModelReported": "nano_banana_2",
+  "reference": "https://www.youtube.com/watch?v=ROF2Nv_KjOM",
+  "referenceUse": "Pacing and graphic inserts only; no source footage, audio, logos or scripts reused.",
+  "stills": [
+    {
+      "index": 1,
+      "job_id": "36499edd-f32b-4946-b469-1b8f66635fc3",
+      "status": "completed",
+      "type": "image",
+      "model": "nano_banana_2",
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37vFb6Uj9Ah6AcGH1Xlj8BJwLku/hf_20260902_213725_36499edd-f32b-4946-b469-1b8f66635fc3.png"
+    },
+    {
+      "index": 2,
+      "job_id": "6641e1d2-38e5-4e9a-a317-d7c1f6720054",
+      "status": "completed",
+      "type": "image",
+      "model": "nano_banana_2",
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37vFb6Uj9Ah6AcGH1Xlj8BJwLku/hf_20260902_213619_6641e1d2-38e5-4e9a-a317-d7c1f6720054.png"
+    },
+    {
+      "index": 3,
+      "job_id": "4ad5f4c5-b0bf-4dec-aaf3-7f8eca607559",
+      "status": "completed",
+      "type": "image",
+      "model": "nano_banana_2",
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37vFb6Uj9Ah6AcGH1Xlj8BJwLku/hf_20260902_213619_4ad5f4c5-b0bf-4dec-aaf3-7f8eca607559.png"
+    },
+    {
+      "index": 4,
+      "job_id": "a5bb250c-3197-421b-a65f-41291a932b99",
+      "status": "completed",
+      "type": "image",
+      "model": "nano_banana_2",
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37vFb6Uj9Ah6AcGH1Xlj8BJwLku/hf_20260902_213620_a5bb250c-3197-421b-a65f-41291a932b99.png"
+    }
+  ],
+  "clips": [
+    {
+      "index": 1,
+      "job_id": "76eeb269-ec7d-4dbe-a167-69f8ae98aa99",
+      "status": "completed",
+      "type": "video",
+      "model": "kling3_0",
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37vFb6Uj9Ah6AcGH1Xlj8BJwLku/hf_20260902_214005_76eeb269-ec7d-4dbe-a167-69f8ae98aa99.mp4",
+      "thumbnail_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37vFb6Uj9Ah6AcGH1Xlj8BJwLku/hf_20260902_213725_36499edd-f32b-4946-b469-1b8f66635fc3.png"
+    },
+    {
+      "index": 2,
+      "job_id": "246d8145-a1a3-426a-b3d2-d5f0bc6cce53",
+      "status": "completed",
+      "type": "video",
+      "model": "kling3_0",
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37vFb6Uj9Ah6AcGH1Xlj8BJwLku/hf_20260902_214005_246d8145-a1a3-426a-b3d2-d5f0bc6cce53.mp4",
+      "thumbnail_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37vFb6Uj9Ah6AcGH1Xlj8BJwLku/hf_20260902_213619_6641e1d2-38e5-4e9a-a317-d7c1f6720054.png"
+    },
+    {
+      "index": 3,
+      "job_id": "9df88538-d8d2-4182-ad30-48c16db545fc",
+      "status": "completed",
+      "type": "video",
+      "model": "kling3_0",
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37vFb6Uj9Ah6AcGH1Xlj8BJwLku/hf_20260902_214005_9df88538-d8d2-4182-ad30-48c16db545fc.mp4",
+      "thumbnail_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37vFb6Uj9Ah6AcGH1Xlj8BJwLku/hf_20260902_213619_4ad5f4c5-b0bf-4dec-aaf3-7f8eca607559.png"
+    },
+    {
+      "index": 4,
+      "job_id": "875b270a-d3e1-4451-8ba1-613bba89074b",
+      "status": "completed",
+      "type": "video",
+      "model": "kling3_0",
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37vFb6Uj9Ah6AcGH1Xlj8BJwLku/hf_20260903_152110_875b270a-d3e1-4451-8ba1-613bba89074b.mp4",
+      "treatment": "Woman leading a Seoul board meeting, six attentive directors around the table. Five seconds, pro mode, no generated audio."
+    }
+  ],
+  "disclaimer": "AI-created illustrative career scenes. Not advertised vacancies.",
+  "audio": "Licensed energetic EDM/pop excerpt: Take this Higher by Michael Ramir C. (Mixkit). Edited for 18 seconds at 120 BPM with visual cuts every six beats. Replaces the previous original piano/strings experiment. No narration. See music.json and MUSIC-LICENSE.md.",
+  "supersededClips": [
+    {
+      "index": 4,
+      "job_id": "5e3f78e2-e351-46d9-8efc-e9022a71b7e1",
+      "status": "completed",
+      "type": "video",
+      "model": "kling3_0",
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37vFb6Uj9Ah6AcGH1Xlj8BJwLku/hf_20260902_214005_5e3f78e2-e351-46d9-8efc-e9022a71b7e1.mp4",
+      "thumbnail_url": "https://d8j0ntlcm91z4.cloudfront.net/user_37vFb6Uj9Ah6AcGH1Xlj8BJwLku/hf_20260902_213620_a5bb250c-3197-421b-a65f-41291a932b99.png",
+      "replacedBecause": "Window-gazing was ambiguous; replaced with a woman leading a board meeting."
+    }
+  ],
+  "timing": "media/what-if/timing.json",
+  "scoreRenderScript": "scripts/build-film-score.mjs",
+  "music": {
+    "title": "Take this Higher",
+    "artist": "Michael Ramir C.",
+    "provider": "Mixkit",
+    "sourceUrl": "https://assets.mixkit.co/music/1012/1012.mp3",
+    "catalogUrl": "https://mixkit.co/free-stock-music/mood/euphoric/",
+    "licenseUrl": "https://mixkit.co/license/#musicFree",
+    "sha256": "af69c3c7f5a41d7abe46121ee33eb2db6d8ad831c9277e8ec59bfcf867da772f",
+    "sourceBpm": 124,
+    "sourceStartSeconds": 61.437,
+    "fadeOutSeconds": 0.45,
+    "treatment": "Energetic EDM/pop excerpt, entering on the established drum groove rather than the slow intro. Slight tempo adjustment for 120 BPM video synchronization; each visual cut is six beats apart. Not a standalone music release.",
+    "verifiedOn": "2026-09-03"
+  }
+}

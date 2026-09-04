@@ -83,7 +83,7 @@ export function MockEmailBrief() {
             Daily brief
           </p>
           <h3 className="mt-2 text-lg font-semibold tracking-tight text-[var(--ink)]">
-            5 top roles + 3 wildcards today
+            Up to 3 standout roles today
           </h3>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--muted)] shadow-sm">
@@ -96,11 +96,10 @@ export function MockEmailBrief() {
       <div className="mb-5 rounded-[1.4rem] border border-[var(--border-soft)] bg-[var(--surface)]/90 p-4 text-sm leading-6 text-[var(--muted)] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
         <p className="font-medium text-[var(--ink)]">Hi there,</p>
         <p className="mt-2">
-          5 roles matched your profile today, plus 3 wildcards. To select any of
-          them, just reply to this email with the job numbers — for example, type
-          &quot;2 and 4&quot; to pick the second and fourth role. The AI builds your CV and
-          cover letter for those two and they&apos;ll be waiting in your dashboard within
-          minutes. Top picks are numbered 1–5, wildcards 6–8.
+          These new roles stood out against your experience and preferences. To
+          select any of them, reply with the job numbers — for example, type
+          &quot;1 and 3&quot;. Nothing is prepared until you choose to create materials in
+          your dashboard.
         </p>
       </div>
 

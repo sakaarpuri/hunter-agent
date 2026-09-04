@@ -1,0 +1,8 @@
+[
+  { "start": 0, "duration": 3, "lines": ["What if this", "was work?"], "label": "ARCTIC CIRCLE / PHOTOGRAPHER & GUIDE", "clipIndex": 1 },
+  { "start": 3, "duration": 3, "lines": ["Less", "ordinary."], "label": "MALDIVES / OCEAN SCIENCE", "clipIndex": 2 },
+  { "start": 6, "duration": 3, "lines": ["More", "life."], "label": "REMOTE / ROOM FOR LIFE", "clipIndex": 3 },
+  { "start": 9, "duration": 3, "lines": ["Or something", "bigger."], "label": "SEOUL / EXECUTIVE LEADERSHIP", "clipIndex": 4 },
+  { "start": 12, "duration": 3, "lines": ["Your next job", "could change", "more than your job."], "label": "HUNTERAGENT", "ending": true, "reflection": true },
+  { "start": 15, "duration": 3, "lines": ["Find your", "what if."], "label": "DREAM-JOB POSSIBILITIES. IN YOUR INBOX.", "ending": true }
+]
