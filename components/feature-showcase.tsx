@@ -309,8 +309,8 @@ const cards = [
   {
     scene: <EnvelopeScene />,
     label: "Daily brief",
-    title: "5 roles, 8:00 AM sharp",
-    body: "Your top matches land in your inbox every morning. No job board tabs.",
+    title: "Up to 3 roles, at your time",
+    body: "AI searches daily and emails only genuine new matches. No job board tabs.",
     typingDelay: 500,
   },
   {

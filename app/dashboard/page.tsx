@@ -5,16 +5,21 @@ import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mode?: string }>;
+}) {
   const user = await getCurrentUser();
 
   if (!user) {
-    return <AuthPanel />;
+    const { mode } = await searchParams;
+    return <AuthPanel initialMode={mode === "signin" ? "signin" : "signup"} />;
   }
 
   return (
-    <main className="px-4 py-5 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-[1400px]">
+    <main>
+      <div>
         <ErrorBoundary>
           <HunterAgentFlow user={user} />
         </ErrorBoundary>

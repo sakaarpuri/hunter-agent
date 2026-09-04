@@ -2,303 +2,192 @@
 
 import { useState } from "react";
 import {
-  ArrowClockwise,
-  CalendarDots,
   CaretLeft,
   CaretRight,
   EnvelopeSimple,
-  Folders,
-  GlobeHemisphereWest,
+  FileText,
+  ClockCounterClockwise,
   ListChecks,
-  MagnifyingGlass,
-  Palette,
-  PencilSimple,
+  GearSix,
   SignOut,
-  Sparkle,
-  Target,
-  UserCircle,
+  MagnifyingGlass,
 } from "@phosphor-icons/react";
-import { getResumeStyle } from "@/lib/hunteragent-data";
-import { useHunterAgent } from "./hunteragent-context";
+import { Brand } from "@/components/brand";
+import { suggestionExpiry, useHunterAgent } from "./hunteragent-context";
 
-function cn(...parts: Array<string | false | null | undefined>) {
-  return parts.filter(Boolean).join(" ");
-}
+export type WorkspaceView = "brief" | "studio" | "applications";
 
-type NavItem = {
-  label: string;
-  icon: typeof ListChecks;
-  active: boolean;
-  action?: () => void;
-};
-
-const BRIEF_PAGE_SIZE = 8;
-
-export function LeftRail() {
+export function LeftRail({
+  view,
+  onNavigate,
+}: {
+  view: WorkspaceView;
+  onNavigate: (view: WorkspaceView) => void;
+}) {
   const {
     workspace,
+    currentTime,
     draftProfile,
-    handleReset,
     handleLeftRailToggle,
     handleSetActiveBrief,
     user,
     setIsSettingsOpen,
     handleSignOut,
   } = useHunterAgent();
-
-  const [briefSearch, setBriefSearch] = useState("");
-  const [briefPage, setBriefPage] = useState(1);
-  const [showBriefs, setShowBriefs] = useState(false);
-
-  const navItems: NavItem[] = [
-    { label: "Setup", icon: ListChecks, active: workspace.flowPhase === "onboarding" },
-    { label: "Today", icon: EnvelopeSimple, active: ["waiting", "brief", "processing"].includes(workspace.flowPhase) },
-    { label: "Studio", icon: Sparkle, active: workspace.flowPhase === "studio" },
-    { label: "Applied", icon: Folders, active: (workspace.appliedRecords.length ?? 0) > 0 },
-    { label: "Follow Up", icon: CalendarDots, active: (workspace.appliedRecords.some((item) => item.followUp !== "off") ?? false) },
-    { label: "Reset", icon: ArrowClockwise, active: false, action: handleReset },
+  const [search, setSearch] = useState("");
+  const collapsed = workspace.leftRailCollapsed;
+  const items = [
+    {
+      label: "Your brief",
+      icon: EnvelopeSimple,
+      view: "brief" as const,
+      count:
+        workspace.briefs.find((b) => b.id === workspace.activeBriefId)
+          ?.topRoleIds.filter((id) => {
+            const role = workspace.roleCatalog.find((item) => item.id === id);
+            return role && !suggestionExpiry(role, currentTime).expired && !workspace.appliedRecords.some((record) => record.roleId === id);
+          }).length ?? 0,
+    },
+    {
+      label: "Application studio",
+      icon: FileText,
+      view: "studio" as const,
+      count: workspace.packs.length,
+    },
+    {
+      label: "Applications",
+      icon: ListChecks,
+      view: "applications" as const,
+      count: workspace.appliedRecords.length,
+    },
   ];
-
   return (
-    <aside className={cn("hidden border-b border-[var(--border-soft)] bg-[var(--surface)] py-6 lg:block lg:border-r lg:border-b-0", workspace.leftRailCollapsed ? "px-3" : "px-5")}>
-      <div className={cn("flex items-center", workspace.leftRailCollapsed ? "justify-center" : "justify-between")}>
-        {!workspace.leftRailCollapsed && (
-          <div>
-          <p className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-            HunterAgent
-          </p>
-          <h2 className="mt-2 text-xl font-semibold tracking-tight text-[var(--ink)]">
-            Daily brief at {draftProfile.briefTime}
-          </h2>
-          </div>
-        )}
-        <div className="flex items-center gap-2">
-<button
-            type="button"
-            onClick={() => void handleLeftRailToggle()}
-            className="rounded-full border border-[var(--border-soft)] bg-white p-2 text-[var(--muted)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-            aria-label={workspace.leftRailCollapsed ? "Expand navigation rail" : "Collapse navigation rail"}
-            title={workspace.leftRailCollapsed ? "Expand navigation rail" : "Collapse navigation rail"}
-          >
-            {workspace.leftRailCollapsed ? <CaretRight size={18} /> : <CaretLeft size={18} />}
-          </button>
-        </div>
+    <aside className={`workspace-rail ${collapsed ? "is-collapsed" : ""}`}>
+      <div className="workspace-brand">
+        <Brand compact={collapsed} />
+        <button
+          className="rail-collapse"
+          onClick={() => void handleLeftRailToggle()}
+          aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
+        >
+          {collapsed ? <CaretRight size={14} /> : <CaretLeft size={14} />}
+        </button>
       </div>
-
-      <nav className={cn("grid gap-2 text-sm", workspace.leftRailCollapsed ? "mt-6" : "mt-8")}>
-        {navItems.map(({ label, icon: Icon, active, action }) => (
+      <nav aria-label="Workspace navigation">
+        {items.map((item) => (
           <button
-            key={label}
-            type="button"
-            onClick={action}
-            className={cn(
-              "flex items-center rounded-2xl py-3 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-              workspace.leftRailCollapsed ? "justify-center px-0" : "gap-3 px-3",
-              active ? "bg-[var(--accent)] text-white shadow-[0_20px_50px_-34px_rgba(18,108,100,0.9)]" : "text-[var(--muted)] hover:bg-white",
-            )}
-            title={workspace.leftRailCollapsed ? label : undefined}
+            key={item.view}
+            onClick={() => onNavigate(item.view)}
+            aria-current={view === item.view ? "page" : undefined}
+            title={item.label}
+            aria-label={item.label}
+            disabled={!workspace.onboardingComplete}
           >
-            <Icon size={18} weight={active ? "fill" : "duotone"} />
-            {!workspace.leftRailCollapsed && <span className="font-medium">{label}</span>}
+            <item.icon
+              size={20}
+              weight={view === item.view ? "fill" : "regular"}
+            />
+            <span>{item.label}</span>
+            {item.count > 0 && <small>{item.count}</small>}
           </button>
         ))}
       </nav>
-
-      {!workspace.leftRailCollapsed && workspace.briefs.length > 1 && (() => {
-        const filtered = workspace.briefs
-          .filter((b) => {
-            if (!briefSearch.trim()) return true;
-            const q = briefSearch.toLowerCase();
-            const date = b.scheduledFor ?? b.createdAt;
-            return date.toLowerCase().includes(q) || b.status.includes(q);
-          })
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        const paged = filtered.slice(0, briefPage * BRIEF_PAGE_SIZE);
-        return (
-          <div className="mt-6">
-            <button
-              type="button"
-              onClick={() => setShowBriefs((v) => !v)}
-              className="flex w-full items-center justify-between text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
-            >
-              Past briefs
-              <span className="rounded-full bg-[var(--surface)] px-2 py-0.5 text-[0.65rem] font-bold">{workspace.briefs.length}</span>
-            </button>
-            {showBriefs && (
-              <div className="mt-3">
-                <div className="relative">
-                  <MagnifyingGlass size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
-                  <input
-                    value={briefSearch}
-                    onChange={(e) => { setBriefSearch(e.target.value); setBriefPage(1); }}
-                    placeholder="Search briefs…"
-                    className="w-full rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] py-2 pl-8 pr-3 text-xs text-[var(--ink)] outline-none focus:border-[var(--accent)]"
-                  />
-                </div>
-                <div className="mt-2 space-y-1">
-                  {paged.map((brief) => (
-                    <button
-                      key={brief.id}
-                      type="button"
-                      onClick={() => void handleSetActiveBrief(brief.id)}
-                      className={cn(
-                        "w-full rounded-xl px-3 py-2 text-left text-xs transition-colors",
-                        brief.id === workspace.activeBriefId
-                          ? "bg-[var(--accent)] text-white"
-                          : "text-[var(--muted)] hover:bg-white hover:text-[var(--ink)]",
-                      )}
-                    >
-                      <span className="block font-medium">
-                        {brief.scheduledFor
-                          ? new Date(brief.scheduledFor).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
-                          : new Date(brief.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                      </span>
-                      <span className={cn("block capitalize", brief.id === workspace.activeBriefId ? "text-white/70" : "text-[var(--muted)]")}>
-                        {brief.status}
-                        {brief.selectedRoleIds.length > 0 && ` · ${brief.selectedRoleIds.length} selected`}
-                      </span>
-                    </button>
-                  ))}
-                  {paged.length < filtered.length && (
-                    <button
-                      type="button"
-                      onClick={() => setBriefPage((p) => p + 1)}
-                      className="w-full rounded-xl px-3 py-2 text-center text-xs text-[var(--accent)] hover:underline"
-                    >
-                      Load more ({filtered.length - paged.length} remaining)
-                    </button>
-                  )}
-                  {filtered.length === 0 && (
-                    <p className="px-3 py-2 text-xs text-[var(--muted)]">No briefs match.</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })()}
-
-      {!workspace.leftRailCollapsed && <div className="mt-6 rounded-[1.7rem] border border-[var(--border-soft)] bg-white p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-          Delivery
-        </p>
-        <div className="mt-4 space-y-3 text-sm text-[var(--muted)]">
-          <div className="flex items-center justify-between gap-3">
-            <span>Timezone</span>
-            <span className="font-mono text-[var(--ink)]">{draftProfile.timezone}</span>
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <span>Brief time</span>
-            <span className="font-mono text-[var(--ink)]">{draftProfile.briefTime}</span>
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <span>First brief</span>
-            <span className="text-[var(--ink)]">{draftProfile.firstBrief === "now" ? "Send now" : "Scheduled"}</span>
-          </div>
-          <div className="flex items-center justify-between gap-2">
-            <span className="shrink-0">Recipient</span>
-            <span className="min-w-0 truncate text-right text-[var(--ink)]">{draftProfile.recipientEmail || "Not set"}</span>
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <span>Brief status</span>
-            <span className={cn("font-medium", draftProfile.briefsPaused ? "text-amber-600" : "text-[var(--accent)]")}>
-              {draftProfile.briefsPaused ? "Paused" : "Active"}
-            </span>
-          </div>
-        </div>
-      </div>}
-
-      {!workspace.leftRailCollapsed && <div className="mt-6 rounded-[1.7rem] border border-[var(--border-soft)] bg-white p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-          Your profile
-        </p>
-        <div className="mt-4 space-y-3 text-sm leading-6 text-[var(--muted)]">
-          <div className="flex items-start gap-3">
-            <UserCircle size={18} className="mt-1 text-[var(--accent)]" />
-            <div>
-              <p className="font-medium text-[var(--ink)]">{draftProfile.name}</p>
-              <p>{draftProfile.currentTitle}</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Target size={18} className="mt-1 text-[var(--accent)]" />
-            <div>
-              <p className="font-medium text-[var(--ink)]">Target roles</p>
-              <p>{draftProfile.targetRoles.filter(Boolean).join(" · ") || "Not set"}</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <GlobeHemisphereWest size={18} className="mt-1 text-[var(--accent)]" />
-            <div>
-              <p className="font-medium text-[var(--ink)]">Locations</p>
-              <p>{draftProfile.locations}</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <Palette size={18} className="mt-1 text-[var(--accent)]" />
-            <div>
-              <p className="font-medium text-[var(--ink)]">Default style</p>
-              <p>{getResumeStyle(draftProfile.resumeDefaultStyle).label}</p>
-            </div>
-          </div>
-        </div>
-      </div>}
-
-      {!workspace.leftRailCollapsed && workspace.appliedRecords.length > 0 && (
-        <div className="mt-6 rounded-[1.7rem] border border-[var(--border-soft)] bg-white p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Applications</p>
-          <div className="mt-4 space-y-2 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-[var(--muted)]">Applied</span>
-              <span className="font-semibold text-[var(--ink)]">{workspace.appliedRecords.length}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[var(--muted)]">With follow-up</span>
-              <span className="font-semibold text-[var(--ink)]">
-                {workspace.appliedRecords.filter((r) => r.followUp && r.followUp !== "off").length}
-              </span>
-            </div>
-            {workspace.appliedRecords.length > 0 && (
-              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface)]">
-                <div
-                  className="h-full rounded-full bg-[var(--accent)]"
-                  style={{
-                    width: `${Math.min(100, (workspace.appliedRecords.filter((r) => r.followUp && r.followUp !== "off").length / workspace.appliedRecords.length) * 100)}%`,
-                  }}
-                />
-              </div>
-            )}
-          </div>
+      {!collapsed && workspace.onboardingComplete && (
+        <div className="rail-schedule">
+          <p className="eyebrow">YOUR SCOUT</p>
+          <p>
+            <span
+              className={`signal-dot ${draftProfile.briefsPaused ? "is-paused" : ""}`}
+            />{" "}
+            {draftProfile.briefsPaused
+              ? "Briefs paused"
+              : workspace.profile.discoveryCadence === "daily" ? "Searching daily" : "Searching three times a week"}
+          </p>
+          <small>Daily email window: {workspace.profile.briefTime}. New matches only.</small>
+          <small>{draftProfile.timezone.replaceAll("_", " ")}</small>
+          <button onClick={() => setIsSettingsOpen(true)}>
+            Adjust preferences <CaretRight size={12} />
+          </button>
         </div>
       )}
-      <div className={cn("mt-6 border-t border-[var(--border-soft)] pt-4", workspace.leftRailCollapsed ? "flex flex-col items-center gap-2" : "space-y-1")}>
-        {!workspace.leftRailCollapsed && (
-          <p className="mb-2 truncate text-xs text-[var(--muted)]">{user.fullName || user.email || "Your account"}</p>
-        )}
+      {!collapsed && workspace.briefs.length > 0 && (
+        <details className="rail-history">
+          <summary>
+            <ClockCounterClockwise size={15} /> Past briefs{" "}
+            <span>{workspace.briefs.length}</span>
+          </summary>
+          <label className="rail-search">
+            <MagnifyingGlass size={14} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Find a date or status"
+              aria-label="Search past briefs"
+            />
+          </label>
+          <div className="rail-history-list">
+            {workspace.briefs
+              .filter((b) =>
+                `${b.createdAt} ${b.status}`
+                  .toLowerCase()
+                  .includes(search.toLowerCase()),
+              )
+              .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+              .map((b) => (
+                <button
+                  key={b.id}
+                  aria-current={
+                    b.id === workspace.activeBriefId ? "true" : undefined
+                  }
+                  onClick={() => {
+                    void handleSetActiveBrief(b.id);
+                    onNavigate("brief");
+                  }}
+                >
+                  <span>
+                    {new Date(b.createdAt).toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                    })}
+                  </span>
+                  <small>{b.status}</small>
+                </button>
+              ))}
+          </div>
+        </details>
+      )}
+      <div className="rail-account">
         <button
-          type="button"
-          onClick={() => setIsSettingsOpen((current) => !current)}
-          className={cn(
-            "flex items-center rounded-2xl py-3 text-left text-[var(--muted)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:bg-white active:translate-y-[1px] active:scale-[0.98]",
-            workspace.leftRailCollapsed ? "justify-center px-0 w-full" : "gap-3 px-3 w-full",
-          )}
-          title={workspace.leftRailCollapsed ? "Settings" : undefined}
+          onClick={() => setIsSettingsOpen(true)}
+          aria-label="Settings"
+          title="Settings"
         >
-          <PencilSimple size={18} weight="duotone" />
-          {!workspace.leftRailCollapsed && <span className="font-medium">Settings</span>}
+          <GearSix size={20} />
+          <span>Settings</span>
         </button>
         <button
-          type="button"
           onClick={() => void handleSignOut()}
-          className={cn(
-            "flex items-center rounded-2xl py-3 text-left text-[var(--muted)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:bg-white active:translate-y-[1px] active:scale-[0.98]",
-            workspace.leftRailCollapsed ? "justify-center px-0 w-full" : "gap-3 px-3 w-full",
-          )}
-          title={workspace.leftRailCollapsed ? "Sign out" : undefined}
+          aria-label="Sign out"
+          title="Sign out"
         >
-          <SignOut size={18} weight="duotone" />
-          {!workspace.leftRailCollapsed && <span className="font-medium">Sign out</span>}
+          <SignOut size={20} />
+          <span>Sign out</span>
         </button>
+        <div className="rail-user" title={user.fullName}>
+          <span>
+            {(user.fullName || "You")
+              .split(" ")
+              .map((n) => n[0])
+              .slice(0, 2)
+              .join("")}
+          </span>
+          {!collapsed && (
+            <div>
+              <strong>{user.fullName}</strong>
+              <small>Your personal workspace</small>
+            </div>
+          )}
+        </div>
       </div>
     </aside>
   );

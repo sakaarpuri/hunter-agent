@@ -12,6 +12,7 @@ export type CvViewMode = "preview" | "content";
 export type MaterialsMode = "ai" | "self";
 export type WorkplaceMode = "remote" | "hybrid" | "on-site";
 export type RemoteRegion = "worldwide" | "uk" | "europe" | "us" | "timezone-compatible";
+export type DiscoveryCadence = "three-per-week" | "daily";
 
 export type WorkSampleReference = {
   title: string;
@@ -31,6 +32,17 @@ export type Role = {
   proofMode: ProofMode;
   workSamples: WorkSampleReference[];
   summary: string;
+  sourceUrl?: string;
+  firstSeenAt?: string;
+  expiresAt?: string;
+  fingerprint?: string;
+  matchAssessment?: {
+    profileKey: string;
+    sourceKey: string;
+    score: number;
+    fit: string;
+    concerns: string[];
+  };
 };
 
 export type GuidedResumeInput = {
@@ -54,6 +66,8 @@ export type Profile = {
   excludedCompanies: string[];
   specialPreferences: string[];
   briefsPaused: boolean;
+  jobsPerBrief: 3;
+  discoveryCadence: DiscoveryCadence;
   coreStrength: string;
   resumeMode: ResumeMode;
   cvFile: string;
@@ -101,11 +115,17 @@ export type BriefRecord = {
   outboundThreadId: string | null;
   outboundInboxId: string | null;
   roleIds: number[];
+  // Immutable email numbering, including positions whose suggestions have expired.
+  replyRoleIds?: number[];
   topRoleIds: number[];
   status: BriefStatus;
   selectedRoleIds: number[];
   inboundRecords: BriefInboundRecord[];
 };
+
+export type ExpiredBriefRecord = Pick<BriefRecord,
+  "id" | "createdAt" | "sentAt" | "recipientEmail" | "outboundMessageId" | "outboundThreadId" | "outboundInboxId"
+>;
 
 export type PackRecord = {
   id: string;
@@ -138,6 +158,10 @@ export type AppliedRecord = {
 export type WorkspaceState = {
   profile: Profile;
   roleCatalog: Role[];
+  discoveryPool?: Role[];
+  lastDiscoveryAt?: string | null;
+  seenJobs?: Record<string, string>;
+  expiredBriefs?: ExpiredBriefRecord[];
   onboardingStep: number;
   onboardingComplete: boolean;
   flowPhase: FlowPhase;

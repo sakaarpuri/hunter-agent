@@ -9,6 +9,7 @@ import {
   WorkplaceMode,
   WorkspaceState,
 } from "@/lib/hunteragent-types";
+import { normalizeBriefPreferences } from "@/lib/hunteragent-retention";
 
 export const WORKPLACE_MODE_OPTIONS: Array<{ id: WorkplaceMode; label: string }> = [
   { id: "remote", label: "Remote" },
@@ -247,6 +248,8 @@ export const initialProfile: Profile = {
   excludedCompanies: [],
   specialPreferences: [],
   briefsPaused: false,
+  jobsPerBrief: 3,
+  discoveryCadence: "daily",
   coreStrength: "",
   resumeMode: "upload",
   cvFile: "",
@@ -314,8 +317,8 @@ export function parsePreferenceList(value: string) {
     .filter(Boolean);
 }
 
-export function createBriefRecord(firstBrief: Profile["firstBrief"], roles: Role[] = DAILY_ROLES): BriefRecord {
-  const now = new Date();
+export function createBriefRecord(firstBrief: Profile["firstBrief"], roles: Role[] = [], jobsPerBrief: Profile["jobsPerBrief"] = 3, now: Date = new Date()): BriefRecord {
+  const selected = roles.slice(0, normalizeBriefPreferences({ jobsPerBrief }).jobsPerBrief);
   return {
     id: `brief-${crypto.randomUUID()}`,
     createdAt: now.toISOString(),
@@ -325,8 +328,9 @@ export function createBriefRecord(firstBrief: Profile["firstBrief"], roles: Role
     outboundMessageId: null,
     outboundThreadId: null,
     outboundInboxId: null,
-    roleIds: roles.map((role) => role.id),
-    topRoleIds: roles.slice(0, 5).map((role) => role.id),
+    roleIds: selected.map((role) => role.id),
+    replyRoleIds: selected.map((role) => role.id),
+    topRoleIds: selected.map((role) => role.id),
     status: "scheduled",
     selectedRoleIds: [],
     inboundRecords: [],
@@ -335,8 +339,8 @@ export function createBriefRecord(firstBrief: Profile["firstBrief"], roles: Role
 
 export function createInitialWorkspaceState(): WorkspaceState {
   return {
-    profile: initialProfile,
-    roleCatalog: DAILY_ROLES,
+    profile: structuredClone(initialProfile),
+    roleCatalog: [],
     onboardingStep: 1,
     onboardingComplete: false,
     flowPhase: "onboarding",

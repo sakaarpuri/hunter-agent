@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { AuthError, requireUser } from "@/lib/auth";
 import { updateWorkspaceState } from "@/lib/hunteragent-store";
-import { generateSelectedPacksForWorkspace } from "@/lib/hunteragent-workspace-ops";
-import { PackIntent, PackTarget } from "@/lib/hunteragent-types";
+import { generateSelectedPacksForWorkspace, isValidGenerationInput } from "@/lib/hunteragent-workspace-ops";
 import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
@@ -36,14 +35,10 @@ export async function POST(request: Request) {
   rateLimitMap.set(user.id, [...userTimestamps, now]);
 
   try {
-    const body = (await request.json()) as {
-      briefId?: string;
-      roleId?: number;
-      regenerate?: boolean;
-      target?: PackTarget;
-      intent?: PackIntent;
-      instruction?: string;
-    };
+    const body: unknown = await request.json().catch(() => null);
+    if (!isValidGenerationInput(body)) {
+      return NextResponse.json({ error: "Invalid material generation request." }, { status: 400 });
+    }
 
     const workspace = await updateWorkspaceState((state) =>
       generateSelectedPacksForWorkspace(state, {
@@ -52,7 +47,7 @@ export async function POST(request: Request) {
         target: body.target,
         intent: body.intent,
         instruction: body.instruction,
-      }), user.id,
+      }, user.id), user.id,
     );
 
     logger.info("generate-packs: complete", { userId: user.id });

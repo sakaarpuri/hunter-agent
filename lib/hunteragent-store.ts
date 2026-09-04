@@ -1,8 +1,18 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
-import { ensureWorkspaceForUser, getWorkspaceRow, listWorkspaceRows, upsertWorkspaceRow } from "@/lib/db";
-import { createBriefRecord, createInitialWorkspaceState, initialProfile } from "@/lib/hunteragent-data";
+import {
+  claimWorkspaceUpdateLease,
+  compareAndSwapWorkspaceRow,
+  ensureWorkspaceForUser,
+  getWorkspaceRow,
+  listWorkspaceRows,
+  releaseWorkspaceUpdateLease,
+  upsertWorkspaceRow,
+} from "@/lib/db";
+import { createInitialWorkspaceState, initialProfile } from "@/lib/hunteragent-data";
 import { BriefRecord, GuidedResumeInput, WorkspaceState } from "@/lib/hunteragent-types";
+import { normalizeBriefPreferences, pruneExpiredSuggestions } from "@/lib/hunteragent-retention";
 
 const STORE_DIR = path.join(process.cwd(), ".data");
 const LEGACY_STORE_PATH = path.join(STORE_DIR, "hunteragent-workspace.json");
@@ -33,8 +43,8 @@ function normalizeBrief(brief: BriefRecord): BriefRecord {
   };
 }
 
-function ensureWorkspaceState(state: WorkspaceState) {
-  const legacyProfile = state.profile as Partial<WorkspaceState["profile"]> & { portfolioLinks?: string[] };
+export function ensureWorkspaceState(state: WorkspaceState, now: Date = new Date(), previousState?: WorkspaceState) {
+  const legacyProfile = (state.profile ?? {}) as Partial<WorkspaceState["profile"]> & { portfolioLinks?: string[] };
   state.profile = {
     ...initialProfile,
     ...(state.profile ?? {}),
@@ -48,8 +58,9 @@ function ensureWorkspaceState(state: WorkspaceState) {
     specialPreferences: state.profile?.specialPreferences ?? initialProfile.specialPreferences,
     briefsPaused: state.profile?.briefsPaused ?? initialProfile.briefsPaused,
     materialsMode: state.profile?.materialsMode ?? initialProfile.materialsMode,
+    ...normalizeBriefPreferences(state.profile),
   };
-  state.roleCatalog = state.roleCatalog?.length ? state.roleCatalog : createInitialWorkspaceState().roleCatalog;
+  state.roleCatalog = state.roleCatalog ?? createInitialWorkspaceState().roleCatalog;
   state.briefs = (state.briefs ?? []).map(normalizeBrief);
   state.studioTab = state.studioTab === "workSamples" || state.studioTab === "pack" || state.studioTab === "letter" ? state.studioTab : "cv";
   state.cvViewMode = state.cvViewMode ?? "preview";
@@ -58,23 +69,32 @@ function ensureWorkspaceState(state: WorkspaceState) {
   state.promptHistory = state.promptHistory ?? {};
   state.stateVersion = (state.stateVersion as number | undefined) ?? 1;
 
-  if (state.onboardingComplete && state.briefs.length === 0) {
-    const brief = createBriefRecord(state.profile.firstBrief, state.roleCatalog);
-    state.briefs = [brief];
-    state.activeBriefId = brief.id;
-    state.flowPhase = "waiting";
+  return pruneExpiredSuggestions(state, now, previousState);
+}
+
+async function normalizeRow(userId: string, initialRow: { state_json: string }) {
+  let row = initialRow;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const parsed = JSON.parse(row.state_json) as WorkspaceState;
+    const normalized = ensureWorkspaceState(parsed);
+    const nextJson = JSON.stringify(normalized);
+    if (nextJson === JSON.stringify(JSON.parse(row.state_json))) return normalized;
+    // Anchor legacy timestamps once, without overwriting a concurrent user action.
+    if (await compareAndSwapWorkspaceRow(userId, row.state_json, nextJson, new Date().toISOString())) return normalized;
+    const latest = await getWorkspaceRow(userId);
+    if (!latest) throw new Error("Workspace no longer exists.");
+    row = latest;
   }
-  return state;
+  throw new Error("Workspace changed while loading. Please try again.");
 }
 
 async function readStateFromRow(userId: string) {
   const row = (await getWorkspaceRow(userId)) ?? (await ensureWorkspaceForUser(userId));
-  const parsed = JSON.parse(row.state_json) as WorkspaceState;
-  return ensureWorkspaceState(parsed);
+  return normalizeRow(userId, row);
 }
 
-async function persistStateForUser(userId: string, state: WorkspaceState) {
-  const normalized = ensureWorkspaceState(cloneState(state));
+async function persistStateForUser(userId: string, state: WorkspaceState, previousState?: WorkspaceState) {
+  const normalized = ensureWorkspaceState(cloneState(state), new Date(), previousState);
   normalized.stateVersion = (normalized.stateVersion ?? 1) + 1;
   await upsertWorkspaceRow(userId, JSON.stringify(normalized, null, 2), new Date().toISOString());
   return cloneState(normalized);
@@ -90,36 +110,63 @@ export async function readWorkspaceState(userId?: string) {
   try {
     const raw = await readFile(LEGACY_STORE_PATH, "utf8");
     const parsed = JSON.parse(raw) as WorkspaceState;
-    return ensureWorkspaceState(parsed);
+    const normalized = ensureWorkspaceState(parsed);
+    if (JSON.stringify(normalized) !== JSON.stringify(JSON.parse(raw))) {
+      await writeFile(LEGACY_STORE_PATH, JSON.stringify(normalized, null, 2), "utf8");
+    }
+    return normalized;
   } catch {
     const initial = createInitialWorkspaceState();
-    await writeWorkspaceState(initial);
-    return cloneState(initial);
+    return writeWorkspaceState(initial);
   }
 }
 
-export async function writeWorkspaceState(state: WorkspaceState, userId?: string) {
+export async function writeWorkspaceState(state: WorkspaceState, userId?: string, previousState?: WorkspaceState) {
   if (userId) {
-    return await persistStateForUser(userId, state);
+    const row = previousState ? null : await getWorkspaceRow(userId);
+    return await persistStateForUser(userId, state, previousState ?? (row ? JSON.parse(row.state_json) as WorkspaceState : undefined));
   }
 
   await ensureStoreDir();
-  await writeFile(LEGACY_STORE_PATH, JSON.stringify(state, null, 2), "utf8");
-  return cloneState(state);
+  if (!previousState) {
+    try { previousState = JSON.parse(await readFile(LEGACY_STORE_PATH, "utf8")) as WorkspaceState; } catch { /* No legacy workspace yet. */ }
+  }
+  const normalized = ensureWorkspaceState(cloneState(state), new Date(), previousState);
+  await writeFile(LEGACY_STORE_PATH, JSON.stringify(normalized, null, 2), "utf8");
+  return cloneState(normalized);
 }
 
 export async function updateWorkspaceState(
   updater: (state: WorkspaceState) => WorkspaceState | Promise<WorkspaceState>,
   userId?: string,
 ) {
+  if (userId) {
+    const token = randomUUID();
+    let claimed = false;
+    for (let attempt = 0; attempt < 10 && !claimed; attempt++) {
+      claimed = await claimWorkspaceUpdateLease(userId, token);
+      if (!claimed) await new Promise((resolve) => setTimeout(resolve, 100 + attempt * 25));
+    }
+    if (!claimed) throw new Error("Workspace is busy. Please try again.");
+    try {
+      const current = await readWorkspaceState(userId);
+      const next = await updater(cloneState(current));
+      return writeWorkspaceState(next, userId, current);
+    } finally {
+      await releaseWorkspaceUpdateLease(userId, token).catch(() => {});
+    }
+  }
+
   const current = await readWorkspaceState(userId);
   const next = await updater(cloneState(current));
-  return writeWorkspaceState(next, userId);
+  return writeWorkspaceState(next, userId, current);
 }
 
 export async function listStoredWorkspaces() {
-  return (await listWorkspaceRows()).map((row) => ({
-    userId: row.user_id,
-    state: ensureWorkspaceState(JSON.parse(row.state_json) as WorkspaceState),
-  }));
+  const workspaces = [];
+  for (const row of await listWorkspaceRows()) {
+    const state = await normalizeRow(row.user_id, row);
+    workspaces.push({ userId: row.user_id, state });
+  }
+  return workspaces;
 }

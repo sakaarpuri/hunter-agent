@@ -1,361 +1,266 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  CalendarDots,
-  CheckCircle,
-  EnvelopeSimpleOpen,
-  FlowArrow,
-  MagnifyingGlass,
-  Sparkle,
+  ArrowUpRight,
+  Check,
+  EnvelopeSimple,
+  Fingerprint,
+  SlidersHorizontal,
 } from "@phosphor-icons/react/dist/ssr";
-import { MockEmailBrief } from "@/components/mock-email-brief";
-import { DashboardPreview } from "@/components/dashboard-preview";
-import { FeatureCards } from "@/components/feature-showcase";
+import { Brand } from "@/components/brand";
+import { BriefExperience } from "@/components/brief-experience";
+import { DreamFilm } from "@/components/dream-film";
 
-const workflow = [
-  {
-    title: "5 curated roles land in your inbox",
-    body: "Every morning HunterAgent searches live job listings and picks your top 5 matches based on your profile — full-time, part-time, or contract. No job board tabs, no manual searching.",
-    icon: MagnifyingGlass,
-  },
-  {
-    title: "Reply with the ones you want",
-    body: "Reply to the email with the job numbers you want — type \"2 and 4\" to pick the second and fourth role. Top picks are 1–5, wildcards are 6–8. The AI builds your CV and cover letter for each one. Done.",
-    icon: EnvelopeSimpleOpen,
-  },
-  {
-    title: "Your tailored CV is ready in minutes",
-    body: "For each role you replied with, HunterAgent writes a role-specific CV and cover letter — matched to that job description. Open your dashboard and they're already there.",
-    icon: FlowArrow,
-  },
-  {
-    title: "Apply, then follow up on your terms",
-    body: "Mark a role applied from the dashboard. Optionally set a 7 or 14-day follow-up reminder. Everything is opt-in — no automated emails on your behalf unless you ask.",
-    icon: CalendarDots,
-  },
-];
-
-const timingNotes = [
-  ["First delivery", "Send your first batch of roles immediately, or wait for your chosen time."],
-  ["Every day after", "Your roles arrive at the same time each morning, in your timezone."],
-  ["After you reply", "Your dashboard updates right away. Allow 2–10 minutes for the full application pack to generate."],
+const questions = [
+  [
+    "What if I'm happy in my current job?",
+    "That's a good place to start. Tell us what would make a move worth considering. Read your brief, ignore anything that doesn't excite you, and only take the next step when you want to. Active job seekers are welcome too.",
+  ],
+  [
+    "What actually arrives in my inbox?",
+    "Up to three standout matches per email. We search daily but only send genuine new matches, never filler. Your email arrives at your chosen time when there is something worthwhile to share.",
+  ],
+  [
+    "Can I choose where you look?",
+    "Yes. Set your preferred locations and choose remote, hybrid or on-site work. Remote-work region preferences are separate, so a remote listing still needs to fit where you can work. You can change these preferences in your account.",
+  ],
+  [
+    "What happens when I reply?",
+    "Reply with the numbers of the jobs you want to select them in your dashboard. When you're ready, choose to prepare a tailored CV and cover letter, or use your own materials. Simply selecting a job does not start AI writing.",
+  ],
+  [
+    "How long do jobs stay in my account?",
+    "Suggestions stay for seven days from first discovery, including ones you've selected but not applied to. Selecting one doesn't restart the clock. Your generated documents and application history are kept separately, so your work isn't lost.",
+  ],
+  [
+    "Will it apply to jobs for me?",
+    "You stay in control. Review and edit your materials, then submit your application yourself. Mark it applied to keep track and choose an optional follow-up plan.",
+  ],
+  [
+    "What if I already like my CV?",
+    "Keep it. You can choose to prepare your own materials and just use the daily job brief. If you do use AI, you can refine your CV or cover letter separately.",
+  ],
+  [
+    "Are the dream jobs on this page real?",
+    "Yes. They're examples from employer career pages, with original links and a review date. They're an editorial snapshot, not a live vacancy feed or personal recommendations. Openings can close. Your own brief follows your skills, ambitions, and preferences, not this deliberately wide-ranging collection.",
+  ],
 ];
 
 export default function Home() {
   return (
-    <div className="relative overflow-hidden">
-      {/* Ambient gradient orbs */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[56rem] bg-[radial-gradient(ellipse_70%_55%_at_-8%_-8%,rgba(18,108,100,0.24),transparent),radial-gradient(ellipse_55%_45%_at_108%_-4%,rgba(164,126,77,0.16),transparent),radial-gradient(ellipse_38%_28%_at_52%_104%,rgba(18,108,100,0.08),transparent)]" />
-      {/* Dot grid */}
-      <div className="pointer-events-none absolute inset-0 [background-image:radial-gradient(circle,rgba(18,42,39,0.13)_1px,transparent_1px)] [background-size:28px_28px]" />
-
-      <header className="relative z-10 px-4 pt-5 sm:px-6 lg:px-8">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between rounded-full border border-white/70 bg-white/80 px-5 py-3 shadow-[0_20px_55px_-34px_rgba(20,43,40,0.28)] backdrop-blur-md">
-          <Link href="/" className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--accent)] text-sm font-semibold text-white shadow-[0_16px_36px_-22px_rgba(18,108,100,0.9)]">
-              HA
-            </span>
-            <div>
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">
-                HunterAgent
-              </p>
-              <p className="text-sm text-[var(--muted)]">AI-powered job search agent</p>
-            </div>
+    <div className="home-page">
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
+      <header className="site-header">
+        <div className="site-nav">
+          <Brand />
+          <nav aria-label="Main navigation">
+            <a href="#how-it-works">How it works</a>
+            <a href="#your-control">Built around you</a>
+          </nav>
+          <Link className="nav-signin" href="/dashboard?mode=signin">
+            Sign in <ArrowUpRight size={16} />
           </Link>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-            >
-              Sign in
-            </Link>
-          </div>
         </div>
       </header>
-
-      <main className="relative z-10">
-        {/* Hero */}
-        <section className="px-4 pb-14 pt-16 sm:px-6 lg:px-8 lg:pb-20 lg:pt-24">
-          <div className="mx-auto grid max-w-[1400px] items-center gap-12 lg:grid-cols-[1.08fr_0.92fr] lg:gap-16">
-            {/* Left — headline */}
-            <div className="max-w-[44rem]">
-              <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-white/85 px-4 py-2 text-sm font-medium text-[var(--muted)] shadow-[0_18px_38px_-28px_rgba(20,43,40,0.24)] backdrop-blur-sm">
-                <Sparkle size={16} weight="duotone" className="text-[var(--accent)]" />
-                5 top matches in your inbox, every morning
-              </div>
-              <h1 className="mt-8 text-5xl font-semibold tracking-[-0.06em] text-[var(--ink)] md:text-7xl md:leading-[0.94]">
-                The effortless way to land your next job.
-              </h1>
-              <p className="mt-6 max-w-[40rem] text-lg leading-8 text-[var(--muted)] md:text-xl md:leading-9">
-                HunterAgent is an AI agent that finds your top 5 matched roles every morning and writes a tailored CV and cover letter for each one you choose — ready in your dashboard in minutes.
-              </p>
-
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  href="/dashboard"
-                  className="inline-flex items-center gap-3 rounded-full bg-[var(--accent)] pl-6 pr-2 py-2 text-sm font-semibold text-white shadow-[0_18px_45px_-26px_rgba(18,108,100,0.9)] transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:scale-[0.98]"
-                >
-                  Get started free
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15">
-                    <ArrowRight size={14} weight="bold" />
-                  </span>
-                </Link>
-                <a
-                  href="#brief"
-                  className="inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-6 py-3.5 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                >
-                  See a sample email
-                </a>
-              </div>
-
-              <div className="mt-10 rounded-[1.8rem] border border-[var(--border-soft)] bg-white/88 p-5 shadow-[0_24px_55px_-34px_rgba(20,43,40,0.28)] backdrop-blur-sm">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-                  How it works differently
-                </p>
-                <ul className="mt-4 space-y-3 text-sm leading-7 text-[var(--muted)]">
-                  <li className="flex gap-3"><CheckCircle size={18} weight="fill" className="mt-1 shrink-0 text-[var(--accent)]" /> AI matches 5 roles to your profile daily. Reply with numbers — done.</li>
-                  <li className="flex gap-3"><CheckCircle size={18} weight="fill" className="mt-1 shrink-0 text-[var(--accent)]" /> AI writes a role-specific CV and cover letter for each job you pick.</li>
-                  <li className="flex gap-3"><CheckCircle size={18} weight="fill" className="mt-1 shrink-0 text-[var(--accent)]" /> Follow-up reminders are optional — you turn them on after you apply.</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Right — feature cards, vertically centred with hero left col */}
-            <FeatureCards />
-          </div>
+      <main id="main-content">
+        <section className="hero-section" aria-labelledby="hero-title">
+          <DreamFilm />
         </section>
-
-        {/* Sample email brief */}
-        <section id="brief" className="px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-          <div className="mx-auto max-w-[1400px]">
-            <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-              <div className="lg:pt-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">Sample email</p>
-                <h2 className="mt-3 text-4xl font-semibold tracking-[-0.05em] text-[var(--ink)] md:text-5xl">
-                  This is what lands in your inbox.
-                </h2>
-                <p className="mt-5 max-w-sm text-base leading-8 text-[var(--muted)]">
-                  Every morning at your chosen time. Reply with numbers or names — your dashboard does the rest.
-                </p>
-              </div>
-              <div
-                className="reveal-card-brief"
-                style={{
-                  boxShadow:
-                    "10px 3px 0 rgba(18,108,100,0.92), 18px 5px 0 rgba(10,148,128,0.58), 26px 7px 0 rgba(6,182,212,0.28)",
-                  borderRadius: "2rem",
-                  transformOrigin: "center center",
-                }}
-              >
-                <MockEmailBrief />
-              </div>
-            </div>
-          </div>
+        <section
+          className="demo-section page-width"
+          id="try-it"
+          aria-label="Explore real dream-job examples"
+        >
+          <BriefExperience />
         </section>
-
-        {/* How it works */}
-        <section className="px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-          <div className="mx-auto max-w-[1400px]">
-            <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
-              <div className="reveal">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
-                  How it works
-                </p>
-                <h2 className="mt-3 max-w-2xl text-4xl font-semibold tracking-[-0.05em] text-[var(--ink)] md:text-5xl">
-                  Reply to an email. Your CV is tailored and waiting.
-                </h2>
-              </div>
-              <p className="max-w-2xl text-lg leading-8 text-[var(--muted)]">
-                You don&apos;t rewrite your CV for every role. HunterAgent does it for you — automatically, for each job you choose. Your only input is a one-line email reply.
-              </p>
-            </div>
-
-            <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-[1fr_1.2fr_1fr_1.1fr]">
-              {workflow.map((item, index) => {
-                const Icon = item.icon;
-                const delayClass = ["reveal-delay-1", "reveal-delay-2", "reveal-delay-3", "reveal-delay-3"][index] as string;
-                return (
-                  <article
-                    key={item.title}
-                    className={`reveal ${delayClass} rounded-[2rem] border border-[var(--border-soft)] bg-[var(--surface)] p-1.5 shadow-[0_28px_60px_-42px_rgba(20,43,40,0.22)] transition-transform duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1.5`}
-                  >
-                    <div className="rounded-[calc(2rem-0.375rem)] bg-white p-6 h-full shadow-[inset_0_1px_1px_rgba(255,255,255,0.8)]">
-                      <div className="inline-flex rounded-[1.15rem] border border-[rgba(18,108,100,0.14)] bg-gradient-to-br from-[rgba(18,108,100,0.12)] to-[rgba(18,108,100,0.02)] p-[5px] shadow-[0_6px_16px_-8px_rgba(18,108,100,0.22)]">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-[calc(1.15rem-5px)] bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.95)] text-[var(--accent)]">
-                          <Icon size={20} weight="duotone" />
-                        </div>
-                      </div>
-                      <h3 className="mt-5 text-2xl font-semibold tracking-tight text-[var(--ink)]">
-                        {item.title}
-                      </h3>
-                      <p className="mt-3 text-base leading-7 text-[var(--muted)]">{item.body}</p>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
+        <div className="benefit-strip page-width">
+          <span>
+            <span className="index-label">01</span> Three worth considering.
+            Not another feed.
+          </span>
+          <span>
+            <span className="index-label">02</span> Ambition, not urgency.
+          </span>
+          <span>
+            <span className="index-label">03</span> You decide what is worth a
+            move.
+          </span>
+        </div>
+        <section id="how-it-works" className="how-section page-width">
+          <div className="section-intro">
+            <p className="eyebrow">GET ON WITH LIFE. LEAVE A DOOR OPEN.</p>
+            <h2>
+              You don&apos;t have to leave.
+              <br />
+              Just don&apos;t miss it.
+            </h2>
+            <p>
+              A dream job might mean a bigger mission, a different country, or
+              simply more room for life. You define the upgrade. We help you
+              keep an eye out.
+            </p>
           </div>
-        </section>
-
-        {/* Scheduling */}
-        <section className="px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-          <div className="mx-auto grid max-w-[1400px] gap-8 lg:grid-cols-[0.86fr_1.14fr]">
-            <div className="reveal rounded-[2rem] border border-[var(--border-soft)] bg-[var(--surface)] p-6 shadow-[0_28px_65px_-40px_rgba(20,43,40,0.26)] lg:p-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
-                Your schedule
-              </p>
-              <h2 className="mt-3 text-4xl font-semibold tracking-[-0.05em] text-[var(--ink)]">
-                Choose when your daily roles arrive.
-              </h2>
-              <p className="mt-4 text-base leading-8 text-[var(--muted)]">
-                Pick the time that suits your morning. Your first batch can go out
-                right away, or wait for your scheduled slot. After that, it runs
-                automatically — same time, every day.
-              </p>
-
-              <div className="mt-8 space-y-4">
-                {timingNotes.map(([label, body]) => (
-                  <div key={label} className="rounded-[1.5rem] bg-white px-5 py-4 shadow-[inset_3px_0_0_var(--accent),0_0_0_1px_var(--border-soft)]">
-                    <p className="text-sm font-semibold text-[var(--ink)]">{label}</p>
-                    <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{body}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="reveal reveal-delay-1 rounded-[2rem] border border-[var(--border-soft)] bg-white p-6 shadow-[0_28px_65px_-40px_rgba(20,43,40,0.26)] lg:p-8">
-              <div className="flex items-center justify-between gap-4 border-b border-[var(--border-soft)] pb-5">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
-                    Setup preview
-                  </p>
-                  <h3 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--ink)]">
-                    When do you want your daily roles?
-                  </h3>
-                </div>
-                <span className="rounded-full bg-[var(--surface)] px-4 py-2 text-xs font-medium text-[var(--muted)]">
-                  Step 3 of 3
-                </span>
-              </div>
-
-              <div className="mt-6 grid gap-5 md:grid-cols-[1fr_0.9fr]">
-                <div className="space-y-5">
-                  <label className="grid gap-2 text-sm">
-                    <span className="font-medium text-[var(--ink)]">What time each morning?</span>
-                    <div className="rounded-[1.2rem] border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[var(--ink)]">
-                      8:00 AM
-                    </div>
-                    <span className="text-xs leading-6 text-[var(--muted)]">Your roles arrive at this time every day.</span>
-                  </label>
-                  <label className="grid gap-2 text-sm">
-                    <span className="font-medium text-[var(--ink)]">Your timezone</span>
-                    <div className="rounded-[1.2rem] border border-[var(--border-strong)] bg-[var(--surface)] px-4 py-3 text-[var(--ink)]">
-                      Europe/London
-                    </div>
-                  </label>
-                  <div className="grid gap-3 text-sm">
-                    <span className="font-medium text-[var(--ink)]">First batch</span>
-                    <div className="rounded-[1.3rem] border border-[var(--accent)] bg-[var(--accent-soft)] px-4 py-3 text-[var(--ink)]">
-                      Send immediately
-                    </div>
-                    <div className="rounded-[1.3rem] border border-[var(--border-strong)] bg-white px-4 py-3 text-[var(--muted)]">
-                      Send at my scheduled time
-                    </div>
-                  </div>
-                </div>
-                <div className="rounded-[1.6rem] bg-[var(--surface)] p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-                    Preview
-                  </p>
-                  <div className="mt-4 rounded-[1.5rem] border border-[var(--border-soft)] bg-white p-4">
-                    <p className="font-medium text-[var(--ink)]">You&apos;re all set.</p>
-                    <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-                      Your first roles will arrive now. After that, HunterAgent
-                      will send your daily batch every morning at 8:00 AM London time.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Dashboard preview */}
-        <section className="px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-          <div className="mx-auto max-w-[1400px]">
-            <div className="reveal mb-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--accent)]">
-                Your dashboard
-              </p>
-              <div className="mt-3 flex flex-wrap items-center gap-5">
-                <h2 className="text-4xl font-semibold tracking-[-0.05em] text-[var(--ink)] md:text-5xl">
-                  Where your applications come together.
-                </h2>
-                <Link
-                  href="/dashboard"
-                  className="inline-flex shrink-0 items-center gap-3 rounded-full border border-[var(--border-strong)] bg-white pl-5 pr-2 py-2 text-sm font-semibold text-[var(--ink)] transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:scale-[0.98]"
-                >
-                  Open dashboard
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--ink)]/8">
-                    <ArrowRight size={14} weight="bold" />
-                  </span>
-                </Link>
-              </div>
-              <p className="mt-5 max-w-2xl text-lg leading-8 text-[var(--muted)]">
-                No job board tabs. No copy-pasting CVs. No forgetting to follow up. HunterAgent handles the repetitive parts so you can focus on the conversations that matter.
-              </p>
-            </div>
-            <div
-              className="reveal-card-dashboard"
-              style={{
-                boxShadow:
-                  "14px 4px 0 rgba(18,108,100,0.92), 24px 6px 0 rgba(10,148,128,0.58), 32px 8px 0 rgba(6,182,212,0.28)",
-                borderRadius: "2rem",
-                transformOrigin: "center center",
-              }}
-            >
-              <div className="overflow-hidden rounded-[2rem]" style={{ height: "calc(720px * 0.72)" }}>
-                <div style={{ transform: "scale(0.72)", transformOrigin: "top left", width: "calc(100% / 0.72)" }}>
-                  <DashboardPreview fullPage />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Footer CTA */}
-        <section className="px-4 pb-16 pt-8 sm:px-6 lg:px-8 lg:pb-24">
-          <div className="mx-auto max-w-[1400px] rounded-[2.4rem] border border-[var(--border-soft)] bg-[var(--ink)] px-6 py-10 text-white shadow-[0_32px_80px_-42px_rgba(7,17,16,0.6)] sm:px-8 lg:px-10">
-            <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+          <div className="journey-steps">
+            <article>
+              <span className="journey-number">01</span>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-white/60">
-                  Simple by design
+                <p className="eyebrow">SET YOUR DIRECTION</p>
+                <h3>
+                  What would make
+                  <br />
+                  you say &ldquo;maybe&rdquo;?
+                </h3>
+                <p>
+                  Bring your experience, then set your ambitions: the roles,
+                  places, salary, and non-negotiables that could make your next
+                  chapter better than this one.
                 </p>
-                <h2 className="mt-3 text-4xl font-semibold tracking-[-0.05em] md:text-5xl">
-                  Daily email to discover jobs. Dashboard to tailor CV and track applications.
-                </h2>
+                <div className="preference-example">
+                  <span>A bigger mission</span>
+                  <span>Room for life</span>
+                  <span>Open to a new country</span>
+                </div>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <Link
-                  href="/dashboard"
-                  className="inline-flex items-center gap-3 rounded-full bg-white pl-6 pr-2 py-2 text-sm font-semibold text-[var(--ink)] transition-all duration-500 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:scale-[0.98]"
-                >
-                  Get started free
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--ink)]/20">
-                    <ArrowRight size={14} weight="bold" />
-                  </span>
+            </article>
+            <article>
+              <span className="journey-number">02</span>
+              <div>
+                <p className="eyebrow">A FEW WORTH YOUR ATTENTION</p>
+                <h3>
+                  Open your email.
+                  <br />
+                  Keep your options interesting.
+                </h3>
+                <p>
+                  AI searches daily for relevant roles and selects up to three
+                  new opportunities for your email, with context on the fit.
+                  Nothing catching your eye? Carry on with your day. Something
+                  does? Reply with its number.
+                </p>
+                <div className="reply-example">
+                  <EnvelopeSimple size={18} />
+                  <span>Number 2 has my attention.</span>
+                  <ArrowUpRight size={18} />
+                </div>
+              </div>
+            </article>
+            <article>
+              <span className="journey-number">03</span>
+              <div>
+                <p className="eyebrow">MAKE YOUR NEXT MOVE</p>
+                <h3>
+                  Curious becomes serious.
+                  <br />
+                  When you decide.
+                </h3>
+                <p>
+                  Only then turn your experience into a tailored CV and letter.
+                  Refine, preview, and apply yourself. No pressure to move just
+                  because you took a look.
+                </p>
+                <Link href="/dashboard" className="text-link">
+                  Set up your scout <ArrowRight size={17} />
                 </Link>
-                <a
-                  href="#brief"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/6 px-5 py-3 text-sm font-semibold text-white transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                >
-                  See a sample email
-                </a>
               </div>
+            </article>
+          </div>
+        </section>
+        <section className="control-section" id="your-control">
+          <div className="page-width control-grid">
+            <div>
+              <p className="eyebrow">CURIOSITY ISN&apos;T A COMMITMENT</p>
+              <h2>
+                An agent with initiative.
+                <br />
+                <span>And boundaries.</span>
+              </h2>
+              <p>
+                The point isn&apos;t to talk you out of a good job. It&apos;s to
+                help you recognise an opportunity you might genuinely want.
+              </p>
+            </div>
+            <div className="control-features">
+              <article>
+                <SlidersHorizontal size={25} />
+                <div>
+                  <h3>You set the brief.</h3>
+                  <p>
+                    Location, work type, excluded companies, and delivery time.
+                    Change your mind? Change your preferences.
+                  </p>
+                </div>
+              </article>
+              <article>
+                <Fingerprint size={25} />
+                <div>
+                  <h3>It starts with your experience.</h3>
+                  <p>
+                    Review the reasoning and refine the writing. Your CV should
+                    sound like you, with every claim checked by you.
+                  </p>
+                </div>
+              </article>
+              <article>
+                <Check size={25} />
+                <div>
+                  <h3>You make the final move.</h3>
+                  <p>
+                    No applications sent behind your back. Pause your brief,
+                    edit one section, or handle the materials yourself.
+                  </p>
+                </div>
+              </article>
             </div>
           </div>
+        </section>
+        <section className="faq-section page-width">
+          <div>
+            <p className="eyebrow">A FEW GOOD QUESTIONS</p>
+            <h2>
+              Before your
+              <br />
+              first possibilities.
+            </h2>
+          </div>
+          <div>
+            {questions.map(([question, answer]) => (
+              <details key={question}>
+                <summary>
+                  {question}
+                  <span aria-hidden="true">+</span>
+                </summary>
+                <p>{answer}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+        <section className="closing-section page-width">
+          <p className="eyebrow">NO RESIGNATION REQUIRED.</p>
+          <h2>Find your &ldquo;what if&rdquo;.</h2>
+          <Link href="/dashboard" className="button button-accent">
+            Find my what if <ArrowUpRight size={19} />
+          </Link>
+          <p>Keep doing what you do. Let something extraordinary find you.</p>
         </section>
       </main>
+      <footer className="site-footer page-width">
+        <Brand />
+        <p>A few possibilities. No pressure to move.</p>
+        <nav aria-label="Legal">
+          <Link href="/privacy" className="text-link">
+            Privacy
+          </Link>{" "}
+          <span aria-hidden="true">·</span>{" "}
+          <Link href="/terms" className="text-link">
+            Terms
+          </Link>
+        </nav>
+        <a href="#main-content" className="text-link">
+          Back to top <ArrowUpRight size={16} />
+        </a>
+      </footer>
     </div>
   );
 }

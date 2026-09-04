@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAgentMailReplyText, isAgentMailMessageReceived, verifyAgentMailWebhook } from "@/lib/agentmail-webhook";
 import { listStoredWorkspaces, updateWorkspaceState } from "@/lib/hunteragent-store";
-import { type AppliedInboundReply, applyInboundReplyToWorkspace, generateSelectedPacksForWorkspace } from "@/lib/hunteragent-workspace-ops";
+import { type AppliedInboundReply, applyInboundReplyToWorkspace } from "@/lib/hunteragent-workspace-ops";
 import { logger } from "@/lib/logger";
 
 export const runtime = "nodejs";
@@ -26,7 +26,7 @@ type WorkspaceResolution = {
   reason: "thread" | "message" | "sender_inbox" | "no_match" | "ambiguous";
 };
 
-async function resolveWorkspaceUserId(metadata: { threadId?: string; messageId?: string; inboxId?: string; sender?: string }): Promise<WorkspaceResolution> {
+async function resolveWorkspaceUserId(metadata: { threadId?: string; inboxId?: string; sender?: string }): Promise<WorkspaceResolution> {
   const workspaces = await listStoredWorkspaces();
 
   const matchByPredicate = (
@@ -45,16 +45,9 @@ async function resolveWorkspaceUserId(metadata: { threadId?: string; messageId?:
 
   if (metadata.threadId) {
     const byThread = matchByPredicate("thread", ({ state }) =>
-      state.briefs.some((brief) => brief.outboundThreadId === metadata.threadId),
+      [...state.briefs, ...(state.expiredBriefs ?? [])].some((brief) => brief.outboundThreadId === metadata.threadId),
     );
-    if (byThread) return byThread;
-  }
-
-  if (metadata.messageId) {
-    const byMessage = matchByPredicate("message", ({ state }) =>
-      state.briefs.some((brief) => brief.outboundMessageId === metadata.messageId),
-    );
-    if (byMessage) return byMessage;
+    return byThread ?? { userId: null, reason: "no_match" };
   }
 
   // This is the only heuristic fallback we allow: same sending inbox and same recipient
@@ -62,7 +55,7 @@ async function resolveWorkspaceUserId(metadata: { threadId?: string; messageId?:
   if (metadata.inboxId && metadata.sender) {
     const normalizedSender = metadata.sender.trim().toLowerCase();
     const bySenderAndInbox = matchByPredicate("sender_inbox", ({ state }) =>
-      state.briefs.some(
+      [...state.briefs, ...(state.expiredBriefs ?? [])].some(
         (brief) =>
           brief.outboundInboxId === metadata.inboxId &&
           Boolean(brief.sentAt) &&
@@ -83,8 +76,7 @@ export async function POST(request: Request) {
     event = verifyAgentMailWebhook(rawBody, request.headers);
   } catch (error) {
     logger.warn("webhook: signature verification failed", { error: error instanceof Error ? error.message : String(error) });
-    const message = error instanceof Error ? error.message : "Invalid AgentMail webhook.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json({ error: "Invalid webhook request." }, { status: 400 });
   }
 
   if (!isAgentMailMessageReceived(event)) {
@@ -100,13 +92,12 @@ export async function POST(request: Request) {
 
   const resolution = await resolveWorkspaceUserId({
     threadId: event.message.thread_id,
-    messageId: event.message.message_id,
     inboxId: event.message.inbox_id,
     sender: event.message.from,
   });
 
   if (!resolution.userId) {
-    logger.warn("webhook: could not resolve workspace", { reason: resolution.reason, sender: event.message.from });
+    logger.warn("webhook: could not resolve workspace", { reason: resolution.reason });
     return NextResponse.json(
       {
         ok: true,
@@ -121,7 +112,7 @@ export async function POST(request: Request) {
   let appliedReply: AppliedInboundReply | null = null;
 
   const workspace = await withRetry(() =>
-    updateWorkspaceState(async (state) => {
+    updateWorkspaceState((state) => {
       appliedReply = applyInboundReplyToWorkspace(state, {
         rawText,
         sender: event.message.from,
@@ -134,13 +125,7 @@ export async function POST(request: Request) {
         messageId: event.message.message_id,
       });
 
-      if (!appliedReply?.briefId || appliedReply.duplicate || appliedReply.selectedRoleIds.length === 0) {
-        return state;
-      }
-
-      return generateSelectedPacksForWorkspace(state, {
-        briefId: appliedReply.briefId,
-      });
+      return state;
     }, resolution.userId ?? undefined)
   );
 
@@ -162,7 +147,9 @@ export async function POST(request: Request) {
     ok: true,
     eventType: event.event_type,
     resolvedBy: resolution.reason,
-    briefId: replyMeta.briefId ?? workspace.activeBriefId,
+    briefId: replyMeta.briefId,
+    ignored: replyMeta.briefId === null || Boolean(workspace.lastError),
+    error: workspace.lastError,
     selectedRoleIds: replyMeta.selectedRoleIds,
     duplicate: replyMeta.duplicate,
   });

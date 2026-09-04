@@ -1,19 +1,35 @@
 "use client";
 
-import React from "react";
+import React, { useId, useState } from "react";
 import {
+  ArrowDown,
+  ArrowUpRight,
+  CaretDown,
   CheckCircle,
-  PaperPlaneTilt,
+  FileText,
+  Info,
   Palette,
   PencilSimple,
+  Printer,
+  SlidersHorizontal,
   Sparkle,
 } from "@phosphor-icons/react";
-import { RESUME_STYLES, formatAppliedDate, getResumeStyle } from "@/lib/hunteragent-data";
+import {
+  RESUME_STYLES,
+  formatAppliedDate,
+  getResumeStyle,
+} from "@/lib/hunteragent-data";
 import { CvPreview } from "@/components/cv-preview";
 import { TrustExplanationPanel } from "@/components/trust-explanation-panel";
 import { useHunterAgent } from "./hunteragent-context";
-import type { AppliedRecord, PackTarget, StudioTab } from "@/lib/hunteragent-types";
-import type { CvViewMode, Tone } from "@/lib/hunteragent-types";
+import type {
+  AppliedRecord,
+  CvViewMode,
+  PackTarget,
+  StudioTab,
+  Tone,
+} from "@/lib/hunteragent-types";
+import "./studio-panel.css";
 
 function cn(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
@@ -21,45 +37,99 @@ function cn(...parts: Array<string | false | null | undefined>) {
 
 const PROCESSING_STAGES = [
   "Analysing the roles you selected",
-  "Drafting your resume and cover letter",
-  "Selecting the best supporting materials",
+  "Drafting your CV and cover letter",
+  "Selecting supporting materials",
 ] as const;
 
-const EDIT_PROMPT_SUGGESTIONS = ["Make it more direct", "Focus on growth work", "Sound more senior"] as const;
+const EDIT_PROMPT_SUGGESTIONS = [
+  "Make it more direct",
+  "Focus on growth work",
+  "Sound more senior",
+] as const;
 
 function renderInline(text: string): React.ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i} className="font-semibold text-[var(--ink)]">{part.slice(2, -2)}</strong>;
-    }
-    return part;
-  });
+  return text
+    .split(/(\*\*[^*]+\*\*)/g)
+    .map((part, i) =>
+      part.startsWith("**") && part.endsWith("**") ? (
+        <strong key={i}>{part.slice(2, -2)}</strong>
+      ) : (
+        part
+      ),
+    );
 }
 
 function renderMarkdown(text: string) {
-  return text.split("\n").map((line, index) => {
-    if (line.startsWith("### ")) return <h4 key={index} className="mt-4 font-semibold text-[var(--ink)]">{line.slice(4)}</h4>;
-    if (line.startsWith("## ")) return <h3 key={index} className="mt-5 text-base font-semibold text-[var(--ink)]">{line.slice(3)}</h3>;
-    if (line.startsWith("# ")) return <h2 key={index} className="mt-6 text-lg font-semibold text-[var(--ink)]">{line.slice(2)}</h2>;
-    if (line.startsWith("- ") || line.startsWith("* ")) return <li key={index} className="ml-4 list-disc">{renderInline(line.slice(2))}</li>;
-    if (line.trim() === "") return <br key={index} />;
-    return <p key={index}>{renderInline(line)}</p>;
-  });
-}
-
-function targetFromStudioTab(tab: StudioTab): PackTarget {
-  if (tab === "cv") return "cv";
-  if (tab === "letter") return "letter";
-  if (tab === "workSamples") return "workSamples";
-  return "pack";
+  const lines = text.split("\n");
+  const blocks: React.ReactNode[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+    if (/^[-*] /.test(line)) {
+      const start = i;
+      const items: string[] = [];
+      while (i < lines.length && /^[-*] /.test(lines[i]))
+        items.push(lines[i++].slice(2));
+      i--;
+      blocks.push(
+        <ul key={start}>
+          {items.map((item, index) => (
+            <li key={index}>{renderInline(item)}</li>
+          ))}
+        </ul>,
+      );
+    } else if (line.startsWith("### ")) {
+      blocks.push(<h4 key={i}>{renderInline(line.slice(4))}</h4>);
+    } else if (line.startsWith("## ")) {
+      blocks.push(<h3 key={i}>{renderInline(line.slice(3))}</h3>);
+    } else if (line.startsWith("# ")) {
+      blocks.push(<h2 key={i}>{renderInline(line.slice(2))}</h2>);
+    } else {
+      blocks.push(<p key={i}>{renderInline(line)}</p>);
+    }
+  }
+  return blocks;
 }
 
 function targetLabel(target: PackTarget) {
   if (target === "cv") return "CV";
   if (target === "letter") return "cover letter";
-  if (target === "workSamples") return "work sample reasoning";
-  return "pack";
+  if (target === "workSamples") return "work sample notes";
+  return "application pack";
+}
+
+function safeSampleUrl(value?: string) {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:"
+      ? url.href
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+// Manual tab activation avoids firing persisted workspace updates while arrowing through tabs.
+function moveTabFocus(event: React.KeyboardEvent<HTMLButtonElement>) {
+  const keys = ["ArrowLeft", "ArrowRight", "Home", "End"];
+  if (!keys.includes(event.key)) return;
+  const tabs = Array.from(
+    event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>(
+      '[role="tab"]:not(:disabled)',
+    ) ?? [],
+  );
+  if (!tabs.length) return;
+  const current = tabs.indexOf(event.currentTarget);
+  const next =
+    event.key === "Home"
+      ? 0
+      : event.key === "End"
+        ? tabs.length - 1
+        : (current + (event.key === "ArrowRight" ? 1 : -1) + tabs.length) %
+          tabs.length;
+  event.preventDefault();
+  tabs[next].focus();
 }
 
 export function StudioPanel() {
@@ -96,515 +166,815 @@ export function StudioPanel() {
     handleFollowUpPlan,
     generationStage,
   } = useHunterAgent();
+  const id = useId();
+  const [refinementOpen, setRefinementOpen] = useState(false);
+  const [isMarkingApplied, setIsMarkingApplied] = useState(false);
+  const selectedTab = visibleStudioTabs.some(
+    ([value]) => value === workspace.studioTab,
+  )
+    ? workspace.studioTab
+    : "cv";
+  const currentApplication = appliedDetails.find(
+    (item) => item.roleId === activeRole?.id,
+  );
+  const isSelfManaged = draftProfile.materialsMode === "self";
+  const isFallback = activePack?.provider === "fallback";
+  const isReady = workspace.flowPhase === "studio" && activeRole && activePack;
 
   function handleExportPlainText() {
     if (!activePack) return;
-    const lines: string[] = [];
-    lines.push(draftProfile.name);
+    const lines = [draftProfile.name];
     if (draftProfile.currentTitle) lines.push(draftProfile.currentTitle);
     if (draftProfile.locations) lines.push(draftProfile.locations);
     lines.push("");
-    if (activePack.cvSummary) {
-      lines.push("SUMMARY");
-      lines.push(activePack.cvSummary);
-      lines.push("");
+    if (activePack.cvSummary) lines.push("SUMMARY", activePack.cvSummary, "");
+    if (activePack.cvBullets.length)
+      lines.push(
+        "EXPERIENCE",
+        ...activePack.cvBullets.map((bullet) => `- ${bullet}`),
+      );
+    const url = URL.createObjectURL(
+      new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" }),
+    );
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${(draftProfile.name || "Candidate").replace(/\s+/g, "_")}_CV.txt`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function markApplied() {
+    setIsMarkingApplied(true);
+    try {
+      await handleMarkApplied();
+    } finally {
+      setIsMarkingApplied(false);
     }
-    if (activePack.cvBullets.length > 0) {
-      lines.push("EXPERIENCE");
-      for (const bullet of activePack.cvBullets) {
-        lines.push(`• ${bullet}`);
-      }
+  }
+
+  function renderDocument(tab: StudioTab) {
+    if (!activePack || !activeRole) return null;
+    if (tab === "cv") {
+      return workspace.cvViewMode === "preview" ? (
+        <CvPreview
+          profile={draftProfile}
+          pack={activePack}
+          role={activeRole}
+          styleId={effectiveStyle}
+          className="studio-cv-pages"
+        />
+      ) : (
+        <article className="studio-paper studio-prose" aria-label="CV content">
+          <p className="studio-eyebrow">
+            {activePack.resumeSourceType === "upload"
+              ? "Based on your uploaded CV"
+              : "Based on your guided resume"}
+          </p>
+          <h2 className="studio-document-name">
+            {draftProfile.name || "Your CV"}
+          </h2>
+          {draftProfile.currentTitle && (
+            <p className="studio-document-subtitle">
+              {draftProfile.currentTitle}
+            </p>
+          )}
+          <h3>Professional summary</h3>
+          <p>
+            {activePack.cvSummary ||
+              "No summary is available yet. Use Refine to generate one."}
+          </p>
+          <h3>Experience highlights</h3>
+          <ul>
+            {activePack.cvBullets.map((bullet, index) => (
+              <li key={index}>{renderInline(bullet)}</li>
+            ))}
+          </ul>
+        </article>
+      );
     }
-    const text = lines.join("\n");
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${draftProfile.name.replace(/\s+/g, "_")}_CV.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+    if (tab === "letter") {
+      return (
+        <article
+          className="studio-paper studio-prose"
+          aria-label="Cover letter draft"
+        >
+          <header className="studio-letter-heading">
+            <p className="studio-eyebrow">Cover letter</p>
+            <h2>{activeRole.company}</h2>
+            <p>{activeRole.title}</p>
+          </header>
+          {activePack.letter ? (
+            renderMarkdown(activePack.letter)
+          ) : (
+            <p>
+              No cover letter is available yet. Use Refine to generate a draft.
+            </p>
+          )}
+        </article>
+      );
+    }
+    if (tab === "workSamples" && showWorkSamplesTab) {
+      return (
+        <article className="studio-paper">
+          <p className="studio-eyebrow">Supporting evidence</p>
+          <h2 className="studio-section-title mt-2">Work samples</h2>
+          <p className="studio-note mt-2">
+            Review the suggested evidence and confirm each link before including
+            it.
+          </p>
+          {!activePack.workSampleSelections.length ? (
+            <p className="studio-note mt-6">
+              No work samples are selected for this role.
+            </p>
+          ) : (
+            <ol className="studio-samples">
+              {activePack.workSampleSelections.map((item, index) => {
+                const href = safeSampleUrl(item.href);
+                return (
+                  <li key={`${item.title}-${index}`}>
+                    <span className="studio-sample-number" aria-hidden="true">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-semibold">{item.title}</h3>
+                      <p className="studio-note mt-2">{item.note}</p>
+                      {href ? (
+                        <a
+                          className="studio-sample-link"
+                          href={href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Open work sample{" "}
+                          <ArrowUpRight size={14} aria-hidden="true" />
+                          <span className="sr-only">
+                            : {item.title} (opens in a new tab)
+                          </span>
+                        </a>
+                      ) : (
+                        <p className="studio-note mt-2">
+                          {item.href
+                            ? "This sample needs a valid web link."
+                            : "No link attached. Add the sample separately when applying."}
+                        </p>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </article>
+      );
+    }
+    return (
+      <article className="studio-paper">
+        <p className="studio-eyebrow">Application overview</p>
+        <h2 className="studio-section-title mt-2">
+          The thinking behind this pack
+        </h2>
+        <p className="studio-note mt-4">
+          {activePack.reasoning ||
+            "Review each document against the role requirements before applying."}
+        </p>
+        <dl className="studio-summary-list">
+          <div>
+            <dt>CV layout</dt>
+            <dd>{getResumeStyle(effectiveStyle).label}</dd>
+          </div>
+          <div>
+            <dt>Draft tone</dt>
+            <dd className="capitalize">{activePack.tone}</dd>
+          </div>
+          {showWorkSamplesTab && (
+            <div>
+              <dt>Work samples</dt>
+              <dd>{activePack.workSampleSelections.length} selected</dd>
+            </div>
+          )}
+          <div>
+            <dt>Draft source</dt>
+            <dd>
+              {isFallback
+                ? "Profile-based template"
+                : "AI-generated with Claude"}
+            </dd>
+          </div>
+        </dl>
+        <p className="studio-note">
+          A draft, not a submitted application. Check names, dates, claims, and
+          links before you send it.
+        </p>
+      </article>
+    );
   }
 
   return (
-    <section className="bg-[var(--surface)] px-5 py-6 lg:px-6 xl:px-7">
-      {workspace.flowPhase !== "studio" || !activeRole || !activePack ? (
-        <div className="rounded-[1.9rem] border border-[var(--border-soft)] bg-white p-5 shadow-[0_25px_55px_-40px_rgba(18,40,38,0.3)]">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Workspace preview</p>
-          <h3 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--ink)]">
+    <section className="hunter-studio" aria-label="Application studio">
+      {!isReady ? (
+        <div className="studio-empty">
+          <p className="studio-eyebrow">Application studio</p>
+          <FileText
+            className="studio-empty-icon"
+            size={32}
+            aria-hidden="true"
+          />
+          <h2 className="studio-section-title">
             {workspace.flowPhase === "onboarding"
-              ? "Your studio opens here once setup is complete."
+              ? "A space for your next move."
               : workspace.flowPhase === "waiting"
-                ? "Waiting for your first brief to arrive."
+                ? "Your next opportunity starts with a brief."
                 : workspace.flowPhase === "brief"
-                  ? "Choose your roles and your materials will appear here."
-                  : "Preparing your application materials…"}
-          </h3>
-          <div className="mt-5 grid gap-3">
-            {[1, 2, 3].map((item) => (
-              <div key={item} className="h-24 rounded-[1.5rem] border border-dashed border-[var(--border-soft)] bg-[var(--surface)]" />
-            ))}
-          </div>
-          <div className="mt-5 rounded-[1.5rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4 text-sm leading-7 text-[var(--muted)]">
-            {workspace.flowPhase === "processing"
-              ? `${PROCESSING_STAGES[generationStage]}…`
-              : "Select roles from your email to start building your application materials. Your CV, cover letter, and follow-up draft will appear here."}
-          </div>
+                  ? "Choose a role. Make it yours."
+                  : "Your application is taking shape."}
+          </h2>
+          <p className="studio-note mt-3 max-w-lg">
+            {workspace.flowPhase === "onboarding"
+              ? "Complete your profile to prepare role-specific application materials here."
+              : workspace.flowPhase === "waiting"
+                ? "When your brief arrives, select the roles you want to pursue. Your materials will appear here."
+                : workspace.flowPhase === "brief"
+                  ? "Select roles from your brief to begin. Review your CV and cover letter, then refine only what needs changing."
+                  : "Keep this workspace open while your drafts are prepared."}
+          </p>
+          {workspace.flowPhase === "processing" ? (
+            <div className="studio-processing" role="status" aria-live="polite">
+              <span className="studio-status-dot" />
+              {PROCESSING_STAGES[generationStage] ??
+                "Preparing your application materials"}
+              ...
+            </div>
+          ) : (
+            <div className="studio-empty-outline" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+              <span />
+            </div>
+          )}
+          <p className="studio-empty-footer">
+            Review first. Refine with purpose. Apply when ready.
+          </p>
         </div>
       ) : (
-        <div className="space-y-6">
-          <div className="rounded-[1.9rem] border border-[var(--border-soft)] bg-white p-5 shadow-[0_25px_55px_-40px_rgba(18,40,38,0.3)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Application studio</p>
-
-            {activePack.reasoning && draftProfile.materialsMode !== "self" && (
-              <div className="mt-4 rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-4">
-                <p className="text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">Why we tailored it this way</p>
-                <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{activePack.reasoning}</p>
-              </div>
+        <>
+          <header className="studio-header">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="studio-eyebrow">Application studio</p>
+              <span className="studio-status" role="status" aria-live="polite">
+                {isGenerating ? (
+                  <>
+                    <span className="studio-status-dot" /> Updating draft...
+                  </>
+                ) : currentApplication ? (
+                  <>
+                    <CheckCircle size={14} aria-hidden="true" /> Applied
+                  </>
+                ) : isSelfManaged ? (
+                  "Self-managed"
+                ) : (
+                  "Draft for review"
+                )}
+              </span>
+            </div>
+            <h2 className="studio-role-title">{activeRole.company}</h2>
+            <p className="studio-role-subtitle">{activeRole.title}</p>
+            <p className="studio-role-meta">
+              {[
+                activeRole.location,
+                activeRole.employment,
+                activeRole.posted && (/^post(?:ed|ing)\b/i.test(activeRole.posted) ? activeRole.posted : `Posted ${activeRole.posted}`),
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+            {activeRole.sourceUrl?.startsWith("https://") && (
+              <a className="text-link mt-3" href={activeRole.sourceUrl} target="_blank" rel="noopener noreferrer">
+                Open original job listing <ArrowUpRight size={14} />
+              </a>
             )}
+          </header>
 
-            <div className="mt-4 border-b border-[var(--border-soft)] pb-4">
-              <h3 className="text-2xl font-semibold tracking-tight text-[var(--ink)]">{activeRole.company}</h3>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                {activeRole.title} · {activeRole.location} · {activeRole.employment} · Posted {activeRole.posted}
+          {isSelfManaged ? (
+            <div className="studio-paper studio-self-managed">
+              <FileText size={25} aria-hidden="true" />
+              <h3 className="studio-section-title mt-4">
+                Your materials. Your process.
+              </h3>
+              <p className="studio-note mt-3">
+                Prepare and submit your own CV and cover letter outside
+                HunterAgent. This workspace can track when you apply and your
+                follow-up plan.
+              </p>
+              <p className="studio-note mt-3">
+                Document uploads are not available in this studio yet.
               </p>
             </div>
-
-            {draftProfile.materialsMode === "self" && (
-              <div className="mt-5 rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Your materials</p>
-                <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-                  You&apos;re in self-managed mode. Upload your CV and cover letter for this role to keep a record of exactly what you submitted. You can still mark it applied and set follow-up reminders below.
+          ) : (
+            <>
+              <div className="studio-source-notice">
+                <Info size={16} aria-hidden="true" />
+                <p>
+                  <strong>
+                    {isFallback ? "Template draft" : "AI-assisted draft"}.
+                  </strong>{" "}
+                  {isFallback
+                    ? "Built from your profile without AI generation. Review and refine before sending."
+                    : "Generated with Claude. Check every claim against your experience before sending."}
                 </p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <label className="cursor-pointer rounded-[1.3rem] border border-dashed border-[var(--border-strong)] bg-white p-4 text-center transition-colors hover:border-[var(--accent)]">
-                    <input type="file" accept=".pdf,.doc,.docx" className="sr-only" />
-                    <p className="text-sm font-medium text-[var(--ink)]">Upload CV</p>
-                    <p className="mt-1 text-xs text-[var(--muted)]">PDF or Word</p>
-                  </label>
-                  <label className="cursor-pointer rounded-[1.3rem] border border-dashed border-[var(--border-strong)] bg-white p-4 text-center transition-colors hover:border-[var(--accent)]">
-                    <input type="file" accept=".pdf,.doc,.docx" className="sr-only" />
-                    <p className="text-sm font-medium text-[var(--ink)]">Upload cover letter</p>
-                    <p className="mt-1 text-xs text-[var(--muted)]">PDF or Word</p>
-                  </label>
-                </div>
               </div>
-            )}
-
-            {draftProfile.materialsMode !== "self" && (<>
-            <div className="mt-5 flex flex-wrap gap-2 text-xs font-medium">
-              {visibleStudioTabs.map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => void handleStudioTab(value)}
-                  className={cn(
-                    "rounded-full px-3.5 py-2 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                    workspace.studioTab === value ? "bg-[var(--accent)] text-white" : "border border-[var(--border-soft)] bg-white text-[var(--muted)]",
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              {([
-                ["balanced", "Balanced"],
-                ["direct", "More direct"],
-                ["warm", "Warmer"],
-              ] as Array<[Tone, string]>).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => void handleToneChange(value)}
-                  className={cn(
-                    "rounded-full px-3.5 py-2 text-xs font-medium transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                    workspace.tone === value ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "bg-[var(--surface)] text-[var(--muted)]",
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-6 rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Refinement prompt</p>
-                  <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-                    Adjust only what needs changing. Use this to edit just the current section without rewriting the whole pack.
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-[var(--muted)]">
-                    Active target: {targetLabel(targetFromStudioTab(workspace.studioTab))}
-                  </div>
+              <div
+                className="studio-tab-bar"
+                role="tablist"
+                aria-label="Application documents"
+              >
+                {visibleStudioTabs.map(([value, label]) => (
                   <button
+                    key={value}
                     type="button"
-                    onClick={handleClearPrompt}
-                    className="rounded-full border border-[var(--border-soft)] bg-white px-3 py-1 text-[11px] font-medium text-[var(--muted)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
+                    role="tab"
+                    id={`${id}-tab-${value}`}
+                    aria-controls={`${id}-panel-${value}`}
+                    aria-selected={selectedTab === value}
+                    tabIndex={selectedTab === value ? 0 : -1}
+                    onKeyDown={moveTabFocus}
+                    onClick={() => void handleStudioTab(value)}
+                    disabled={isGenerating}
+                    className={cn(
+                      "studio-tab",
+                      selectedTab === value && "is-active",
+                    )}
                   >
-                    Clear prompt
-                  </button>
-                </div>
-              </div>
-              <textarea
-                value={editInstruction}
-                onChange={(event) => setEditInstruction(event.target.value)}
-                placeholder="Example: Make the cover letter more direct and emphasize growth work."
-                className="mt-4 min-h-28 w-full rounded-[1.2rem] border border-[var(--border-soft)] bg-white px-4 py-3 text-sm leading-7 text-[var(--ink)] outline-none transition focus:border-[var(--accent)]"
-              />
-              <div className="mt-3 flex flex-wrap gap-2">
-                {EDIT_PROMPT_SUGGESTIONS.map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    type="button"
-                    onClick={() => handleSuggestionClick(suggestion)}
-                    className="rounded-full border border-[var(--border-soft)] bg-white px-3.5 py-2 text-xs font-medium text-[var(--muted)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                  >
-                    {suggestion}
+                    {value === "pack" ? "Overview" : label}
                   </button>
                 ))}
               </div>
-              {promptHistory.length > 0 && (
-                <div className="mt-4 border-t border-[var(--border-soft)] pt-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[var(--muted)]">Recent for this role and section</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {promptHistory.map((entry) => (
-                      <button
-                        key={entry}
-                        type="button"
-                        onClick={() => setEditInstruction(entry)}
-                        className="rounded-full border border-[var(--border-soft)] bg-white px-3.5 py-2 text-xs font-medium text-[var(--muted)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                      >
-                        {entry}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {workspace.studioTab === "cv" && (
-              <div className="mt-6 space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex flex-wrap gap-2 text-xs font-medium">
-                    {([
-                      ["preview", "Preview"],
-                      ["content", "Content"],
-                    ] as Array<[CvViewMode, string]>).map(([mode, label]) => (
+              <div className="studio-document-toolbar">
+                {selectedTab === "cv" ? (
+                  <div
+                    className="studio-segmented"
+                    role="group"
+                    aria-label="CV view"
+                  >
+                    {(
+                      [
+                        ["preview", "Document"],
+                        ["content", "Text"],
+                      ] as Array<[CvViewMode, string]>
+                    ).map(([mode, label]) => (
                       <button
                         key={mode}
                         type="button"
+                        aria-pressed={workspace.cvViewMode === mode}
+                        disabled={isGenerating}
                         onClick={() => void handleCvViewMode(mode)}
-                        className={cn(
-                          "rounded-full px-3.5 py-2 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                          workspace.cvViewMode === mode ? "bg-[var(--accent)] text-white" : "border border-[var(--border-soft)] bg-white text-[var(--muted)]",
-                        )}
                       >
                         {label}
                       </button>
                     ))}
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={handleExportCvPreview}
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-soft)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                    >
-                      <PaperPlaneTilt size={16} />
-                      Export PDF
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleExportPlainText}
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-soft)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                    >
-                      Export plain text
-                    </button>
-                  </div>
-                </div>
-
-                {workspace.cvViewMode === "preview" ? (
-                  <CvPreview profile={draftProfile} pack={activePack} role={activeRole} styleId={effectiveStyle} />
                 ) : (
-                  <>
-                    <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Resume summary</p>
-                          <p className="mt-3 text-sm leading-7 text-[var(--muted)]">{activePack.cvSummary}</p>
-                        </div>
-                        <div className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[var(--muted)]">
-                          {activePack.resumeSourceType === "upload" ? "Uploaded base CV" : "Guided base resume"}
-                        </div>
-                      </div>
-                    </div>
-
-                    {activePack.cvBullets.map((bullet) => (
-                      <div key={bullet} className="rounded-[1.4rem] border border-[var(--border-soft)] bg-white p-4 text-sm leading-7 text-[var(--muted)]">
-                        {bullet}
-                      </div>
-                    ))}
-                  </>
+                  <p className="studio-note">
+                    {selectedTab === "letter"
+                      ? "Cover letter draft"
+                      : selectedTab === "workSamples"
+                        ? "Evidence for this role"
+                        : "Your application at a glance"}
+                  </p>
                 )}
-
-                <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Design reference</p>
-                      <p className="mt-2 text-sm leading-7 text-[var(--muted)]">Keep this tucked away unless you want to change the visual direction.</p>
-                    </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    className={cn(
+                      "studio-button studio-button-small",
+                      refinementOpen && "is-selected",
+                    )}
+                    aria-expanded={refinementOpen}
+                    aria-controls={`${id}-refinement`}
+                    onClick={() => setRefinementOpen(!refinementOpen)}
+                  >
+                    <SlidersHorizontal size={16} aria-hidden="true" /> Refine{" "}
+                    <CaretDown
+                      size={12}
+                      className={cn(
+                        "studio-caret",
+                        refinementOpen && "is-open",
+                      )}
+                      aria-hidden="true"
+                    />
+                  </button>
+                  {selectedTab === "cv" && (
                     <button
                       type="button"
-                      onClick={() => setDesignReferenceOpen((current) => !current)}
-                      className="rounded-full border border-[var(--border-soft)] bg-white px-4 py-2 text-xs font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
+                      className="studio-button studio-button-primary studio-button-small"
+                      onClick={handleExportCvPreview}
+                      disabled={isGenerating}
+                      aria-describedby={`${id}-print-help`}
                     >
-                      {designReferenceOpen ? "Collapse" : "Open"}
+                      <Printer size={16} aria-hidden="true" /> Print / save PDF
                     </button>
-                  </div>
-
-                  {designReferenceOpen && (
-                    <div className="mt-4 space-y-4">
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {RESUME_STYLES.map((style) => {
-                          const active = effectiveStyle === style.id;
-                          return (
-                            <button
-                              key={style.id}
-                              type="button"
-                              onClick={() => void handleRoleStyle(style.id)}
-                              className={cn(
-                                "rounded-[1.45rem] border p-4 text-left transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.99]",
-                                active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border-soft)] bg-white",
-                              )}
-                            >
-                              <div className="flex items-center justify-between gap-3">
-                                <h4 className="font-semibold text-[var(--ink)]">{style.label}</h4>
-                                <span className={cn("rounded-full px-2.5 py-1 text-[11px] font-medium", active ? "bg-[var(--accent)] text-white" : "bg-[var(--surface)] text-[var(--muted)]")}>{active ? "Current" : "Use"}</span>
-                              </div>
-                              <div className="mt-3 rounded-[1rem] border border-[var(--border-soft)] p-3">
-                                <div className="h-3 w-20 rounded-full" style={{ backgroundColor: style.id === "creative" ? "#c67a3f" : "#0f6a62" }} />
-                                <div className="mt-3 h-2 w-28 rounded-full bg-[rgba(20,32,30,0.18)]" />
-                                <div className="mt-2 h-2 w-full rounded-full bg-[rgba(20,32,30,0.12)]" />
-                                <div className="mt-2 h-2 w-4/5 rounded-full bg-[rgba(20,32,30,0.12)]" />
-                              </div>
-                              <p className="mt-3 text-sm leading-6 text-[var(--muted)]">{style.blurb}</p>
-                              <p className="mt-2 text-xs leading-6 text-[var(--muted)]">Best for: {style.bestFor}</p>
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => void handleMakeDefaultStyle(effectiveStyle)}
-                        className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-4 py-2.5 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
-                      >
-                        <Palette size={16} />
-                        Make {getResumeStyle(effectiveStyle).label} the default style
-                      </button>
-                    </div>
                   )}
                 </div>
               </div>
-            )}
+              {selectedTab === "cv" && (
+                <p id={`${id}-print-help`} className="studio-export-note">
+                  Opens your browser&apos;s print dialog. Choose Save as PDF to
+                  download.
+                </p>
+              )}
 
-            {workspace.studioTab === "letter" && (
-              <div className="mt-6 rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4 text-sm leading-7 text-[var(--muted)]">
-                {renderMarkdown(activePack.letter)}
-              </div>
-            )}
-
-            {workspace.studioTab === "workSamples" && (
-              <div className="mt-6 space-y-3">
-                {activePack.workSampleSelections.length === 0 ? (
-                  <div className="rounded-[1.4rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4 text-sm leading-7 text-[var(--muted)]">
-                    No work samples needed for this role — your CV and cover letter are the strongest application here.
+              <div
+                className={cn(
+                  "studio-workbench",
+                  refinementOpen && "has-refinement",
+                )}
+              >
+                <aside
+                  id={`${id}-refinement`}
+                  className="studio-refinement"
+                  hidden={!refinementOpen}
+                  aria-label="Refine application materials"
+                >
+                  <p className="studio-eyebrow">Refine your draft</p>
+                  <h3 className="studio-refinement-title">
+                    A focused edit, not a fresh start.
+                  </h3>
+                  <p className="studio-note mt-2">
+                    {selectedTab === "pack"
+                      ? "You are editing the whole application pack."
+                      : `Changes apply to your ${targetLabel(selectedTab)} only.`}
+                  </p>
+                  <label
+                    className="studio-field-label mt-5"
+                    htmlFor={`${id}-instruction`}
+                  >
+                    What would you like to change?
+                  </label>
+                  <textarea
+                    id={`${id}-instruction`}
+                    value={editInstruction}
+                    onChange={(event) => setEditInstruction(event.target.value)}
+                    placeholder="e.g. Lead with my product systems experience."
+                    rows={4}
+                    disabled={isGenerating}
+                    className="studio-textarea"
+                  />
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {EDIT_PROMPT_SUGGESTIONS.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        className="studio-suggestion"
+                        disabled={isGenerating}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
                   </div>
-                ) : activePack.workSampleSelections.map((item) => (
-                  <div key={`${item.title}-${item.note}`} className="rounded-[1.4rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <h4 className="font-semibold text-[var(--ink)]">{item.title}</h4>
-                        {item.href && <p className="mt-2 text-xs font-mono text-[var(--accent)]">{item.href}</p>}
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      className="studio-button studio-button-primary"
+                      disabled={isGenerating}
+                      onClick={() =>
+                        selectedTab === workspace.studioTab
+                          ? handleEditCurrentTabOnly()
+                          : handleSectionEdit(selectedTab)
+                      }
+                    >
+                      <PencilSimple size={15} aria-hidden="true" />
+                      {isGenerating
+                        ? "Updating..."
+                        : `${editInstruction.trim() ? "Update" : "Refresh"} ${targetLabel(selectedTab)}`}
+                    </button>
+                    <button
+                      type="button"
+                      className="studio-text-button"
+                      disabled={isGenerating || !editInstruction.trim()}
+                      onClick={handleClearPrompt}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  {promptHistory.length > 0 && (
+                    <details className="studio-subdetails">
+                      <summary>
+                        Recent instructions <span>{promptHistory.length}</span>
+                      </summary>
+                      <div className="mt-3 grid gap-2">
+                        {promptHistory.map((entry) => (
+                          <button
+                            type="button"
+                            key={entry}
+                            className="studio-suggestion text-left"
+                            disabled={isGenerating}
+                            onClick={() => setEditInstruction(entry)}
+                          >
+                            {entry}
+                          </button>
+                        ))}
                       </div>
-                      <div className="rounded-full bg-white px-3 py-1 text-[11px] font-medium text-[var(--muted)]">Work sample</div>
+                    </details>
+                  )}
+                  <details className="studio-subdetails">
+                    <summary>
+                      Whole-pack changes{" "}
+                      <Sparkle size={15} aria-hidden="true" />
+                    </summary>
+                    <p className="studio-note mt-3">
+                      Changing the tone regenerates all materials for this role,
+                      not just the open document.
+                    </p>
+                    <fieldset className="mt-4" disabled={isGenerating}>
+                      <legend className="studio-field-label">
+                        Tone for the whole pack
+                      </legend>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {(
+                          [
+                            ["balanced", "Balanced"],
+                            ["direct", "Direct"],
+                            ["warm", "Warm"],
+                          ] as Array<[Tone, string]>
+                        ).map(([tone, label]) => (
+                          <button
+                            type="button"
+                            className="studio-suggestion"
+                            aria-pressed={workspace.tone === tone}
+                            disabled={isGenerating || workspace.tone === tone}
+                            onClick={() => void handleToneChange(tone)}
+                            key={tone}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </fieldset>
+                    <button
+                      type="button"
+                      className="studio-button mt-4"
+                      disabled={isGenerating}
+                      onClick={() => void handleSharpenPack()}
+                    >
+                      <Sparkle size={15} aria-hidden="true" /> Sharpen pack
+                    </button>
+                  </details>
+                  {selectedTab === "cv" && (
+                    <div className="studio-subdetails">
+                      <button
+                        className="studio-disclosure"
+                        type="button"
+                        aria-expanded={designReferenceOpen}
+                        aria-controls={`${id}-design`}
+                        onClick={() =>
+                          setDesignReferenceOpen(!designReferenceOpen)
+                        }
+                      >
+                        <span>
+                          <Palette size={15} aria-hidden="true" /> CV layout
+                        </span>
+                        <span>
+                          {getResumeStyle(effectiveStyle).label}
+                          <CaretDown size={12} aria-hidden="true" />
+                        </span>
+                      </button>
+                      <div id={`${id}-design`} hidden={!designReferenceOpen}>
+                        <p className="studio-note mt-3">
+                          Change the presentation of your CV without rewriting
+                          its content.
+                        </p>
+                        <div className="studio-style-grid">
+                          {RESUME_STYLES.map((style) => (
+                            <button
+                              key={style.id}
+                              type="button"
+                              className="studio-style-option"
+                              aria-pressed={effectiveStyle === style.id}
+                              disabled={isGenerating}
+                              onClick={() => void handleRoleStyle(style.id)}
+                            >
+                              <span className="flex items-center justify-between gap-2">
+                                <strong>{style.label}</strong>
+                                {effectiveStyle === style.id && (
+                                  <CheckCircle size={16} aria-hidden="true" />
+                                )}
+                              </span>
+                              <span className={`studio-style-thumbnail is-${style.id}`} aria-hidden="true">
+                                <span className="thumbnail-header" />
+                                <span className="thumbnail-sidebar" />
+                                <span className="thumbnail-lines"><i /><i /><i /><i /></span>
+                              </span>
+                              <span className="studio-note">{style.blurb}</span>
+                            </button>
+                          ))}
+                        </div>
+                        <button
+                          type="button"
+                          className="studio-text-button mt-3"
+                          disabled={isGenerating}
+                          onClick={() =>
+                            void handleMakeDefaultStyle(effectiveStyle)
+                          }
+                        >
+                          Make {getResumeStyle(effectiveStyle).label} my default
+                        </button>
+                      </div>
                     </div>
-                    <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{item.note}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {workspace.studioTab === "pack" && (
-              <div className="mt-6 space-y-4">
-                <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4 text-sm leading-7 text-[var(--muted)]">
-                  {activePack.reasoning}
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {[
-                    `Resume · ${getResumeStyle(activePack.resumeStyleUsed).label}`,
-                    `Cover letter · ${workspace.tone}`,
-                    showWorkSamplesTab ? `Work samples · ${activePack.workSampleSelections.length} picks` : "Work samples · not in scope",
-                    `Provider · ${activePack.provider === "anthropic" ? "AI (Claude)" : activePack.provider === "fallback" ? "Template" : activePack.provider}`,
-                  ].map((item) => (
-                    <div key={item} className="rounded-[1.4rem] border border-[var(--border-soft)] bg-white px-4 py-4 text-sm font-medium text-[var(--ink)]">
-                      {item}
+                  )}
+                </aside>
+                <div className="studio-document-area" aria-busy={isGenerating}>
+                  {visibleStudioTabs.map(([tab]) => (
+                    <div
+                      key={tab}
+                      role="tabpanel"
+                      id={`${id}-panel-${tab}`}
+                      aria-labelledby={`${id}-tab-${tab}`}
+                      tabIndex={0}
+                      hidden={selectedTab !== tab}
+                    >
+                      {selectedTab === tab && renderDocument(tab)}
                     </div>
                   ))}
                 </div>
               </div>
-            )}
-
-            {trustExplanation && (
-              <div className="mt-6 rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Trust layer</p>
-                    <p className="mt-2 text-sm leading-7 text-[var(--muted)]">
-                      See how this CV, cover letter, and work sample selection were put together.
-                    </p>
-                  </div>
+              {selectedTab === "cv" && (
+                <div className="studio-document-footer">
+                  <span>
+                    {getResumeStyle(effectiveStyle).label} layout{" "}
+                    <span aria-hidden="true">·</span> Review before sending
+                  </span>
                   <button
                     type="button"
-                    onClick={() => setTrustPanelOpen((current) => !current)}
-                    className="rounded-full border border-[var(--border-soft)] bg-white px-4 py-2 text-xs font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]"
+                    className="studio-text-button"
+                    disabled={isGenerating}
+                    onClick={handleExportPlainText}
                   >
-                    {trustPanelOpen ? "Hide trust details" : "Open trust details"}
+                    <ArrowDown size={14} aria-hidden="true" /> Download plain
+                    text
                   </button>
                 </div>
+              )}
 
-                {trustPanelOpen && (
-                  <div className="mt-4">
-                    <TrustExplanationPanel explanation={trustExplanation} />
-                  </div>
-                )}
-              </div>
-            )}
-            </>)}
-
-            {draftProfile.materialsMode !== "self" && (
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <button
-                  type="button"
-                  onClick={() => void handleEditCurrentTabOnly()}
-                  disabled={isGenerating}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] disabled:cursor-not-allowed disabled:opacity-45 enabled:hover:-translate-y-0.5 enabled:active:translate-y-[1px] enabled:active:scale-[0.98]"
-                >
-                  <PencilSimple size={16} weight="fill" />
-                  {isGenerating ? "Updating" : `Edit ${targetLabel(targetFromStudioTab(workspace.studioTab))} only`}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleSharpenPack()}
-                  disabled={isGenerating}
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] disabled:cursor-not-allowed disabled:opacity-45 enabled:hover:-translate-y-0.5 enabled:active:translate-y-[1px] enabled:active:scale-[0.98]"
-                >
-                  <Sparkle size={16} weight="fill" />
-                  Regenerate all
-                </button>
-              </div>
-            )}
-
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={handleMarkApplied}
-                disabled={isGenerating}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] disabled:cursor-not-allowed disabled:opacity-45 enabled:hover:-translate-y-0.5 enabled:active:translate-y-[1px] enabled:active:scale-[0.98]"
-              >
-                <CheckCircle size={16} weight="fill" />
-                Mark applied
-              </button>
-            </div>
-
-            {draftProfile.materialsMode !== "self" && (
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                {([
-                  ["cv", "Edit CV only"],
-                  ["letter", "Edit cover letter only"],
-                  ...(showWorkSamplesTab ? ([["workSamples", "Edit work samples only"]] as Array<[PackTarget, string]>) : []),
-                ] as Array<[PackTarget, string]>).map(([target, label]) => (
+              {(trustExplanation || activePack.reasoning) && (
+                <section className="studio-trust">
                   <button
-                    key={target}
                     type="button"
-                    onClick={() => void handleSectionEdit(target)}
-                    disabled={isGenerating}
-                    className={cn(
-                      "inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] disabled:cursor-not-allowed disabled:opacity-45 enabled:hover:-translate-y-0.5 enabled:active:translate-y-[1px] enabled:active:scale-[0.98]",
-                      workspace.studioTab === target
-                        ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                        : "border-[var(--border-soft)] bg-white text-[var(--ink)]",
-                    )}
+                    className="studio-disclosure"
+                    aria-expanded={trustPanelOpen}
+                    aria-controls={`${id}-trust`}
+                    onClick={() => setTrustPanelOpen(!trustPanelOpen)}
                   >
-                    <Sparkle size={16} />
-                    {label}
+                    <span>
+                      <Info size={17} aria-hidden="true" /> How this draft was
+                      put together
+                    </span>
+                    <CaretDown
+                      size={15}
+                      className={cn(
+                        "studio-caret",
+                        trustPanelOpen && "is-open",
+                      )}
+                      aria-hidden="true"
+                    />
                   </button>
-                ))}
-              </div>
-            )}
+                  <p className="studio-note mt-1">
+                    Source material, tailoring decisions, and inferred details.
+                  </p>
+                  <div
+                    id={`${id}-trust`}
+                    hidden={!trustPanelOpen}
+                    className="studio-trust-content"
+                  >
+                    <p className="studio-note">
+                      These explanations describe the inputs and decisions, not
+                      an independent fact-check.
+                    </p>
+                    {activePack.reasoning && (
+                      <p className="studio-note mt-3">{activePack.reasoning}</p>
+                    )}
+                    {trustExplanation && (
+                      <TrustExplanationPanel
+                        explanation={trustExplanation}
+                        className="studio-trust-details mt-5"
+                      />
+                    )}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
 
-            {activePack.provider === "fallback" && draftProfile.materialsMode !== "self" && (
-              <div className="mt-4 rounded-[1.45rem] border border-[var(--border-soft)] bg-[var(--surface)] px-4 py-4 text-sm leading-7 text-[var(--muted)]">
-                These materials were built automatically from your profile. They&apos;re a solid starting point — review and edit before sending.
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-[1.9rem] border border-[var(--border-soft)] bg-white p-5 shadow-[0_25px_55px_-40px_rgba(18,40,38,0.3)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">Applied timeline</p>
+          <footer className="studio-application-action">
+            <div>
+              <h3 className="text-sm font-semibold">
+                {currentApplication
+                  ? "Application recorded"
+                  : "Already sent your application?"}
+              </h3>
+              <p className="studio-note mt-1">
+                {currentApplication
+                  ? `Marked applied on ${formatAppliedDate(currentApplication.appliedAt)}.`
+                  : "Mark it here to track it in Applications. This does not submit anything."}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="studio-button"
+              onClick={() => void markApplied()}
+              disabled={
+                isGenerating || isMarkingApplied || !!currentApplication
+              }
+            >
+              <CheckCircle size={17} aria-hidden="true" />
+              {isMarkingApplied
+                ? "Recording..."
+                : currentApplication
+                  ? "Applied"
+                  : "Mark applied"}
+            </button>
+          </footer>
+          <section
+            className="studio-timeline"
+            aria-labelledby={`${id}-timeline-heading`}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <h3
+                id={`${id}-timeline-heading`}
+                className="studio-section-title"
+              >
+                Application log
+              </h3>
+              <span className="studio-note">
+                {appliedDetails.length} recorded
+              </span>
+            </div>
             {appliedDetails.length === 0 ? (
-              <div className="mt-4 rounded-[1.5rem] border border-dashed border-[var(--border-strong)] bg-[var(--surface-2)] p-4 text-sm leading-7 text-[var(--muted)]">
-                No applications logged yet. Mark a role as applied from the studio to track it here.
-              </div>
+              <p className="studio-note mt-3">
+                Nothing logged yet. Your applications and follow-up plans will
+                appear here.
+              </p>
             ) : (
-              <div className="mt-4 space-y-4">
+              <div className="mt-4">
                 {appliedDetails.map((item) => (
-                  <div key={item.roleId} className="rounded-[1.5rem] border border-[var(--border-soft)] bg-[var(--surface)] p-4">
+                  <article key={item.roleId} className="studio-timeline-entry">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <h4 className="text-lg font-semibold tracking-tight text-[var(--ink)]">{item.role.company}</h4>
-                        <p className="mt-1 text-sm text-[var(--muted)]">{item.role.title} · Applied {formatAppliedDate(item.appliedAt)}</p>
+                        <h4 className="font-semibold">{item.role.company}</h4>
+                        <p className="studio-note mt-1">{item.role.title}</p>
                       </div>
-                      <div className="rounded-full bg-white px-3 py-1 text-xs font-medium text-[var(--muted)]">
-                        {getResumeStyle(item.resumeStyleUsed).label} · {item.provider}
-                      </div>
+                      <span className="studio-note">
+                        Applied {formatAppliedDate(item.appliedAt)}
+                      </span>
                     </div>
-                    <p className="mt-3 text-sm leading-7 text-[var(--muted)]">
-                      {item.followUp === "off" ? "No follow-up reminder set." : `Follow-up reminder: in ${item.followUp} days.`}{" "}
-                      {item.followUpDueAt ? `Due ${formatAppliedDate(item.followUpDueAt)}.` : ""}
+                    <p className="studio-note mt-3">
+                      {item.followUp === "off"
+                        ? "No follow-up planned."
+                        : item.followUpDueAt
+                          ? `Follow-up due ${formatAppliedDate(item.followUpDueAt)}.`
+                          : `Follow-up planned for ${item.followUp} days after applying.`}
                     </p>
-                    <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium">
-                      {([
-                        ["off", "Follow-up off"],
-                        ["7", "Remind in 7 days"],
-                        ["14", "Remind in 14 days"],
-                      ] as Array<[AppliedRecord["followUp"], string]>).map(([value, label]) => (
+                    <div
+                      className="mt-3 flex flex-wrap gap-2"
+                      role="group"
+                      aria-label={`Follow-up for ${item.role.title} at ${item.role.company}`}
+                    >
+                      {(
+                        [
+                          ["off", "Off"],
+                          ["7", "7 days"],
+                          ["14", "14 days"],
+                        ] as Array<[AppliedRecord["followUp"], string]>
+                      ).map(([value, label]) => (
                         <button
                           key={value}
                           type="button"
-                          onClick={() => void handleFollowUpPlan(item.roleId, value)}
-                          className={cn(
-                            "rounded-full px-3.5 py-2 transition-transform duration-300 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 active:translate-y-[1px] active:scale-[0.98]",
-                            item.followUp === value ? "bg-[var(--accent)] text-white" : "border border-[var(--border-soft)] bg-white text-[var(--muted)]",
-                          )}
+                          className="studio-suggestion"
+                          aria-pressed={item.followUp === value}
+                          onClick={() =>
+                            void handleFollowUpPlan(item.roleId, value)
+                          }
                         >
                           {label}
                         </button>
                       ))}
                     </div>
                     {item.followUpDraft && (
-                      <div className="mt-4 rounded-[1.4rem] border border-[var(--border-soft)] bg-white p-4 text-sm leading-7 whitespace-pre-line text-[var(--muted)]">
-                        {item.followUpDraft}
-                      </div>
+                      <details className="studio-followup-draft">
+                        <summary>Review follow-up draft</summary>
+                        <p className="studio-note mt-3 whitespace-pre-line">
+                          {item.followUpDraft}
+                        </p>
+                      </details>
                     )}
-                  </div>
+                  </article>
                 ))}
               </div>
             )}
-          </div>
-        </div>
+          </section>
+        </>
       )}
     </section>
   );

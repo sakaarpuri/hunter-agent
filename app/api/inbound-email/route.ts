@@ -14,15 +14,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 401 });
   }
 
-  const body = (await request.json()) as {
+  const body = (await request.json().catch(() => null)) as {
     briefId: string;
     rawText: string;
     sender?: string;
     subject?: string;
     source?: "dashboard" | "webhook";
-  };
+  } | null;
 
-  if (!body.briefId || !body.rawText?.trim()) {
+  if (!body || typeof body.briefId !== "string" || !body.briefId.trim() || typeof body.rawText !== "string" || !body.rawText.trim()
+    || (body.source !== undefined && body.source !== "dashboard" && body.source !== "webhook")) {
     return NextResponse.json({ error: "briefId and rawText are required" }, { status: 400 });
   }
 
