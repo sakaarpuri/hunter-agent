@@ -1,7 +1,9 @@
 # Curiosity-Led Discovery
 
-Status: proposed, not implemented. Current production preferences and matching
-must not be described as a working close-match / unexpected-role mixer.
+Status: v1 implemented. Production supports a persisted three-position search
+range, bounded adjacent-role families, explicit close/adjacent labels, and a
+deterministic brief mix. Free-form introduction interpretation remains a future
+onboarding enhancement.
 
 ## Audience And Promise
 
@@ -44,15 +46,19 @@ limits are never relaxed by the exploration control. Unknown requirements are
 not confirmed benefits. An adventurous career setting and a career change are
 different preferences, not automatic implications of one slider position.
 
-## Existing Foundations And Gaps
+## Implementation Notes
 
-Already present: location text, remote regions, work arrangement, target titles,
+Implemented: location text, remote regions, work arrangement, target titles,
 strengths, move criteria, three-role delivery, shared public-search caching,
-per-user cadence, spending caps, and evidence-grounded private AI ranking.
+per-user cadence, spending caps, evidence-grounded private AI ranking, persisted
+exploration preference, bounded adjacent-family search, explicit close/adjacent
+assessment, deterministic mixture selection, structured role feedback, and
+pre-send source verification.
 
-Missing: quick introduction interpretation into confirmed role families,
-persisted exploration preference, bounded adjacent-family search, explicit
-close/adjacent assessment, and deterministic mixture selection in email.
+Still optional future work: interpreting one free-form introduction into editable,
+confirmed role families. The v1 experience uses the user's existing title,
+target roles, skills, and move criteria to select from a conservative role bridge
+taxonomy without adding a model call to each search.
 
 Preserve the existing generation/application flow. New profile fields need
 normalization for old accounts, workspace persistence, settings, fixtures and

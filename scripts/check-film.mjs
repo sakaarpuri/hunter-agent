@@ -115,7 +115,7 @@ try {
       assert.equal(await page.getByRole('heading', {level: 1}).count(), 1);
       assert.equal(await page.getByRole('heading', {level: 1}).innerText(), 'What if this\nwas work?');
       const text = await page.locator('main').innerText();
-      assert.ok(text.includes('Your AI job scout searches for roles'), 'The AI-search promise is explicit');
+      assert.ok(text.includes('Our agents search widely for roles'), 'The agent-search promise is explicit');
       for (const phrase of ['25 seconds. Your sound, your choice.', 'AI-created concept scenes, not advertised vacancies.', 'A little possibility. Replay whenever you like.', 'Keep your job. Keep your standards.', 'Three or five possibilities worth making a move for.']) assert.ok(!text.includes(phrase));
       if (scenario === 'normal' || scenario === 'no-frame-callback') await playing(video);
       else {

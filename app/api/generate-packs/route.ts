@@ -3,6 +3,7 @@ import { AuthError, requireUser } from "@/lib/auth";
 import { updateWorkspaceState } from "@/lib/hunteragent-store";
 import { generateSelectedPacksForWorkspace, isValidGenerationInput } from "@/lib/hunteragent-workspace-ops";
 import { logger } from "@/lib/logger";
+import { recordProductEvent } from "@/lib/product-analytics";
 
 export const runtime = "nodejs";
 
@@ -49,6 +50,10 @@ export async function POST(request: Request) {
         instruction: body.instruction,
       }, user.id), user.id,
     );
+    await recordProductEvent(user.id, "materials_generated", {
+      target: body.target ?? "pack",
+      intent: body.intent ?? "refresh",
+    });
 
     logger.info("generate-packs: complete", { userId: user.id });
     return NextResponse.json(workspace);

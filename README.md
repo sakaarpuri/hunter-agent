@@ -86,6 +86,10 @@ The `/api/cron/daily-briefs` route still exists for manual or authenticated serv
 
 Already implemented:
 - real auth with per-user workspaces
+- Close Match, A Little Stretch, and Surprise Me discovery modes with fixed hard constraints
+- structured role feedback that influences future matching
+- pre-send listing verification and first-party source preference
+- privacy-safe first-party product events with 90-day retention
 - inbound AgentMail webhook handling
 - outbound brief sending
 - Tavily-backed discovery with shared public-query caching and no demo-job fallback
@@ -97,7 +101,7 @@ Already implemented:
 - customer-facing Privacy and Terms pages
 
 Launch decisions still owned outside the codebase:
-- choose and integrate a payment provider before charging the planned subscription
+- choose and integrate a payment provider before charging the £4.99 monthly founding-member price
 - configure the public support email and confirm the operator identity and governing-law wording with appropriate legal advice
 - verify the production provider credentials and complete one real-account delivery-and-reply test after deployment
 

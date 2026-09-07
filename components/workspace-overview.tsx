@@ -24,6 +24,7 @@ export function WorkspaceOverview({
 }) {
   const {
     workspace,
+    isDesignPreview,
     currentTime,
     draftProfile,
     activeBrief,
@@ -35,12 +36,14 @@ export function WorkspaceOverview({
     handleSendFirstBriefNow,
     setIsSettingsOpen,
     handleActiveRole,
+    handleRoleFeedback,
   } = useHunterAgent();
   const [sending, setSending] = useState(false);
   const [selected, setSelected] = useState<number[]>(() => activeBrief?.selectedRoleIds ?? []);
   const [showMore, setShowMore] = useState(false);
   const [showReply, setShowReply] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [feedbackOpen, setFeedbackOpen] = useState<number | null>(null);
   const busy = isGenerating || isSubmittingReply;
   const retainedRoles = (activeBrief?.roleIds ?? [])
     .map((id) => getRoleFromCatalog(id, workspace.roleCatalog))
@@ -86,7 +89,7 @@ export function WorkspaceOverview({
           <p>
             {draftProfile.briefsPaused
               ? "Your brief emails are paused. Resume in preferences whenever you're ready."
-              : `We search ${workspace.profile.discoveryCadence === "daily" ? "daily" : "three times a week"} for up to 3 new matches per brief. Your daily email window is ${workspace.profile.briefTime} in ${workspace.profile.timezone.replaceAll("_", " ")}. No genuine new matches means no email, never padding.`}
+              : `Our agents search ${workspace.profile.discoveryCadence === "daily" ? "daily" : "three times a week"} for up to 3 new matches per brief. Your email window is ${workspace.profile.briefTime} in ${workspace.profile.timezone.replaceAll("_", " ")}. No genuine new matches means no email, never padding.`}
           </p>
           <div className="waiting-actions">
             <button
@@ -211,6 +214,7 @@ export function WorkspaceOverview({
             (r) => r.roleId === role.id,
           );
           const open = expanded === role.id;
+          const feedback = workspace.roleFeedback[String(role.id)];
           return (
             <article
               className={`real-role ${selected.includes(role.id) ? "is-selected" : ""}`}
@@ -251,9 +255,9 @@ export function WorkspaceOverview({
                     ? "Applied"
                     : pack
                       ? "Materials ready"
-                      : activeBrief.topRoleIds.includes(role.id)
-                        ? "Top pick"
-                        : "Wildcard"}
+                      : role.explorationKind === "adjacent"
+                        ? "A little stretch"
+                        : "Close match"}
                 </span>
               </div>
               <div className="role-reason">
@@ -265,7 +269,8 @@ export function WorkspaceOverview({
               </div>
               <div className="role-actions">
                 {role.sourceUrl?.startsWith("https://") && (
-                  <a className="text-link" href={role.sourceUrl} target="_blank" rel="noopener noreferrer">
+                  <a className="text-link" href={role.sourceUrl} target="_blank" rel="noopener noreferrer"
+                    onClick={() => { if (!isDesignPreview) void fetch("/api/events", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ event: "role_opened", roleId: role.id }) }).catch(() => {}); }}>
                     Original listing <ArrowRight size={14} />
                   </a>
                 )}
@@ -293,6 +298,33 @@ export function WorkspaceOverview({
                   </button>
                 )}
               </div>
+              <div className="flex flex-wrap items-center gap-2 border-t border-[var(--border-soft)] px-5 py-3 text-sm">
+                <span className="mr-1 text-[var(--muted)]">Help your next brief:</span>
+                <button type="button" className={`rounded-full border px-3 py-1.5 font-medium ${feedback?.reaction === "interested" ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border-soft)] bg-white text-[var(--ink)]"}`}
+                  onClick={() => { setFeedbackOpen(null); void handleRoleFeedback(role.id, "interested"); }}>
+                  Worth a look
+                </button>
+                <button type="button" className={`rounded-full border px-3 py-1.5 font-medium ${feedback?.reaction === "not_for_me" ? "border-[var(--ink)] bg-[var(--ink)] text-white" : "border-[var(--border-soft)] bg-white text-[var(--ink)]"}`}
+                  onClick={() => setFeedbackOpen(feedbackOpen === role.id ? null : role.id)}>
+                  Not for me
+                </button>
+                <span className="ml-auto text-xs text-[var(--muted)]">
+                  {role.sourceVerificationStatus === "verified" ? "Listing checked today" : "Check current availability"}
+                </span>
+              </div>
+              {feedbackOpen === role.id && (
+                <div className="flex flex-wrap gap-2 bg-[var(--surface)] px-5 pb-4 text-xs" aria-label="Why this role is not for you">
+                  {([
+                    ["salary", "Pay"], ["location", "Location"], ["company", "Company"],
+                    ["seniority", "Level"], ["direction", "Wrong direction"], ["not_exciting", "Not exciting"],
+                  ] as const).map(([reason, label]) => (
+                    <button key={reason} type="button" className="rounded-full border border-[var(--border-soft)] bg-white px-3 py-1.5 text-[var(--ink)]"
+                      onClick={() => { setFeedbackOpen(null); void handleRoleFeedback(role.id, "not_for_me", reason); }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
               {open && (
                 <div id={`role-detail-${role.id}`} className="role-detail">
                   <p>{role.summary}</p>

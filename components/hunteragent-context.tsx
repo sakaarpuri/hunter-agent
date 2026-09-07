@@ -2,7 +2,7 @@
 import { createContext, useContext } from "react";
 import type { AuthUser } from "@/lib/auth";
 import type {
-  AppliedRecord, CvViewMode, PackIntent, PackTarget, Profile,
+  AppliedRecord, CvViewMode, PackIntent, PackTarget, Profile, RoleFeedbackReason,
   ProofMode, ResumeStyleId, Role, StudioTab, Tone, WorkspaceState,
 } from "@/lib/hunteragent-types";
 import type { buildTrustExplanation } from "@/lib/hunteragent-trust";
@@ -102,6 +102,7 @@ export type HunterAgentContextValue = {
   handleStudioTab: (tab: StudioTab) => Promise<void>;
   handleCvViewMode: (mode: CvViewMode) => Promise<void>;
   handleActiveRole: (roleId: number) => Promise<void>;
+  handleRoleFeedback: (roleId: number, reaction: "interested" | "not_for_me", reason?: RoleFeedbackReason) => Promise<void>;
   handleRoleStyle: (styleId: ResumeStyleId) => Promise<void>;
   handleMakeDefaultStyle: (styleId: ResumeStyleId) => Promise<void>;
   handleLeftRailToggle: () => Promise<void>;

@@ -13,6 +13,17 @@ export type MaterialsMode = "ai" | "self";
 export type WorkplaceMode = "remote" | "hybrid" | "on-site";
 export type RemoteRegion = "worldwide" | "uk" | "europe" | "us" | "timezone-compatible";
 export type DiscoveryCadence = "three-per-week" | "daily";
+export type ExplorationMode = "close" | "stretch" | "surprise";
+export type ExplorationKind = "close" | "adjacent";
+export type SourceVerificationStatus = "verified" | "unavailable" | "unknown";
+export type RoleFeedbackReaction = "interested" | "not_for_me";
+export type RoleFeedbackReason =
+  | "salary"
+  | "location"
+  | "company"
+  | "seniority"
+  | "direction"
+  | "not_exciting";
 
 export type WorkSampleReference = {
   title: string;
@@ -36,6 +47,10 @@ export type Role = {
   firstSeenAt?: string;
   expiresAt?: string;
   fingerprint?: string;
+  explorationKind?: ExplorationKind;
+  sourceKind?: "primary" | "aggregator";
+  sourceVerifiedAt?: string;
+  sourceVerificationStatus?: SourceVerificationStatus;
   matchAssessment?: {
     profileKey: string;
     sourceKey: string;
@@ -68,6 +83,7 @@ export type Profile = {
   briefsPaused: boolean;
   jobsPerBrief: 3;
   discoveryCadence: DiscoveryCadence;
+  explorationMode: ExplorationMode;
   coreStrength: string;
   resumeMode: ResumeMode;
   cvFile: string;
@@ -155,6 +171,17 @@ export type AppliedRecord = {
   resumeStyleUsed: ResumeStyleId;
 };
 
+export type RoleFeedbackRecord = {
+  roleId: number;
+  reaction: RoleFeedbackReaction;
+  reason?: RoleFeedbackReason;
+  title: string;
+  company: string;
+  location: string;
+  explorationKind: ExplorationKind;
+  updatedAt: string;
+};
+
 export type WorkspaceState = {
   profile: Profile;
   roleCatalog: Role[];
@@ -177,6 +204,7 @@ export type WorkspaceState = {
   roleStyleOverrides: Record<string, ResumeStyleId>;
   promptDrafts: Record<string, string>;
   promptHistory: Record<string, string[]>;
+  roleFeedback: Record<string, RoleFeedbackRecord>;
   generationStatus: string | null;
   lastError: string | null;
   stateVersion: number;

@@ -245,6 +245,19 @@ async function initializeSchema() {
   await sql`CREATE INDEX IF NOT EXISTS idx_ai_cache_updated_at ON ai_response_cache(updated_at)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_ai_budget_day ON ai_budget_usage(budget_day)`;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS product_events (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      event_name TEXT NOT NULL,
+      properties JSONB NOT NULL DEFAULT '{}'::jsonb,
+      occurred_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`ALTER TABLE product_events ENABLE ROW LEVEL SECURITY`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_product_events_user_time ON product_events(user_id, occurred_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_product_events_name_time ON product_events(event_name, occurred_at DESC)`;
+
   await migrateLegacyStateIfNeeded(sql);
 }
 
@@ -711,6 +724,22 @@ export async function pruneDiscoveryStorage() {
   await sql`DELETE FROM ai_response_cache WHERE updated_at <= now() - interval '30 days'`;
   await sql`DELETE FROM ai_budget_usage WHERE budget_day < (now() AT TIME ZONE 'UTC')::date - 30`;
   await sql`DELETE FROM auth_rate_limits WHERE updated_at <= now() - interval '2 days'`;
+  await sql`DELETE FROM product_events WHERE occurred_at <= now() - interval '90 days'`;
+}
+
+export async function insertProductEvent(row: {
+  id: string;
+  userId: string;
+  eventName: string;
+  properties?: Record<string, string | number | boolean | null>;
+  occurredAt?: string;
+}) {
+  await ensureDatabaseInitialized();
+  const sql = getSql();
+  await sql`
+    INSERT INTO product_events (id, user_id, event_name, properties, occurred_at)
+    VALUES (${row.id}, ${row.userId}, ${row.eventName}, ${JSON.stringify(row.properties ?? {})}::jsonb, ${row.occurredAt ?? new Date().toISOString()})
+  `;
 }
 
 const AI_CACHE_MAX_TTL_SECONDS = 30 * 24 * 60 * 60;

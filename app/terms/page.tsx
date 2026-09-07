@@ -15,7 +15,7 @@ export default function TermsPage() {
       eyebrow="Using the service"
       title="Terms without surprises."
       summary="These terms cover the current HunterAgent service. HunterAgent helps you discover possibilities and prepare materials; it does not make career decisions or apply to jobs for you."
-      updated="4 September 2026"
+      updated="7 September 2026"
     >
       <section>
         <h2>About these terms</h2>
@@ -127,17 +127,19 @@ export default function TermsPage() {
       </section>
 
       <section>
-        <h2>Billing is not active</h2>
+        <h2>Free beta and future billing</h2>
         <p>
-          The current HunterAgent product has no active checkout, paid
+          HunterAgent is currently free during beta and does not ask for payment
+          details. The current product has no active checkout, paid
           subscription, renewal, cancellation-billing, or payment-card processing.
           You will not be charged through the current service.
         </p>
         <p>
-          If paid access is introduced, the price, billing interval, taxes where
+          Beta members are expected to be offered a £4.99 monthly founding price
+          before deciding whether to continue. If paid access is introduced, the price, billing interval, taxes where
           applicable, and any additional payment terms must be shown before you
-          affirmatively agree to a charge. These terms do not promise a future
-          price or a refund policy.
+          affirmatively agree to a charge. The price and terms shown at checkout
+          will control; no charge begins without your affirmative agreement.
         </p>
       </section>
 

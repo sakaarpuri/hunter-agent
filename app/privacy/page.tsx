@@ -16,7 +16,7 @@ export default function PrivacyPage() {
       eyebrow="Your information"
       title="Privacy, plainly."
       summary="This notice describes the current HunterAgent product: a job-discovery and application-writing service that you direct. It does not describe features that have not been built."
-      updated="4 September 2026"
+      updated="7 September 2026"
     >
       <section>
         <h2>Who is responsible</h2>
@@ -68,6 +68,15 @@ export default function PrivacyPage() {
           control provider costs. Server logs may include internal user IDs,
           event IDs, request outcomes, and error descriptions. The AI path is
           designed not to log prompts, model responses, names, or CV content.
+        </p>
+        <h3>Product feedback and analytics</h3>
+        <p>
+          HunterAgent records limited first-party events such as account setup,
+          brief delivery, opening a job listing, structured role feedback,
+          creating materials, and recording an application. These events can
+          include an internal user ID and non-sensitive labels such as search
+          range or feedback reason. They do not include CV text, prompt text,
+          email content, or generated documents.
         </p>
       </section>
 
@@ -136,7 +145,8 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong>Tavily</strong> receives public job-search queries made from
-            target-role and region terms. The search-query builder excludes your
+            a role title (one you named or a bounded adjacent title) and region
+            terms. The search-query builder excludes your
             name, email, CV, salary, strengths, excluded employers, and private
             career-preference text.
           </li>
@@ -171,7 +181,8 @@ export default function PrivacyPage() {
           HunterAgent uses one essential, HTTP-only session cookie to keep you
           signed in. It is set with a 30-day expiry and is marked Secure in
           production. The current code does not include advertising cookies or a
-          third-party analytics service. Browser features may keep ordinary data
+          third-party analytics service. Limited first-party product events are
+          stored in HunterAgent&apos;s own database. Browser features may keep ordinary data
           such as a downloaded or printed CV at your direction.
         </p>
       </section>
@@ -197,6 +208,7 @@ export default function PrivacyPage() {
             Limited public-search, AI-response, and usage-control records are
             pruned on a rolling basis, with database cleanup capped at 30 days.
           </li>
+          <li>First-party product events are pruned after 90 days.</li>
           <li>
             Login sessions expire after 30 days. Password-reset links become
             unusable after one hour; their records are removed when used,

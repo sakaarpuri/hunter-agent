@@ -3,6 +3,7 @@ import { hasSentBriefOnLocalDay, shouldRunBriefNow, CRON_CADENCE_MINUTES } from 
 import { listStoredWorkspaces, updateWorkspaceState } from "@/lib/hunteragent-store";
 import { pruneDiscoveryStorage } from "@/lib/db";
 import type { WorkspaceState } from "@/lib/hunteragent-types";
+import { recordProductEvent } from "@/lib/product-analytics";
 
 export type DailyBriefRunResult = {
   userId: string;
@@ -38,16 +39,25 @@ export async function runDailyBriefs(
       continue;
     }
     let changedBeforeUpdate: string | null = null;
+    let preparedCount = 0;
+    let createdBrief = false;
     const workspace = await updateWorkspaceState(async (state) => {
       // Only due snapshots take the write path; recheck a newer state before
       // doing any search/send, without replacing the user's workspace message.
       changedBeforeUpdate = skipReason(state, now);
       if (changedBeforeUpdate) return state;
 
+      const existingBriefIds = new Set((state.briefs ?? []).map((brief) => brief.id));
       const prepared = await prepareFreshBrief(state, { userId, now });
       if (!prepared.brief) return state;
+      preparedCount = prepared.roles.length;
+      createdBrief = !existingBriefIds.has(prepared.brief.id);
       return sendPreparedBrief(state, prepared.brief.id, now);
     }, userId);
+
+    if (preparedCount && createdBrief) await recordProductEvent(userId, "brief_prepared", { count: preparedCount, scheduled: true });
+    const sent = workspace.briefs?.find((brief) => brief.sentAt && brief.sentAt === now.toISOString());
+    if (sent) await recordProductEvent(userId, "brief_sent", { count: sent.roleIds.length, scheduled: true });
 
     results.push({ userId, status: changedBeforeUpdate ?? workspace.generationStatus ?? "Processed" });
   }

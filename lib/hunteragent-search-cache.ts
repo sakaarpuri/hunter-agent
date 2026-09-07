@@ -13,7 +13,16 @@ export type SearchOutcome = {
   results: PublicSearchResult[];
   status: "cached" | "live" | "unavailable" | "budget" | "busy" | "error";
 };
-const DOMAINS = ["boards.greenhouse.io", "job-boards.greenhouse.io", "jobs.lever.co", "jobs.ashbyhq.com", "wellfound.com", "linkedin.com"];
+const DOMAINS = [
+  "boards.greenhouse.io",
+  "job-boards.greenhouse.io",
+  "jobs.lever.co",
+  "jobs.ashbyhq.com",
+  "jobs.smartrecruiters.com",
+  "myworkdayjobs.com",
+  "wellfound.com",
+  "linkedin.com",
+];
 const DAY = 86_400_000;
 
 function budget(name: string, fallback: number) {
@@ -44,6 +53,10 @@ export function canonicalJobUrl(raw: string): string | null {
     } else if (host === "jobs.lever.co" || host === "jobs.ashbyhq.com") {
       if (parts.length === 3 && parts[2] === "apply") parts.pop();
       if (parts.length !== 2 || !/^[a-f0-9-]{20,}$/i.test(parts[1])) return null;
+    } else if (host === "jobs.smartrecruiters.com") {
+      if (parts.length < 2 || parts.length > 3 || !/^[a-z0-9-]+$/i.test(parts[0])) return null;
+    } else if (host.endsWith(".myworkdayjobs.com")) {
+      if (!parts.includes("job") || parts.length < 3) return null;
     } else if (host === "wellfound.com") {
       if (parts.length !== 2 || parts[0] !== "jobs" || !/^\d+/.test(parts[1])) return null;
     } else if (host === "linkedin.com") {
@@ -56,6 +69,13 @@ export function canonicalJobUrl(raw: string): string | null {
   } catch {
     return null;
   }
+}
+
+export function jobSourceKind(raw: string): "primary" | "aggregator" {
+  const canonical = canonicalJobUrl(raw);
+  if (!canonical) return "aggregator";
+  const host = new URL(canonical).hostname;
+  return host === "wellfound.com" || host === "linkedin.com" ? "aggregator" : "primary";
 }
 
 export function publicQueryCacheKey(query: string, depth: SearchDepth) {

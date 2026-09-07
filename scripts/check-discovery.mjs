@@ -163,7 +163,7 @@ try {
     state.onboardingComplete = true;
     Object.assign(state.profile, { targetRoles: ["Frontend Engineer"], locations: "London", name: "Private Person",
       recipientEmail: "private@example.test", coreStrength: "Secret CV evidence", specialPreferences: ["Private accessibility preference"],
-      jobsPerBrief: 3, discoveryCadence: "three-per-week", briefsPaused: false, timezone: "Europe/London", briefTime: "09:00" });
+      jobsPerBrief: 3, discoveryCadence: "three-per-week", explorationMode: "close", briefsPaused: false, timezone: "Europe/London", briefTime: "09:00" });
     return state;
   }
   const profile = workspace().profile;
@@ -177,6 +177,10 @@ try {
   assert.equal(cache.publicQueryCacheKey(" Frontend  London ", "basic"), cache.publicQueryCacheKey("frontend london", "basic"));
   assert.notEqual(cache.publicQueryCacheKey("frontend london", "basic"), cache.publicQueryCacheKey("frontend london", "advanced"));
   assert.equal(cache.canonicalJobUrl("https://job-boards.greenhouse.io/acme/jobs/123?utm_source=test#apply"), "https://boards.greenhouse.io/acme/jobs/123");
+  assert.equal(cache.canonicalJobUrl("https://jobs.smartrecruiters.com/Acme/123-product-designer?source=test"), "https://jobs.smartrecruiters.com/Acme/123-product-designer");
+  assert.equal(cache.canonicalJobUrl("https://acme.wd1.myworkdayjobs.com/en-US/careers/job/London/Product-Designer_123?source=test"), "https://acme.wd1.myworkdayjobs.com/en-US/careers/job/London/Product-Designer_123");
+  assert.equal(cache.jobSourceKind("https://jobs.lever.co/acme/12345678-1234-1234-1234-123456789abc"), "primary");
+  assert.equal(cache.jobSourceKind("https://www.linkedin.com/jobs/view/product-designer-123"), "aggregator");
   for (const url of ["https://boards.greenhouse.io/acme", "https://example.com/jobs/1", "javascript:alert(1)", "https://jobs.lever.co/acme"]) assert.equal(cache.canonicalJobUrl(url), null);
   pass("broad public queries, isolated cache keys, canonical job URLs and no identity/preferences in shared queries");
 

@@ -7,6 +7,7 @@ import { readWorkspaceState, updateWorkspaceState } from "@/lib/hunteragent-stor
 import { CvViewMode, ResumeStyleId, StudioTab, Tone, WorkspaceState } from "@/lib/hunteragent-types";
 import { sanitizeProfile } from "@/lib/sanitize";
 import { canUseRole, getRetainedBrief, hasSavedRole, normalizeBriefPreferences, pruneExpiredSuggestions } from "@/lib/hunteragent-retention";
+import { recordProductEvent } from "@/lib/product-analytics";
 
 export const runtime = "nodejs";
 
@@ -51,6 +52,7 @@ export async function POST(request: Request) {
     | { action: "set_default_style"; style: ResumeStyleId }
     | { action: "set_role_style"; roleId: number; style: ResumeStyleId }
     | { action: "mark_applied"; roleId: number }
+    | { action: "set_role_feedback"; roleId: number; reaction: "interested" | "not_for_me"; reason?: "salary" | "location" | "company" | "seniority" | "direction" | "not_exciting" }
     | { action: "set_active_brief"; briefId: string }
     | { action: "reset_workspace" }
     | null;
@@ -202,6 +204,26 @@ export async function POST(request: Request) {
         }
         return state;
       }
+      case "set_role_feedback": {
+        const role = state.roleCatalog.find((item) => item.id === body.roleId);
+        const validReasons = ["salary", "location", "company", "seniority", "direction", "not_exciting"];
+        if (!role || !canUseRole(state, body.roleId) || !["interested", "not_for_me"].includes(body.reaction)
+          || (body.reason !== undefined && !validReasons.includes(body.reason))) {
+          state.lastError = "That feedback could not be saved.";
+          return state;
+        }
+        state.roleFeedback[String(body.roleId)] = {
+          roleId: role.id,
+          reaction: body.reaction,
+          ...(body.reaction === "not_for_me" && body.reason ? { reason: body.reason } : {}),
+          title: role.title,
+          company: role.company,
+          location: role.location,
+          explorationKind: role.explorationKind ?? "close",
+          updatedAt: new Date().toISOString(),
+        };
+        return state;
+      }
       case "set_active_brief": {
         const brief = getRetainedBrief(state, body.briefId);
         if (brief) {
@@ -225,6 +247,14 @@ export async function POST(request: Request) {
 
   if (nextState.lastError) return json(nextState);
 
+  if (body.action === "set_role_feedback") {
+    await recordProductEvent(user.id, "role_feedback", { reaction: body.reaction, reason: body.reason ?? null });
+  } else if (body.action === "mark_applied") {
+    await recordProductEvent(user.id, "application_recorded", { roleId: body.roleId });
+  } else if (body.action === "finish_onboarding") {
+    await recordProductEvent(user.id, "onboarding_completed", { explorationMode: nextState.profile.explorationMode });
+  }
+
   if (body.action === "finish_onboarding" || body.action === "send_first_brief_now" || body.action === "update_profile") {
     if (body.action === "update_profile") {
       return json(nextState);
@@ -234,15 +264,21 @@ export async function POST(request: Request) {
 
     try {
       let preparedBriefId: string | null = null;
+      const existingBriefIds = new Set(nextState.briefs.map((brief) => brief.id));
       const refreshedState = await updateWorkspaceState(async (state) => {
         const prepared = await prepareFreshBrief(state, { userId: user.id });
         preparedBriefId = prepared.brief?.id ?? null;
         return state;
       }, user.id);
+      if (preparedBriefId && !existingBriefIds.has(preparedBriefId)) {
+        await recordProductEvent(user.id, "brief_prepared", { explorationMode: refreshedState.profile.explorationMode });
+      }
       if (!preparedBriefId) return json(refreshedState);
 
       if (shouldSendImmediately && refreshedState.profile.recipientEmail.trim()) {
         const sentState = await updateWorkspaceState(async (state) => sendPreparedBrief(state, preparedBriefId ?? undefined), user.id);
+        const sentBrief = sentState.briefs.find((item) => item.id === preparedBriefId);
+        if (sentBrief?.sentAt) await recordProductEvent(user.id, "brief_sent", { count: sentBrief.roleIds.length });
         return json(sentState);
       }
 

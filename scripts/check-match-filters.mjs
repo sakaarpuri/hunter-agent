@@ -26,10 +26,11 @@ function load(name) {
 
 const { initialProfile } = load("@/lib/hunteragent-data");
 const discovery = load("@/lib/hunteragent-discovery");
+const exploration = load("@/lib/hunteragent-exploration");
 const now = new Date("2026-09-07T08:00:00.000Z");
 let sequence = 100;
 function profile(overrides = {}) {
-  return { ...structuredClone(initialProfile), targetRoles: ["Senior Product Designer"], locations: "", workplaceModes: [], workTypes: [], remoteRegions: [], ...overrides };
+  return { ...structuredClone(initialProfile), explorationMode: "close", targetRoles: ["Senior Product Designer"], locations: "", workplaceModes: [], workTypes: [], remoteRegions: [], ...overrides };
 }
 function role(overrides = {}) {
   const id = ++sequence;
@@ -146,4 +147,22 @@ const pooled = await discovery.discoverRoles(profile(), { now, pool: [other, val
 assert.deepEqual(pooled.roles.map((item) => item.id), [valid.id]);
 assert.equal(pooled.status, "pool");
 console.log("PASS: unchanged dedupe, expiry, seen-job suppression, public queries and cached-pool discovery");
+
+const stretchProfile = profile({ explorationMode: "stretch", targetRoles: ["Product Designer"], locations: "London", workplaceModes: ["remote"] });
+assert.deepEqual(discovery.buildPublicQueries(stretchProfile), ['"product designer" jobs london', '"service designer" jobs london']);
+assert.equal(exploration.classifyExplorationRole("Product Designer", stretchProfile), "close");
+assert.equal(exploration.classifyExplorationRole("Service Designer", stretchProfile), "adjacent");
+assert.equal(exploration.classifyExplorationRole("Chief Financial Officer", stretchProfile), null);
+assert.equal(discovery.matchesHardFilters(role({ title: "Service Designer", location: "Berlin / On-site" }), stretchProfile), false);
+const closeRoles = [1, 2, 3].map((id) => role({ id: 900 + id, title: "Product Designer", explorationKind: "close" }));
+const adjacentRoles = [1, 2, 3].map((id) => role({ id: 950 + id, title: "Service Designer", explorationKind: "adjacent" }));
+assert.deepEqual(exploration.selectExplorationMix([...closeRoles, ...adjacentRoles], "stretch").map((item) => item.explorationKind), ["close", "close", "adjacent"]);
+assert.deepEqual(exploration.selectExplorationMix([...closeRoles, ...adjacentRoles], "surprise").map((item) => item.explorationKind), ["close", "adjacent", "adjacent"]);
+assert.deepEqual(exploration.selectExplorationMix(adjacentRoles, "close"), []);
+const acmeRole = role({ id: 980, company: "Acme", title: "Product Designer", sourceUrl: "https://boards.greenhouse.io/acme/jobs/980" });
+const betaRole = role({ id: 981, company: "Beta", title: "Product Designer", sourceUrl: "https://boards.greenhouse.io/beta/jobs/981" });
+const feedbackProfile = profile({ targetRoles: ["Product Designer"] });
+const companyFeedback = [{ roleId: 1, reaction: "not_for_me", reason: "company", title: "Product Designer", company: "Acme", location: "London", explorationKind: "close", updatedAt: now.toISOString() }];
+assert.deepEqual(discovery.rankUnseenRoles([acmeRole, betaRole], feedbackProfile, {}, now, companyFeedback).map((item) => item.company), ["Beta", "Acme"]);
+console.log("PASS: exploration modes use bounded adjacent-role bridges, preserve hard constraints, and enforce the promised three-role mix");
 console.log(`\n${assertions} fixture checks plus discovery invariants passed. No AI, network, database or secrets used.`);

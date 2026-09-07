@@ -104,6 +104,10 @@ function fakeDatabase(clock) {
     if (query.startsWith("DELETE FROM discovery_")) return [];
     if (query.startsWith("DELETE FROM password_reset_tokens older")) return [];
     if (query.startsWith("DELETE FROM auth_rate_limits")) return [];
+    if (query.startsWith("DELETE FROM product_events")) {
+      assert.match(query, /occurred_at <= now\(\) - interval '90 days'/);
+      return [];
+    }
     if (query.startsWith("DELETE FROM users")) {
       users.delete(values[0]);
       for (const [key, row] of cache) if (row.userId === values[0]) cache.delete(key);

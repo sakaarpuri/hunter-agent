@@ -35,7 +35,10 @@ export function createPreviewTransport(phase: FlowPhase, clock: () => Date = () 
     const firstSeen = now.getTime() - index * 60 * 60 * 1000;
     return { ...structuredClone(role), sourceUrl: `https://example.test/jobs/${role.id}`,
       fingerprint: `preview-role-${role.id}`, firstSeenAt: new Date(firstSeen).toISOString(),
-      expiresAt: new Date(firstSeen + JOB_RETENTION_MS).toISOString() };
+      expiresAt: new Date(firstSeen + JOB_RETENTION_MS).toISOString(),
+      explorationKind: index === 2 ? "adjacent" as const : "close" as const,
+      sourceKind: "primary" as const, sourceVerificationStatus: "verified" as const,
+      sourceVerifiedAt: now.toISOString() };
   });
   state.roleCatalog = structuredClone(sampleRoles);
   state.discoveryPool = structuredClone(sampleRoles);
@@ -55,6 +58,7 @@ export function createPreviewTransport(phase: FlowPhase, clock: () => Date = () 
     firstBrief: "scheduled",
     jobsPerBrief: 3,
     discoveryCadence: "daily",
+    explorationMode: "stretch",
     workSampleLinks: ["https://example.com/case-study"],
     guidedResume: {
       professionalSummary:
@@ -223,6 +227,21 @@ export function createPreviewTransport(phase: FlowPhase, clock: () => Date = () 
               provider: "fallback",
               resumeStyleUsed: state.profile.resumeDefaultStyle,
             });
+          break;
+        }
+        case "set_role_feedback": {
+          const roleId = Number(b.roleId);
+          const role = state.roleCatalog.find((item) => item.id === roleId);
+          if (role) state.roleFeedback[String(roleId)] = {
+            roleId,
+            reaction: b.reaction as "interested" | "not_for_me",
+            ...(b.reason ? { reason: b.reason as "salary" | "location" | "company" | "seniority" | "direction" | "not_exciting" } : {}),
+            title: role.title,
+            company: role.company,
+            location: role.location,
+            explorationKind: role.explorationKind ?? "close",
+            updatedAt: clock().toISOString(),
+          };
           break;
         }
         default:

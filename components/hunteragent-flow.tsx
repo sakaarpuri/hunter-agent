@@ -22,6 +22,7 @@ import {
   RemoteRegion,
   ResumeStyleId,
   Role,
+  RoleFeedbackReason,
   StudioTab,
   Tone,
   WorkplaceMode,
@@ -836,6 +837,15 @@ export function HunterAgentFlow({
     }
   }
 
+  async function handleRoleFeedback(roleId: number, reaction: "interested" | "not_for_me", reason?: RoleFeedbackReason) {
+    try {
+      setClientError(null);
+      await runWorkspaceAction({ action: "set_role_feedback", roleId, reaction, reason });
+    } catch (error) {
+      setClientError(error instanceof Error ? error.message : "Could not save your feedback.");
+    }
+  }
+
   async function saveActivePrompt() {
     if (promptTimerRef.current) clearTimeout(promptTimerRef.current);
     if (
@@ -1124,6 +1134,7 @@ export function HunterAgentFlow({
         handleStudioTab,
         handleCvViewMode,
         handleActiveRole,
+        handleRoleFeedback,
         handleRoleStyle,
         handleMakeDefaultStyle,
         handleLeftRailToggle,

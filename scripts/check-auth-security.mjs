@@ -93,4 +93,9 @@ for (const route of ["login", "signup", "forgot-password", "reset-password"]) {
   assert.match(source, /allowAuthAttempt\(/, `${route} must use the shared durable limiter`);
 }
 
+for (const route of ["workspace", "events", "generate-packs"]) {
+  const source = readFileSync(resolve(root, `app/api/${route}/route.ts`), "utf8");
+  assert.match(source, /requireUser\(/, `${route} must require an authenticated user`);
+}
+
 console.log("Auth security checks passed.");

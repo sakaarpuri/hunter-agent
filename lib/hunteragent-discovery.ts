@@ -1,8 +1,15 @@
 import { createHash } from "node:crypto";
 import { claimDiscoveryRun, type PublicSearchResult } from "@/lib/db";
-import { canonicalJobUrl, discoveryLimits, searchPublicJobs } from "@/lib/hunteragent-search-cache";
+import { canonicalJobUrl, discoveryLimits, jobSourceKind, searchPublicJobs } from "@/lib/hunteragent-search-cache";
 import { shouldDiscoverNow } from "@/lib/hunteragent-scheduling";
-import { Profile, ProofMode, Role, WorkplaceMode } from "@/lib/hunteragent-types";
+import {
+  buildPublicQueryPlans,
+  classifyExplorationRole,
+  selectExplorationMix,
+} from "@/lib/hunteragent-exploration";
+import { Profile, ProofMode, Role, RoleFeedbackRecord, WorkplaceMode } from "@/lib/hunteragent-types";
+
+export { matchesOccupation } from "@/lib/hunteragent-exploration";
 
 const DAY = 86_400_000;
 
@@ -28,16 +35,8 @@ export function jobsPerBrief(profile: Profile): 3 {
   return 3;
 }
 
-function publicTerm(value: string) {
-  return value.toLowerCase().replace(/["\r\n]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
-}
-
 export function buildPublicQueries(profile: Profile) {
-  // Deliberately exclude names, CVs, salary, strengths, excluded employers and
-  // special preferences. Public role + region queries can be shared safely.
-  const regions = profile.locations.split(",").map(publicTerm).filter(Boolean).slice(0, 2);
-  const titles = [...new Set(profile.targetRoles.map(publicTerm).filter(Boolean))].slice(0, 2);
-  return titles.map((title) => `"${title}" jobs ${regions.join(" OR ")}`.trim());
+  return buildPublicQueryPlans(profile).map((plan) => plan.query);
 }
 
 function workplaceMode(text: string): WorkplaceMode | null {
@@ -54,7 +53,7 @@ function proofMode(title: string): ProofMode {
   return "optional";
 }
 
-function convertResult(result: PublicSearchResult): Role {
+function convertResult(result: PublicSearchResult, profile: Profile): Role {
   const pieces = result.title.split(/\s+[|\u2014-]\s+/).map((piece) => piece.trim()).filter(Boolean);
   const at = result.title.match(/^(?:Job Application for )?(.+?) at (.+)$/i);
   const title = (at?.[1] ?? pieces[0] ?? result.title).replace(/^Job Application for /i, "");
@@ -74,6 +73,8 @@ function convertResult(result: PublicSearchResult): Role {
     location: location ?? (mode === "remote" ? "Remote" : mode === "hybrid" ? "Hybrid" : "Location not specified"),
     posted: result.publishedDate ? `Posted ${result.publishedDate.slice(0, 10)} (source)` : "Posting date not provided by source",
     fit: snippet, focus: [], proofMode: proofMode(title), workSamples: [], summary: content,
+    explorationKind: classifyExplorationRole(title, profile) ?? "close",
+    sourceKind: jobSourceKind(result.url),
   };
 }
 
@@ -81,41 +82,6 @@ function normalizedWords(value: string) {
   return value.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
-const TITLE_NOISE = new Set(["senior", "junior", "sr", "jr", "lead", "principal", "staff", "head", "director", "associate", "graduate", "trainee", "intern", "ii", "iii", "iv", "of", "the", "and", "a", "an"]);
-const EXECUTIVE_TITLES: Array<[RegExp, string]> = [
-  [/\b(?:ceo|chief executive(?: officer)?)\b/g, "chiefexecutive"],
-  [/\b(?:cto|chief technology officer)\b/g, "chieftechnology"],
-  [/\b(?:cfo|chief financial officer)\b/g, "chieffinancial"],
-  [/\b(?:coo|chief operating officer)\b/g, "chiefoperating"],
-  [/\b(?:ciso|chief information security officer)\b/g, "chiefinformationsecurity"],
-  [/\b(?:cio|chief information officer)\b/g, "chiefinformation"],
-  [/\b(?:cmo|chief marketing officer)\b/g, "chiefmarketing"],
-];
-
-function occupationWords(title: string) {
-  let text = normalizedWords(title).replace(/\bfront end\b/g, "frontend").replace(/\bback end\b/g, "backend").replace(/\bfull stack\b/g, "fullstack");
-  for (const [pattern, replacement] of EXECUTIVE_TITLES) text = text.replace(pattern, replacement);
-  text = text.replace(/\b(?:user experience)\b/g, "ux").replace(/\buser interface\b/g, "ui")
-    .replace(/\bdesigners?\b/g, "design").replace(/\bengineering\b/g, "engineer")
-    .replace(/\bphotography\b/g, "photographer").replace(/\bguiding\b/g, "guide");
-  // Software synonyms need a software context: a civil engineer is not a developer.
-  if (/\b(?:software|frontend|backend|fullstack|web|mobile|ios|android|developer|programmer)\b/.test(text)) {
-    text = `${text.replace(/\b(?:developer|programmer)\b/g, "engineer")} software`;
-  }
-  return new Set(text.split(" ").filter((word) => word && !TITLE_NOISE.has(word)));
-}
-
-export function matchesOccupation(title: string, targets: string[]) {
-  const requested = targets.filter((target) => target.trim());
-  if (!requested.length) return true;
-  const actual = occupationWords(title);
-  return requested.some((target) => {
-    const wanted = occupationWords(target);
-    if (!wanted.size) return false;
-    if ([...wanted].some((word) => word.startsWith("chief")) && actual.has("assistant") && !wanted.has("assistant")) return false;
-    return [...wanted].every((word) => actual.has(word));
-  });
-}
 
 function employmentKinds(text: string) {
   const kinds = new Set<string>();
@@ -210,7 +176,7 @@ function matchesRemoteRegion(role: Role, profile: Profile) {
 }
 
 export function matchesHardFilters(role: Role, profile: Profile) {
-  if (!matchesOccupation(role.title, profile.targetRoles)) return false;
+  if (!classifyExplorationRole(role.title, profile)) return false;
   const locationMode = workplaceMode(role.location);
   const mode = locationMode ?? workplaceMode(role.summary);
   if (mode && profile.workplaceModes.length && !profile.workplaceModes.includes(mode)) return false;
@@ -233,7 +199,26 @@ export function matchesHardFilters(role: Role, profile: Profile) {
   return true;
 }
 
-function scoreRole(role: Role, profile: Profile) {
+function feedbackAdjustment(role: Role, feedback: RoleFeedbackRecord[]) {
+  const roleWords = new Set(normalizedWords(role.title).split(" "));
+  let score = 0;
+  for (const item of feedback.slice(0, 60)) {
+    const titleOverlap = normalizedWords(item.title).split(" ").filter((word) => roleWords.has(word)).length;
+    if (item.reaction === "interested") {
+      if (titleOverlap) score += Math.min(4, titleOverlap * 2);
+      if (normalizedWords(item.company) === normalizedWords(role.company)) score += 2;
+      if (item.explorationKind === (role.explorationKind ?? "close")) score += 1;
+      continue;
+    }
+    if (item.reason === "company" && normalizedWords(item.company) === normalizedWords(role.company)) score -= 8;
+    if (item.reason === "location" && normalizedWords(item.location) === normalizedWords(role.location)) score -= 5;
+    if ((item.reason === "direction" || item.reason === "seniority") && titleOverlap) score -= Math.min(6, titleOverlap * 2);
+    if (item.reason === "not_exciting" && titleOverlap && item.explorationKind === (role.explorationKind ?? "close")) score -= 3;
+  }
+  return score;
+}
+
+function scoreRole(role: Role, profile: Profile, feedback: RoleFeedbackRecord[] = []) {
   const text = `${role.title} ${role.company} ${role.location} ${role.summary}`.toLowerCase();
   let score = 0;
   for (const target of profile.targetRoles) if (target && text.includes(target.toLowerCase())) score += 5;
@@ -241,10 +226,12 @@ function scoreRole(role: Role, profile: Profile) {
   for (const location of profile.locations.split(",")) if (location.trim() && text.includes(location.trim().toLowerCase())) score += 2;
   for (const preference of profile.specialPreferences) if (preference && text.includes(preference.toLowerCase())) score += 3;
   if (profile.coreStrength && text.includes(profile.coreStrength.toLowerCase())) score += 4;
+  if (role.sourceKind === "primary") score += 2;
+  score += feedbackAdjustment(role, feedback);
   return score;
 }
 
-export function rankUnseenRoles(roles: Role[], profile: Profile, seenJobs: Record<string, string> = {}, now = new Date()) {
+export function rankUnseenRoles(roles: Role[], profile: Profile, seenJobs: Record<string, string> = {}, now = new Date(), feedback: RoleFeedbackRecord[] = []) {
   const seen = new Set<string>();
   const ids = new Set<number>();
   return roles.filter((role) => {
@@ -256,7 +243,8 @@ export function rankUnseenRoles(roles: Role[], profile: Profile, seenJobs: Recor
     seen.add(fingerprint);
     ids.add(role.id);
     return true;
-  }).sort((left, right) => scoreRole(right, profile) - scoreRole(left, profile));
+  }).map((role) => ({ ...role, explorationKind: classifyExplorationRole(role.title, profile) ?? role.explorationKind ?? "close" }))
+    .sort((left, right) => scoreRole(right, profile, feedback) - scoreRole(left, profile, feedback));
 }
 
 export type DiscoveryOptions = {
@@ -266,6 +254,7 @@ export type DiscoveryOptions = {
   knownRoles?: Role[];
   seenJobs?: Record<string, string>;
   lastDiscoveryAt?: string | null;
+  feedback?: RoleFeedbackRecord[];
 };
 
 export async function discoverRoles(profile: Profile, options: DiscoveryOptions = {}) {
@@ -274,10 +263,10 @@ export async function discoverRoles(profile: Profile, options: DiscoveryOptions 
   const result = (roles: Role[], status: string) => ({ roles, usedFallback: false as const, lastDiscoveryAt, status });
   if (profile.briefsPaused) return result([], "paused");
   const candidates = [...(options.pool ?? [])];
-  const ranked = () => rankUnseenRoles(candidates, profile, options.seenJobs, now);
+  const ranked = () => rankUnseenRoles(candidates, profile, options.seenJobs, now, options.feedback);
   if (!shouldDiscoverNow(profile, lastDiscoveryAt, now)) return result(ranked(), "pool");
-  const queries = buildPublicQueries(profile);
-  if (!queries.length) return result(ranked(), "unavailable");
+  const plans = buildPublicQueryPlans(profile);
+  if (!plans.length) return result(ranked(), "unavailable");
   let allowPaid = false;
   if (options.userId && process.env.DATABASE_URL && process.env.TAVILY_API_KEY) {
     try {
@@ -295,7 +284,7 @@ export async function discoverRoles(profile: Profile, options: DiscoveryOptions 
   }
   const add = (results: PublicSearchResult[]) => {
     for (const raw of results) {
-      const role = convertResult(raw);
+      const role = convertResult(raw, profile);
       const existing = known.get(role.fingerprint!);
       // Never refresh firstSeenAt/expiry or overwrite a saved catalog record.
       candidates.push(existing ?? role);
@@ -304,15 +293,17 @@ export async function discoverRoles(profile: Profile, options: DiscoveryOptions 
   };
   let status = "pool";
   let canEscalate = true;
-  for (const query of queries) {
-    if (ranked().length >= jobsPerBrief(profile) * 3) break;
-    const search = await searchPublicJobs(query, "basic", { userId: options.userId, allowPaid, now });
+  for (const plan of plans) {
+    const search = await searchPublicJobs(plan.query, "basic", { userId: options.userId, allowPaid, now });
     status = search.status;
     add(search.results);
     if (search.status !== "cached" && search.status !== "live") { canEscalate = false; break; }
   }
-  if (canEscalate && ranked().length < jobsPerBrief(profile) && discoveryLimits().advanced) {
-    const search = await searchPublicJobs(queries[0], "advanced", { userId: options.userId, allowPaid, now });
+  if (canEscalate && plans.length <= 2
+    && selectExplorationMix(ranked(), profile.explorationMode, jobsPerBrief(profile)).length < jobsPerBrief(profile)
+    && discoveryLimits().advanced) {
+    const fallbackPlan = plans.find((plan) => plan.kind === "adjacent") ?? plans[0];
+    const search = await searchPublicJobs(fallbackPlan.query, "advanced", { userId: options.userId, allowPaid, now });
     status = search.status;
     add(search.results);
   }

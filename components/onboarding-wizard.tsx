@@ -26,7 +26,7 @@ const ONBOARDING_STEPS = [
     label: "Profile",
     title: "Start with your story.",
     description:
-      "Bring your experience. We'll help you find where it belongs next.",
+      "Bring your experience. Our agents will help you find where it belongs next.",
     next: "Set your preferences",
   },
   {
@@ -42,7 +42,7 @@ const ONBOARDING_STEPS = [
     label: "Delivery",
     title: "Find your search rhythm.",
     description:
-      "Choose how often we search and when your shortlist can arrive.",
+      "Choose how often our agents search and when your shortlist can arrive.",
     next: "Finish setup",
   },
 ] as const;
@@ -73,10 +73,35 @@ export function BriefPreferences() {
             </button>
           ))}
         </div>
-        <p className={styles.groupHint}>Search cadence controls when we look for jobs. Daily email time is separate: it is the delivery window for new matches, not a promise of a daily email.</p>
+        <p className={styles.groupHint}>Search cadence controls when our agents look for jobs. Daily email time is separate: it is the delivery window for new matches, not a promise of a daily email.</p>
       </fieldset>
       <p className={styles.groupHint}>Suggested jobs stay for seven days from first discovery, even if selected. Applied history and generated documents are kept separately. Selecting a job never starts AI writing.</p>
     </div>
+  );
+}
+
+export function ExplorationPreference() {
+  const { draftProfile, setDraftProfile, isSavingPreferences } = useHunterAgent();
+  const options = [
+    ["close", "Close Match", "Stay close to the roles you named."],
+    ["stretch", "A Little Stretch", "Mostly close matches, with one credible adjacent possibility."],
+    ["surprise", "Surprise Me", "More adjacent possibilities, always grounded in your experience."],
+  ] as const;
+  return (
+    <fieldset className={styles.fieldGroup} disabled={isSavingPreferences}>
+      <legend>How adventurous should the search be?</legend>
+      <div className={styles.optionGrid}>
+        {options.map(([value, title, description]) => (
+          <button key={value} type="button" className={styles.optionButton}
+            aria-pressed={draftProfile.explorationMode === value}
+            onClick={() => setDraftProfile((current) => ({ ...current, explorationMode: value }))}>
+            <span className={styles.optionTitle}>{title}</span>
+            <span className={styles.optionDescription}>{description}</span>
+          </button>
+        ))}
+      </div>
+      <p className={styles.groupHint}>Your location, work style, employment type, and excluded employers always stay fixed.</p>
+    </fieldset>
   );
 }
 
@@ -563,6 +588,7 @@ export function OnboardingWizard() {
                     </div>
                   </fieldset>
                   <MoveCriteriaField />
+                  <ExplorationPreference />
                   <details className={styles.advancedPreferences}>
                     <summary>
                       <SlidersHorizontal size={19} aria-hidden="true" />
@@ -841,6 +867,11 @@ export function OnboardingWizard() {
               <dd>{draftProfile.specialPreferences.join(" / ")}</dd>
             </div>
           )}
+          <div>
+            <dt>Search range</dt>
+            <dd>{draftProfile.explorationMode === "close" ? "Close Match" : draftProfile.explorationMode === "surprise" ? "Surprise Me" : "A Little Stretch"}</dd>
+            <dd className={styles.summaryDetail}>Hard preferences stay fixed.</dd>
+          </div>
           <div>
             <dt>Your application materials</dt>
             <dd>

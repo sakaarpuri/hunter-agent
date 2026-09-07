@@ -83,9 +83,9 @@ await test("profile defaults and strict count/cadence normalization", () => {
   assert.equal(data.initialProfile.jobsPerBrief, 3);
   assert.equal(data.initialProfile.discoveryCadence, "daily");
   for (const value of [undefined, null, false, 0, 4, 10, "3", "5", [], {}, Infinity, NaN]) {
-    assert.deepEqual(retention.normalizeBriefPreferences({ jobsPerBrief: value, discoveryCadence: value }), { jobsPerBrief: 3, discoveryCadence: "daily" });
+    assert.deepEqual(retention.normalizeBriefPreferences({ jobsPerBrief: value, discoveryCadence: value, explorationMode: value }), { jobsPerBrief: 3, discoveryCadence: "daily", explorationMode: "stretch" });
   }
-  assert.deepEqual(retention.normalizeBriefPreferences({ jobsPerBrief: 3, discoveryCadence: "daily" }), { jobsPerBrief: 3, discoveryCadence: "daily" });
+  assert.deepEqual(retention.normalizeBriefPreferences({ jobsPerBrief: 3, discoveryCadence: "daily", explorationMode: "close" }), { jobsPerBrief: 3, discoveryCadence: "daily", explorationMode: "close" });
   assert.equal(data.createBriefRecord("now", data.DAILY_ROLES, 3).roleIds.length, 3);
   assert.equal(data.createBriefRecord("now", data.DAILY_ROLES, 10).roleIds.length, 3);
 });

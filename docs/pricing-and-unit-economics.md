@@ -2,8 +2,12 @@
 
 ## Product Decision
 
-- Planned subscription price: **£4.99 per month**.
+- Current access: **free beta**, with no payment details collected.
+- Planned founding-member price: **£4.99 per month**, offered before beta members decide whether to continue.
+- A **£49 per year** always-on career-radar option is under consideration, not promised or implemented.
 - Brief size: up to three genuine new matches.
+- Do not offer permanent free daily searches until measured search costs, recommendation quality, and retention are known.
+- Do not increase pricing until recommendation quality has been proven with production feedback and retention data.
 - Billing is not implemented yet. The public product must not imply that it can
   collect a subscription until checkout, subscription state, webhooks, and
   cancellation are working and tested.
@@ -76,3 +80,8 @@ estimate with measured usage as soon as production traffic exists.
 Before paid acquisition, record Anthropic's returned input/output token counts
 per task without storing prompts or responses. Compare measured p50, p90, and
 p99 monthly costs with this estimate and revisit the daily budget limits.
+
+Before enabling billing, measure listing-open rate, positive role feedback,
+negative-feedback reasons, shortlist-to-materials conversion, and four-week
+retention. Price changes should follow demonstrated customer value, not a
+model-cost estimate alone.

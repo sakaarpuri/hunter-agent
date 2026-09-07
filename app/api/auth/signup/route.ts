@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { attachSessionCookie, AuthError, createSession, createUser } from "@/lib/auth";
 import { allowAuthAttempt, clientAddress } from "@/lib/auth-rate-limit";
+import { recordProductEvent } from "@/lib/product-analytics";
 
 export const runtime = "nodejs";
 
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
       email: body.email ?? "",
       password: body.password ?? "",
     });
+    await recordProductEvent(user.id, "account_created");
 
     const response = NextResponse.json({ user });
     return attachSessionCookie(response, await createSession(user.id, ip));

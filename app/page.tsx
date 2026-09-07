@@ -18,7 +18,15 @@ const questions = [
   ],
   [
     "What actually arrives in my inbox?",
-    "Up to three standout matches per email. We search daily but only send genuine new matches, never filler. Your email arrives at your chosen time when there is something worthwhile to share.",
+    "Up to three standout matches per email. Our agents search on your chosen rhythm but only send genuine new matches, never filler. Your email arrives at your chosen time when there is something worthwhile to share.",
+  ],
+  [
+    "How adventurous can the search be?",
+    "Choose Close Match, A Little Stretch, or Surprise Me. The range changes, but your location, work style, employment type, and excluded employers stay fixed.",
+  ],
+  [
+    "What does the beta cost?",
+    "HunterAgent is free during beta and does not ask for payment details. If paid access is introduced, beta members will be offered a £4.99 monthly founding price before deciding whether to continue.",
   ],
   [
     "Can I choose where you look?",
@@ -77,8 +85,8 @@ export default function Home() {
         </section>
         <div className="benefit-strip page-width">
           <span>
-            <span className="index-label">01</span> Three worth considering.
-            Not another feed.
+            <span className="index-label">01</span> Our agents search widely.
+            You see three worth considering.
           </span>
           <span>
             <span className="index-label">02</span> Ambition, not urgency.
@@ -98,7 +106,7 @@ export default function Home() {
             </h2>
             <p>
               A dream job might mean a bigger mission, a different country, or
-              simply more room for life. You define the upgrade. We help you
+              simply more room for life. You define the upgrade. Our agents
               keep an eye out.
             </p>
           </div>
@@ -134,8 +142,8 @@ export default function Home() {
                   Keep your options interesting.
                 </h3>
                 <p>
-                  AI searches daily for relevant roles and selects up to three
-                  new opportunities for your email, with context on the fit.
+                  Our agents search widely and select up to three new
+                  opportunities for your email, with context on the fit.
                   Nothing catching your eye? Carry on with your day. Something
                   does? Reply with its number.
                 </p>
@@ -195,10 +203,10 @@ export default function Home() {
               <article>
                 <Fingerprint size={25} />
                 <div>
-                  <h3>It starts with your experience.</h3>
+                  <h3>Private by default.</h3>
                   <p>
-                    Review the reasoning and refine the writing. Your CV should
-                    sound like you, with every claim checked by you.
+                    No public job-seeker profile, no contact with your current
+                    employer, and no applications sent without you.
                   </p>
                 </div>
               </article>

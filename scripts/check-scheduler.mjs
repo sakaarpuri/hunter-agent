@@ -61,6 +61,7 @@ try {
   let updates = 0;
   const runner = load("lib/run-daily-briefs.ts", {
     "@/lib/db": { pruneDiscoveryStorage: async () => {} },
+    "@/lib/product-analytics": { recordProductEvent: async () => {} },
     "@/lib/hunteragent-scheduling": {
       CRON_CADENCE_MINUTES: 15,
       hasSentBriefOnLocalDay: () => false,

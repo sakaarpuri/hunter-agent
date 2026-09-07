@@ -262,7 +262,7 @@ export function DreamFilm() {
           </div>
           <div className={styles.invitation}>
             <p className={styles.description}>
-              Your AI job scout searches for roles that fit your experience and what you want next, then emails a shortlist worth considering.
+              Our agents search widely for roles that fit your experience, ambitions and boundaries. You see three worth considering.
             </p>
             <div className={`${styles.actions} hero-actions`}>
               <Link className={`button ${styles.cta}`} href="/dashboard">
@@ -275,6 +275,7 @@ export function DreamFilm() {
             <p className={styles.heroStatus} role="status">
               {playback === "error" ? "Preview unavailable. You can still watch the film." : ""}
             </p>
+            <p className={styles.heroStatus}>Private by default. Free during beta. No payment details.</p>
           </div>
         </div>
         <button className={styles.previewControl} type="button" onClick={() => controlsRef.current.togglePlayback()} aria-label={playLabel} aria-controls="dream-film-player">

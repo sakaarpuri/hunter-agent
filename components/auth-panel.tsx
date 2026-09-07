@@ -374,7 +374,7 @@ export function AuthPanel({
                   <p className={styles.authFootnote}>
                     <LockKey size={17} aria-hidden="true" />
                     {mode === "signup"
-                      ? "Next: set up your profile and role preferences."
+                      ? "Free during beta. No payment details. Next: set up your search."
                       : "Your saved search and application history stay with your account."}
                   </p>
                 )}

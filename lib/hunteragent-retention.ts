@@ -2,11 +2,12 @@ import type { BriefRecord, ExpiredBriefRecord, Profile, Role, WorkspaceState } f
 
 export const JOB_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 
-export function normalizeBriefPreferences(value: unknown): Pick<Profile, "jobsPerBrief" | "discoveryCadence"> {
+export function normalizeBriefPreferences(value: unknown): Pick<Profile, "jobsPerBrief" | "discoveryCadence" | "explorationMode"> {
   const input = value && typeof value === "object" ? value as Record<string, unknown> : {};
   return {
     jobsPerBrief: 3,
     discoveryCadence: input.discoveryCadence === "three-per-week" ? "three-per-week" : "daily",
+    explorationMode: input.explorationMode === "close" || input.explorationMode === "surprise" ? input.explorationMode : "stretch",
   };
 }
 

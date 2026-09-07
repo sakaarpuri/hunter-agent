@@ -67,6 +67,7 @@ export function ensureWorkspaceState(state: WorkspaceState, now: Date = new Date
   state.leftRailCollapsed = state.leftRailCollapsed ?? true;
   state.promptDrafts = state.promptDrafts ?? {};
   state.promptHistory = state.promptHistory ?? {};
+  state.roleFeedback = state.roleFeedback ?? {};
   state.stateVersion = (state.stateVersion as number | undefined) ?? 1;
 
   return pruneExpiredSuggestions(state, now, previousState);

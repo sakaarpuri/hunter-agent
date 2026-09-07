@@ -49,8 +49,10 @@ export function buildBriefEmail(brief: BriefRecord, profile: Profile, roles: Rol
     "Then check your dashboard for your application materials.", "",
   ];
   for (const { role, position } of ordered) {
+    const range = role.explorationKind === "adjacent" ? "A little stretch" : "Close match";
+    const availability = role.sourceVerificationStatus === "verified" ? "Listing checked today" : "Check current availability";
     lines.push(`${position}. ${role.title} - ${role.company}`, `   ${role.location} / ${role.employment}`,
-      `   Source details: ${role.fit}`, `   ${role.posted}`, `   Job listing: ${role.sourceUrl}`, "");
+      `   ${range} / ${availability}`, `   Why it may be worth a look: ${role.fit}`, `   ${role.posted}`, `   Job listing: ${role.sourceUrl}`, "");
   }
   lines.push("Reply examples:", examples, companies, "pause", "more remote");
   if (base) lines.push("", `Open dashboard: ${base}/dashboard`);
@@ -59,7 +61,8 @@ export function buildBriefEmail(brief: BriefRecord, profile: Profile, roles: Rol
     <div style="padding:14px 16px;border:1px solid #d7d7d2;border-radius:18px;background:#fff;margin:0 0 12px 0;">
       <div style="font-weight:600;color:#172221;font-size:15px;">${escapeHtml(`${position}. ${role.title} - ${role.company}`)}</div>
       <div style="margin-top:6px;color:#4f5c59;font-size:13px;">${escapeHtml(`${role.location} / ${role.employment}`)}</div>
-      <div style="margin-top:8px;color:#1f2d2b;font-size:13px;line-height:1.6;"><strong>Source details:</strong> ${escapeHtml(role.fit)}</div>
+      <div style="margin-top:8px;color:#58716b;font-size:12px;font-weight:600;">${escapeHtml(role.explorationKind === "adjacent" ? "A little stretch" : "Close match")} &middot; ${escapeHtml(role.sourceVerificationStatus === "verified" ? "Listing checked today" : "Check current availability")}</div>
+      <div style="margin-top:8px;color:#1f2d2b;font-size:13px;line-height:1.6;"><strong>Why it may be worth a look:</strong> ${escapeHtml(role.fit)}</div>
       <div style="margin-top:8px;font-size:12px;">${escapeHtml(role.posted)} &middot; <a href="${escapeHtml(role.sourceUrl!)}">View job listing</a></div>
     </div>`).join("");
   const html = `<!doctype html>

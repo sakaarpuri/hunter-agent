@@ -4,6 +4,8 @@ import { pruneExpiredSuggestions } from "@/lib/hunteragent-retention";
 import { sendDailyBriefEmail } from "@/lib/agentmail";
 import { WorkspaceState } from "@/lib/hunteragent-types";
 import { prioritizeRoles } from "@/lib/hunteragent-matching";
+import { selectExplorationMix } from "@/lib/hunteragent-exploration";
+import { verifyJobSources } from "@/lib/hunteragent-source-verification";
 
 const SEEN_RETENTION_MS = 30 * 86_400_000;
 export type PrepareBriefOptions = { userId?: string; now?: Date };
@@ -52,24 +54,29 @@ export async function prepareFreshBrief(state: WorkspaceState, context: PrepareB
   }
 
   const applied = new Set(state.appliedRecords.map((record) => record.roleId));
+  const feedback = Object.values(state.roleFeedback ?? {}).sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt));
   const search = await discoverRoles(state.profile, {
     userId: options.userId, now, pool: (state.discoveryPool ?? []).filter((role) => !applied.has(role.id)),
     knownRoles: state.roleCatalog, seenJobs: state.seenJobs, lastDiscoveryAt: state.lastDiscoveryAt,
+    feedback,
   });
   state.lastDiscoveryAt = search.lastDiscoveryAt;
   const catalog = new Map(state.roleCatalog.map((role) => [role.id, role]));
-  const filtered = rankUnseenRoles(search.roles, state.profile, state.seenJobs, now).filter((role) => {
+  const filtered = rankUnseenRoles(search.roles, state.profile, state.seenJobs, now, feedback).filter((role) => {
     if (applied.has(role.id)) return false;
     const existing = catalog.get(role.id);
     return !existing || (existing.sourceUrl && roleFingerprint(existing.sourceUrl) === roleFingerprint(role.sourceUrl!));
   });
-  const candidates = await prioritizeRoles(filtered, state.profile, options.userId);
+  const candidates = await prioritizeRoles(filtered, state.profile, options.userId, feedback);
   const hasAssessment = candidates.some((role) => role.matchAssessment);
-  const roles = candidates.filter((role) => hasAssessment ? (role.matchAssessment?.score ?? 0) >= 60 : true)
-    .slice(0, jobsPerBrief(state.profile));
+  const roles = selectExplorationMix(
+    candidates.filter((role) => hasAssessment ? (role.matchAssessment?.score ?? 0) >= 60 : true),
+    state.profile.explorationMode,
+    jobsPerBrief(state.profile),
+  );
   const chosen = new Set(roles.map((role) => role.id));
   state.discoveryPool = candidates.filter((role) => !chosen.has(role.id)).slice(0, 45);
-  for (const role of roles) if (!catalog.has(role.id)) catalog.set(role.id, role);
+  for (const role of [...candidates, ...roles]) catalog.set(role.id, role);
   state.roleCatalog = [...catalog.values()];
   state.flowPhase = "waiting";
   if (!roles.length) {
@@ -99,7 +106,11 @@ export async function sendPreparedBrief(state: WorkspaceState, briefId?: string,
     return state;
   }
   brief.replyRoleIds ??= [...brief.roleIds];
-  brief.roleIds = brief.roleIds.filter((id) => {
+  const currentRoles = brief.roleIds.map((id) => state.roleCatalog.find((item) => item.id === id)).filter((role): role is WorkspaceState["roleCatalog"][number] => Boolean(role && roleIsCurrent(role, now)));
+  const verifiedRoles = await verifyJobSources(currentRoles, now);
+  const updated = new Map(verifiedRoles.map((role) => [role.id, role]));
+  state.roleCatalog = state.roleCatalog.map((role) => updated.get(role.id) ?? role);
+  brief.roleIds = verifiedRoles.filter((role) => role.sourceVerificationStatus !== "unavailable").map((role) => role.id).filter((id) => {
     const role = state.roleCatalog.find((item) => item.id === id);
     return role && roleIsCurrent(role, now);
   }).slice(0, jobsPerBrief(state.profile));

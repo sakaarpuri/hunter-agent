@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ResumeSetupCard } from "./resume-setup-card";
-import { BriefPreferences } from "./onboarding-wizard";
+import { BriefPreferences, ExplorationPreference } from "./onboarding-wizard";
 import {
   REMOTE_REGION_OPTIONS,
   WORKPLACE_MODE_OPTIONS,
@@ -314,6 +314,8 @@ export function SettingsModal() {
             </div>
 
             <div className="rounded-[1.5rem] border border-[var(--border-soft)] bg-white p-4 xl:col-span-2">
+              <ExplorationPreference />
+              <div className="h-5" aria-hidden="true" />
               <BriefPreferences />
               <p className="mt-5 text-sm font-semibold text-[var(--ink)]">
                 Recipient and daily email window
