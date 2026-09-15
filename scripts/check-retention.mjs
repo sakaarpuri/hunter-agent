@@ -81,11 +81,11 @@ async function test(name, run) {
 
 await test("profile defaults and strict count/cadence normalization", () => {
   assert.equal(data.initialProfile.jobsPerBrief, 3);
-  assert.equal(data.initialProfile.discoveryCadence, "daily");
+  assert.equal(data.initialProfile.discoveryCadence, "three-per-week");
   for (const value of [undefined, null, false, 0, 4, 10, "3", "5", [], {}, Infinity, NaN]) {
-    assert.deepEqual(retention.normalizeBriefPreferences({ jobsPerBrief: value, discoveryCadence: value, explorationMode: value }), { jobsPerBrief: 3, discoveryCadence: "daily", explorationMode: "stretch" });
+    assert.deepEqual(retention.normalizeBriefPreferences({ jobsPerBrief: value, discoveryCadence: value, explorationMode: value }), { jobsPerBrief: 3, discoveryCadence: "three-per-week", explorationMode: "stretch" });
   }
-  assert.deepEqual(retention.normalizeBriefPreferences({ jobsPerBrief: 3, discoveryCadence: "daily", explorationMode: "close" }), { jobsPerBrief: 3, discoveryCadence: "daily", explorationMode: "close" });
+  assert.deepEqual(retention.normalizeBriefPreferences({ jobsPerBrief: 3, discoveryCadence: "daily", explorationMode: "close" }), { jobsPerBrief: 3, discoveryCadence: "three-per-week", explorationMode: "close" });
   assert.equal(data.createBriefRecord("now", data.DAILY_ROLES, 3).roleIds.length, 3);
   assert.equal(data.createBriefRecord("now", data.DAILY_ROLES, 10).roleIds.length, 3);
 });
@@ -550,11 +550,11 @@ await test("server normalizes onboarding/settings and rejects malformed actions/
     let response = await post("workspace", { action, onboardingStep: 2, profile: { jobsPerBrief: 3, discoveryCadence: "daily" } });
     let result = await response.json();
     assert.equal(result.profile.jobsPerBrief, 3);
-    assert.equal(result.profile.discoveryCadence, "daily");
+    assert.equal(result.profile.discoveryCadence, "three-per-week");
     response = await post("workspace", { action, onboardingStep: 2, profile: { jobsPerBrief: "3", discoveryCadence: "hourly" } });
     result = await response.json();
     assert.equal(result.profile.jobsPerBrief, 3);
-    assert.equal(result.profile.discoveryCadence, "daily");
+    assert.equal(result.profile.discoveryCadence, "three-per-week");
   }
   for (const [path, body] of [["workspace", null], ["workspace", { action: "set_active_role", roleId: "1" }], ["workspace", { action: "update_profile", profile: null }], ["inbound-email", { briefId: state.activeBriefId, rawText: 1 }], ["generate-packs", { roleId: "1" }], ["generate-packs", "not-json"], ["follow-up", { roleId: 1, plan: "99" }]]) {
     assert.equal((await post(path, body)).status, 400);

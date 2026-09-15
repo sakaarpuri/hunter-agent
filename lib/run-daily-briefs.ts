@@ -1,5 +1,5 @@
 import { prepareFreshBrief, sendPreparedBrief } from "@/lib/hunteragent-briefs";
-import { hasSentBriefOnLocalDay, shouldRunBriefNow, CRON_CADENCE_MINUTES } from "@/lib/hunteragent-scheduling";
+import { hasSentBriefOnLocalDay, shouldDiscoverNow, shouldRunBriefNow, CRON_CADENCE_MINUTES } from "@/lib/hunteragent-scheduling";
 import { listStoredWorkspaces, updateWorkspaceState } from "@/lib/hunteragent-store";
 import { pruneDiscoveryStorage } from "@/lib/db";
 import type { WorkspaceState } from "@/lib/hunteragent-types";
@@ -12,9 +12,13 @@ export type DailyBriefRunResult = {
 
 function skipReason(state: WorkspaceState, now: Date) {
   if (!state.onboardingComplete || !state.profile.recipientEmail.trim()) return "Skipped: setup is incomplete.";
-  if (state.profile.briefsPaused) return "Skipped: daily briefs are paused.";
+  if (state.profile.briefsPaused) return "Skipped: opportunity briefs are paused.";
   if (hasSentBriefOnLocalDay(state, now)) return "Skipped: a brief was already sent today in the user's local timezone.";
   if (!shouldRunBriefNow(state.profile, now)) return `Skipped: ${state.profile.briefTime} ${state.profile.timezone} is not due in this scheduler window.`;
+  const hasPreparedBrief = state.briefs.some((brief) => !brief.sentAt && brief.roleIds.length > 0);
+  if (!hasPreparedBrief && !shouldDiscoverNow(state.profile, state.lastDiscoveryAt, now)) {
+    return "Skipped: the next opportunity search is Monday, Wednesday or Friday.";
+  }
   return null;
 }
 
@@ -41,6 +45,7 @@ export async function runDailyBriefs(
     let changedBeforeUpdate: string | null = null;
     let preparedCount = 0;
     let createdBrief = false;
+    let searchedForNewRoles = false;
     const workspace = await updateWorkspaceState(async (state) => {
       // Only due snapshots take the write path; recheck a newer state before
       // doing any search/send, without replacing the user's workspace message.
@@ -48,7 +53,9 @@ export async function runDailyBriefs(
       if (changedBeforeUpdate) return state;
 
       const existingBriefIds = new Set((state.briefs ?? []).map((brief) => brief.id));
+      const previousDiscoveryAt = state.lastDiscoveryAt;
       const prepared = await prepareFreshBrief(state, { userId, now });
+      searchedForNewRoles = Boolean(state.lastDiscoveryAt && state.lastDiscoveryAt !== previousDiscoveryAt);
       if (!prepared.brief) return state;
       preparedCount = prepared.roles.length;
       createdBrief = !existingBriefIds.has(prepared.brief.id);
@@ -58,6 +65,13 @@ export async function runDailyBriefs(
     if (preparedCount && createdBrief) await recordProductEvent(userId, "brief_prepared", { count: preparedCount, scheduled: true });
     const sent = workspace.briefs?.find((brief) => brief.sentAt && brief.sentAt === now.toISOString());
     if (sent) await recordProductEvent(userId, "brief_sent", { count: sent.roleIds.length, scheduled: true });
+    if (searchedForNewRoles) {
+      await recordProductEvent(userId, "shortlist_outcome", {
+        count: sent?.roleIds.length ?? 0,
+        scheduled: true,
+        explorationMode: workspace.profile.explorationMode,
+      });
+    }
 
     results.push({ userId, status: changedBeforeUpdate ?? workspace.generationStatus ?? "Processed" });
   }

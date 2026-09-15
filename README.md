@@ -49,7 +49,7 @@ Notes:
 
 ## Production Scheduler
 
-HunterAgent includes two ways to trigger daily brief scheduling:
+HunterAgent includes two ways to trigger opportunity-brief scheduling:
 
 - a protected manual trigger route at `/api/cron/daily-briefs`
 - a Netlify Scheduled Function at `netlify/functions/daily-briefs.ts`, which dispatches the long-running work to `daily-briefs-background`
@@ -71,6 +71,7 @@ What the scheduler does on each run:
 - skips users whose setup is incomplete
 - skips users whose briefs are paused
 - skips users who already received a brief that local day
+- skips recurring discovery outside Monday, Wednesday and Friday
 - sends only for users whose configured local brief time falls inside the current 15-minute scheduler window
 - stops accepting new work before the background-function time limit so remaining users are safely reconsidered on the next run
 
@@ -95,7 +96,7 @@ Already implemented:
 - Tavily-backed discovery with shared public-query caching and no demo-job fallback
 - role-aware studio with conditional work samples
 - prompt memory and targeted pack editing
-- Netlify scheduled-to-background delivery for daily briefs
+- Netlify scheduled-to-background delivery for opportunity briefs
 - versioned production database migrations
 - public liveness and protected database-readiness checks
 - customer-facing Privacy and Terms pages
@@ -174,9 +175,10 @@ the demo's links and UI, not the continued availability of the external jobs.
 
 ### Discovery, Delivery, And Retention
 
-Briefs contain up to three jobs. Users choose `discoveryCadence` (`daily` by
-default, or `three-per-week`). Search cadence is separate from the
-daily email delivery time. Discovery maintains an unseen candidate pool; emails
+Opportunity briefs contain one to three jobs. At launch, discovery runs Monday,
+Wednesday and Friday (`three-per-week`). The `daily` cadence remains a dormant
+future premium or user-controlled option. Search cadence is separate from the
+email delivery window. Discovery maintains an unseen candidate pool; emails
 only contain genuine new matches. A sparse result set is not padded, and no
 empty email is sent. Selecting a job does not automatically spend AI-writing
 credits; preparing materials is an explicit dashboard action.

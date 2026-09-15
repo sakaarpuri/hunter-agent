@@ -80,10 +80,10 @@ export function MockEmailBrief() {
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border-soft)] pb-4">
         <div>
           <p className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-[var(--muted)]">
-            Daily brief
+            Your opportunity brief
           </p>
           <h3 className="mt-2 text-lg font-semibold tracking-tight text-[var(--ink)]">
-            Up to 3 standout roles today
+            Roles worth your attention
           </h3>
         </div>
         <div className="flex items-center gap-2 rounded-full border border-[var(--border-soft)] bg-white px-3 py-1.5 text-xs font-medium text-[var(--muted)] shadow-sm">

@@ -57,7 +57,7 @@ export function createPreviewTransport(phase: FlowPhase, clock: () => Date = () 
     resumeMode: "guided",
     firstBrief: "scheduled",
     jobsPerBrief: 3,
-    discoveryCadence: "daily",
+    discoveryCadence: "three-per-week",
     explorationMode: "stretch",
     workSampleLinks: ["https://example.com/case-study"],
     guidedResume: {

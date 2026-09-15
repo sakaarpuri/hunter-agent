@@ -69,7 +69,7 @@ export function buildBriefEmail(brief: BriefRecord, profile: Profile, roles: Rol
 <html><body style="margin:0;background:#f5f2ea;padding:24px;font-family:Georgia,serif;color:#172221;">
   <div style="max-width:680px;margin:0 auto;background:#fffdf8;border:1px solid #dfddd6;border-radius:28px;overflow:hidden;">
     <div style="padding:28px;background:linear-gradient(135deg,#eef6f3 0%,#fffdf8 100%);border-bottom:1px solid #e6e2da;">
-      <div style="font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:#5c6a67;">HunterAgent daily brief</div>
+      <div style="font-size:12px;letter-spacing:0.2em;text-transform:uppercase;color:#5c6a67;">Your HunterAgent opportunity brief</div>
       <h1 style="margin:14px 0 0;font-size:30px;line-height:1.1;">${escapeHtml(subject)}</h1>
       <p style="font-size:15px;line-height:1.7;color:#4f5c59;">Hi ${escapeHtml(profile.name || "there")}, ${escapeHtml(intro)} Reply with the numbers or names you want me to prepare, then check your dashboard for your application materials.</p>
     </div>
@@ -87,10 +87,10 @@ export function buildBriefEmail(brief: BriefRecord, profile: Profile, roles: Rol
 }
 
 export async function sendDailyBriefEmail(brief: BriefRecord, profile: Profile, roles: Role[], now = new Date()) {
-  if (profile.briefsPaused) throw new Error("Daily briefs are paused.");
+  if (profile.briefsPaused) throw new Error("Opportunity briefs are paused.");
   const email = buildBriefEmail(brief, profile, roles, now);
   if (!email.count) throw new Error("No current matches remain. An empty brief will not be emailed.");
-  if (!profile.recipientEmail.trim()) throw new Error("Recipient email is required before HunterAgent can send the daily brief.");
+  if (!profile.recipientEmail.trim()) throw new Error("Recipient email is required before HunterAgent can send the opportunity brief.");
   const apiKey = requireEnv("AGENTMAIL_API_KEY");
   const inboxId = requireEnv("AGENTMAIL_INBOX_ID");
   const response = await fetch(`https://api.agentmail.to/v0/inboxes/${encodeURIComponent(inboxId)}/messages/send`, {
@@ -168,7 +168,7 @@ export async function sendPasswordResetEmail(toEmail: string, resetLink: string)
 
 export function buildScheduledBriefStatus(brief: BriefRecord, profile: Profile) {
   if (profile.briefsPaused) {
-    return "Daily briefs are paused. Resume them in settings when you want HunterAgent to send again.";
+    return "Opportunity briefs are paused. Resume them in settings when you want HunterAgent to send again.";
   }
   const when = brief.scheduledFor ?? brief.createdAt;
   return `First brief is queued for ${formatClock(when)} to ${profile.recipientEmail || "your chosen inbox"}.`;

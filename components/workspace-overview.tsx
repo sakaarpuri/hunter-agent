@@ -89,7 +89,7 @@ export function WorkspaceOverview({
           <p>
             {draftProfile.briefsPaused
               ? "Your brief emails are paused. Resume in preferences whenever you're ready."
-              : `Our agents search ${workspace.profile.discoveryCadence === "daily" ? "daily" : "three times a week"} for up to 3 new matches per brief. Your email window is ${workspace.profile.briefTime} in ${workspace.profile.timezone.replaceAll("_", " ")}. No genuine new matches means no email, never padding.`}
+              : `Our agents search Monday, Wednesday and Friday for 1–3 roles worth your attention. Your delivery window is ${workspace.profile.briefTime} in ${workspace.profile.timezone.replaceAll("_", " ")}. No genuine new matches means no email, never padding.`}
           </p>
           <div className="waiting-actions">
             <button

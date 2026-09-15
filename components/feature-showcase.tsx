@@ -308,9 +308,9 @@ function TrackScene() {
 const cards = [
   {
     scene: <EnvelopeScene />,
-    label: "Daily brief",
-    title: "Up to 3 roles, at your time",
-    body: "AI searches daily and emails only genuine new matches. No job board tabs.",
+    label: "Opportunity brief",
+    title: "1–3 roles, at your time",
+    body: "Our agents search Monday, Wednesday and Friday, and email only genuine new matches. No job board tabs.",
     typingDelay: 500,
   },
   {

@@ -6,7 +6,9 @@ export function normalizeBriefPreferences(value: unknown): Pick<Profile, "jobsPe
   const input = value && typeof value === "object" ? value as Record<string, unknown> : {};
   return {
     jobsPerBrief: 3,
-    discoveryCadence: input.discoveryCadence === "three-per-week" ? "three-per-week" : "daily",
+    // Daily discovery remains a future capability, but launch accounts all use
+    // the quality-first Monday/Wednesday/Friday rhythm.
+    discoveryCadence: "three-per-week",
     explorationMode: input.explorationMode === "close" || input.explorationMode === "surprise" ? input.explorationMode : "stretch",
   };
 }

@@ -6,6 +6,7 @@ export type ProductEventName =
   | "onboarding_completed"
   | "brief_prepared"
   | "brief_sent"
+  | "shortlist_outcome"
   | "role_opened"
   | "role_feedback"
   | "materials_generated"
@@ -23,4 +24,3 @@ export async function recordProductEvent(
     // Analytics must never block a customer action.
   }
 }
-

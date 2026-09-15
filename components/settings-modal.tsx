@@ -206,7 +206,7 @@ export function SettingsModal() {
               </p>
               <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--muted)]">
                 These settings shape which roles get matched and whether your
-                new-match email is active. Search cadence and email delivery time are separate.
+                opportunity brief is active. Our agents search Monday, Wednesday and Friday.
               </p>
             </div>
             <button
@@ -318,7 +318,7 @@ export function SettingsModal() {
               <div className="h-5" aria-hidden="true" />
               <BriefPreferences />
               <p className="mt-5 text-sm font-semibold text-[var(--ink)]">
-                Recipient and daily email window
+                Recipient and delivery window
               </p>
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <label className="grid gap-2 text-sm md:col-span-2">
@@ -339,7 +339,7 @@ export function SettingsModal() {
                 </label>
                 <label className="grid gap-2 text-sm">
                   <span className="font-medium text-[var(--ink)]">
-                    Daily email time
+                    Delivery time
                   </span>
                   <input
                     type="time"

@@ -101,9 +101,9 @@ export function LeftRail({
             />{" "}
             {draftProfile.briefsPaused
               ? "Briefs paused"
-              : workspace.profile.discoveryCadence === "daily" ? "Searching daily" : "Searching three times a week"}
+              : "Searching Mon / Wed / Fri"}
           </p>
-          <small>Daily email window: {workspace.profile.briefTime}. New matches only.</small>
+          <small>Delivery window: {workspace.profile.briefTime}. New matches only.</small>
           <small>{draftProfile.timezone.replaceAll("_", " ")}</small>
           <button onClick={() => setIsSettingsOpen(true)}>
             Adjust preferences <CaretRight size={12} />

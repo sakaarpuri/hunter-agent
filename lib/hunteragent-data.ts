@@ -249,7 +249,7 @@ export const initialProfile: Profile = {
   specialPreferences: [],
   briefsPaused: false,
   jobsPerBrief: 3,
-  discoveryCadence: "daily",
+  discoveryCadence: "three-per-week",
   explorationMode: "stretch",
   coreStrength: "",
   resumeMode: "upload",

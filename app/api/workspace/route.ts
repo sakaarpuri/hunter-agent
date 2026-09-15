@@ -99,7 +99,7 @@ export async function POST(request: Request) {
         }
         state.lastError = state.profile.recipientEmail.trim()
           ? null
-          : "Add the inbox where HunterAgent should send your daily brief before finishing setup.";
+          : "Add the inbox where HunterAgent should send your opportunity brief before finishing setup.";
         return state;
       }
       case "reopen_onboarding": {

@@ -40,41 +40,24 @@ const ONBOARDING_STEPS = [
   {
     id: 3,
     label: "Delivery",
-    title: "Find your search rhythm.",
+    title: "Choose when your brief can arrive.",
     description:
-      "Choose how often our agents search and when your shortlist can arrive.",
+      "Our agents search Monday, Wednesday and Friday. Choose your preferred delivery time.",
     next: "Finish setup",
   },
 ] as const;
 
 export function BriefPreferences() {
-  const { draftProfile, setDraftProfile, isSavingPreferences } = useHunterAgent();
   return (
     <div className={styles.briefPreferences}>
-      <section className={styles.fieldGroup} aria-labelledby="daily-brief-heading">
-        <h3 id="daily-brief-heading" className={styles.fieldHeading}>Your daily brief</h3>
+      <section className={styles.fieldGroup} aria-labelledby="opportunity-brief-heading">
+        <h3 id="opportunity-brief-heading" className={styles.fieldHeading}>Your opportunity brief</h3>
         <div className={styles.briefPromise}>
-          <span className={styles.optionTitle}>Up to 3 standout matches</span>
-          <span className={styles.optionDescription}>Only genuine new matches. No repeats or padding, and no email when nothing qualifies.</span>
+          <span className={styles.optionTitle}>1–3 roles worth your attention</span>
+          <span className={styles.optionDescription}>Our agents search Monday, Wednesday and Friday. You receive an email only when a current role clears the quality bar.</span>
+          <span className={styles.optionDescription}>Three is the limit, not the target. No repeats, no filler.</span>
         </div>
       </section>
-      <fieldset className={styles.fieldGroup} disabled={isSavingPreferences}>
-        <legend>Search cadence</legend>
-        <div className={styles.optionGrid}>
-          {([
-            ["daily", "Daily", "Look for worthwhile new opportunities every day. The default."],
-            ["three-per-week", "Three times a week", "A quieter search rhythm."],
-          ] as const).map(([cadence, label, description]) => (
-            <button key={cadence} type="button" className={styles.optionButton}
-              aria-pressed={(draftProfile.discoveryCadence ?? "daily") === cadence}
-              onClick={() => setDraftProfile((current) => ({ ...current, discoveryCadence: cadence }))}>
-              <span className={styles.optionTitle}>{label}</span>
-              <span className={styles.optionDescription}>{description}</span>
-            </button>
-          ))}
-        </div>
-        <p className={styles.groupHint}>Search cadence controls when our agents look for jobs. Daily email time is separate: it is the delivery window for new matches, not a promise of a daily email.</p>
-      </fieldset>
       <p className={styles.groupHint}>Suggested jobs stay for seven days from first discovery, even if selected. Applied history and generated documents are kept separately. Selecting a job never starts AI writing.</p>
     </div>
   );
@@ -110,11 +93,47 @@ function MoveCriteriaField() {
   const [text, setText] = useState(() =>
     draftProfile.specialPreferences.join(", "),
   );
+  const ideas = [
+    "A bigger challenge",
+    "Better pay",
+    "More meaningful work",
+    "Greater flexibility",
+    "Leadership scope",
+    "An international move",
+    "A brilliant team",
+    "More creative freedom",
+  ];
+
+  function toggleIdea(idea: string) {
+    const next = draftProfile.specialPreferences.includes(idea)
+      ? draftProfile.specialPreferences.filter((item) => item !== idea)
+      : [...draftProfile.specialPreferences, idea];
+    setText(next.join(", "));
+    setDraftProfile((current) => ({ ...current, specialPreferences: next }));
+  }
+
   return (
     <div className={styles.field}>
       <label htmlFor="setup-special-preferences">
-        What would make a move worth it?
+        What would make you look twice?
       </label>
+      <div className={styles.chipGroup} aria-label="Ideas for what could make a move worthwhile">
+        {ideas.map((idea) => {
+          const active = draftProfile.specialPreferences.includes(idea);
+          return (
+            <button
+              key={idea}
+              type="button"
+              className={styles.choiceChip}
+              aria-pressed={active}
+              onClick={() => toggleIdea(idea)}
+            >
+              {active && <Check size={14} aria-hidden="true" />}
+              {idea}
+            </button>
+          );
+        })}
+      </div>
       <textarea
         id="setup-special-preferences"
         aria-describedby="setup-special-help"
@@ -128,11 +147,11 @@ function MoveCriteriaField() {
             specialPreferences: parsePreferenceList(event.target.value),
           }));
         }}
-        placeholder="e.g. climate mission, 4-day week, leadership scope, open to South Korea"
+        placeholder="Add anything more specific, such as a climate mission or a four-day week"
       />
       <p id="setup-special-help" className={styles.fieldHint}>
-        Happy in your current job? Set a high bar. Add your ambitions and
-        non-negotiables, separated by commas.
+        Choose a few ideas or add your own. These guide discovery; your location
+        and work-style choices remain firm.
       </p>
     </div>
   );
@@ -660,10 +679,10 @@ export function OnboardingWizard() {
                   </div>
                   <BriefPreferences />
                   <fieldset className={styles.fieldGroup}>
-                    <legend>Daily email delivery window</legend>
+                    <legend>Opportunity brief delivery window</legend>
                     <div className={styles.scheduleGrid}>
                       <label className={styles.field}>
-                        <span>Daily email time</span>
+                        <span>Delivery time</span>
                         <input
                           type="time"
                           value={draftProfile.briefTime}
@@ -690,7 +709,7 @@ export function OnboardingWizard() {
                       </label>
                     </div>
                     <p className={styles.groupHint}>
-                      We check for unsent new matches at this local time. No new matches means no email.
+                      On search days, this is when your brief can arrive. No new matches means no email.
                     </p>
                   </fieldset>
                   <fieldset className={styles.fieldGroup}>
@@ -898,10 +917,10 @@ export function OnboardingWizard() {
               </button>
             </dt>
             <dd>
-              Up to 3 new matches
+              1–3 new matches when they qualify
             </dd>
             <dd className={styles.summaryDetail}>
-              Search: {draftProfile.discoveryCadence === "daily" ? "Daily" : "Three times a week"}
+              Search: Monday, Wednesday and Friday
             </dd>
             <dd>
               Email window: {" "}

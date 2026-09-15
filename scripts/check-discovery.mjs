@@ -373,6 +373,7 @@ try {
   pass("read-time migration compare-and-swap cannot clobber a newer workspace");
 
   let sent = 0, updates = 0, preparations = 0;
+  const analytics = [];
   const snapshots = ["incomplete", "paused", "sent", "not-due", "changed", "empty"].map((userId) => {
     const state = workspace();
     state.generationStatus = "Preserve user-facing status";
@@ -391,14 +392,18 @@ try {
         if (userId === "changed") latest.profile.briefsPaused = true;
         return callback(latest);
       } },
-    "@/lib/hunteragent-briefs": { prepareFreshBrief: async (_state, options) => {
-      preparations++; assert.equal(options.userId, "empty"); assert.equal(options.now, clock.now); return { brief: null };
+    "@/lib/hunteragent-briefs": { prepareFreshBrief: async (state, options) => {
+      preparations++; assert.equal(options.userId, "empty"); assert.equal(options.now, clock.now);
+      state.lastDiscoveryAt = options.now.toISOString();
+      return { brief: null };
     }, sendPreparedBrief: async () => { sent++; } },
+    "@/lib/product-analytics": { recordProductEvent: async (...event) => analytics.push(event) },
   })("@/lib/run-daily-briefs");
   const scheduled = await run.runDailyBriefs(clock.now);
   assert.equal(sent, 0); assert.equal(updates, 2); assert.equal(preparations, 1);
   assert.equal(scheduled.results.length, 6);
   assert.ok(scheduled.results.slice(0, 5).every((result) => result.status.startsWith("Skipped:")));
+  assert.deepEqual(analytics, [["empty", "shortlist_outcome", { count: 0, scheduled: true, explorationMode: "close" }]]);
   assert.ok(snapshots.every(({ state }) => state.generationStatus === "Preserve user-facing status"));
   pass("scheduler skips no-op writes, preserves status, rechecks only due users, passes identity/clock and never sends an empty brief");
   console.log(`\n${assertions} discovery checks passed. All provider/DB/email calls were mocked.`);

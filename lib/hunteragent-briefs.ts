@@ -15,7 +15,7 @@ export async function prepareFreshBrief(state: WorkspaceState, context: PrepareB
   const now = options.now ?? new Date();
   if (state.profile.briefsPaused) {
     state.flowPhase = "waiting";
-    state.generationStatus = "Daily briefs are paused. Resume them in settings when you want discovery to continue.";
+    state.generationStatus = "Opportunity briefs are paused. Resume them in settings when you want discovery to continue.";
     return { state, brief: null, roles: [] };
   }
 
@@ -96,7 +96,7 @@ export async function prepareFreshBrief(state: WorkspaceState, context: PrepareB
 export async function sendPreparedBrief(state: WorkspaceState, briefId?: string, now = new Date()) {
   if (state.profile.briefsPaused) {
     state.flowPhase = "waiting";
-    state.generationStatus = "Daily briefs are paused. Resume them before sending a new brief.";
+    state.generationStatus = "Opportunity briefs are paused. Resume them before sending a new brief.";
     return state;
   }
   pruneExpiredSuggestions(state, now);

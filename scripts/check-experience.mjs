@@ -45,13 +45,13 @@ for (const invalid of [undefined, null, 1, 2, 4, "3", 0, -1, 99]) {
   const transport = createPreviewTransport("onboarding", () => new Date(testNow));
   let state = await transport("/api/workspace");
   assert.equal(state.profile.jobsPerBrief, 3);
-  assert.equal(state.profile.discoveryCadence, "daily");
+  assert.equal(state.profile.discoveryCadence, "three-per-week");
   const profile = { ...state.profile, jobsPerBrief: 3, discoveryCadence: "daily" };
   await transport("/api/workspace", { action: "sync_draft", profile, onboardingStep: 3 });
   await transport("/api/workspace", { action: "finish_onboarding" });
   state = await transport("/api/workspace", { action: "send_first_brief_now" });
   assert.equal(state.profile.jobsPerBrief, 3);
-  assert.equal(state.profile.discoveryCadence, "daily");
+  assert.equal(state.profile.discoveryCadence, "three-per-week");
   assert.equal(state.briefs[0].roleIds.length, 3);
   assert.equal(state.briefs[0].topRoleIds.length, 3);
   assert.ok(Math.abs(Date.parse(state.briefs[0].createdAt) - testNow.getTime()) < 1000);
@@ -115,7 +115,7 @@ for (const invalid of [undefined, null, 1, 2, 4, "3", 0, -1, 99]) {
   const { profile } = await transport("/api/workspace");
   const tuesday = new Date(testNow.getTime() + 86400000);
   const wednesday = new Date(testNow.getTime() + 2 * 86400000);
-  assert.equal(shouldDiscoverNow({ ...profile, timezone: "UTC" }, testNow.toISOString(), tuesday), true);
+  assert.equal(shouldDiscoverNow({ ...profile, timezone: "UTC" }, testNow.toISOString(), tuesday), false);
   assert.equal(shouldDiscoverNow({ ...profile, timezone: "UTC", discoveryCadence: "three-per-week" }, testNow.toISOString(), tuesday), false);
   assert.equal(shouldDiscoverNow({ ...profile, timezone: "UTC", discoveryCadence: "three-per-week" }, testNow.toISOString(), wednesday), true);
 }
@@ -285,7 +285,7 @@ try {
     }),
   );
   await page.locator('button[type="submit"]').click();
-  await visible(page.getByRole("alert"));
+  await visible(page.getByRole("alert").filter({ hasText: "Test sign-in error" }));
   assert.equal(
     await page.getByLabel("Email address", { exact: true }).inputValue(),
     "test@example.test",
@@ -482,10 +482,14 @@ try {
   );
   await page.getByRole("button", { name: "Set your preferences" }).click();
   await visible(page.getByRole("heading", { name: "Define your next move." }));
-  const moveCriteria = page.getByLabel("What would make a move worth it?", {
+  const moveCriteria = page.getByLabel("What would make you look twice?", {
     exact: true,
   });
   await visible(moveCriteria);
+  const meaningfulIdea = page.getByRole("button", { name: "More meaningful work", exact: true });
+  await meaningfulIdea.click();
+  assert.equal(await meaningfulIdea.getAttribute("aria-pressed"), "true");
+  assert.match(await moveCriteria.inputValue(), /More meaningful work/);
   await moveCriteria.fill("");
   await moveCriteria.pressSequentially("climate mission, 4-day week", {
     delay: 12,
@@ -495,35 +499,33 @@ try {
     page.getByText("climate mission / 4-day week", { exact: true }),
   );
   await page.getByRole("button", { name: "Choose delivery" }).click();
-  await visible(page.getByRole("heading", { name: "Find your search rhythm." }));
+  await visible(page.getByRole("heading", { name: "Choose when your brief can arrive." }));
   const choices = (label) => page.getByRole("button", { name: new RegExp(`^${label}`) });
-  await visible(page.getByText("Up to 3 standout matches", { exact: true }));
+  await visible(page.getByText("1–3 roles worth your attention", { exact: true }));
   assert.equal(await choices("5 possibilities").count(), 0);
-  assert.equal(await choices("Daily").getAttribute("aria-pressed"), "true");
-  await choices("Three times a week").click();
-  await choices("Daily").click();
-  const deliveryTime = await page.getByLabel("Daily email time", { exact: true }).inputValue();
+  assert.equal(await choices("Daily").count(), 0);
+  assert.equal(await choices("Three times a week").count(), 0);
+  const deliveryTime = await page.getByLabel("Delivery time", { exact: true }).inputValue();
   await page.screenshot({ path: `${output}/onboarding-delivery-desktop.png`, fullPage: true, animations: "disabled" });
   await page.getByRole("button", { name: "Finish setup", exact: true }).click();
   await visible(page.getByRole("button", { name: "Find my first roles now" }));
   await page.getByRole("button", { name: "Adjust delivery" }).click();
   await visible(page.getByRole("dialog"));
-  await visible(page.getByText("Up to 3 standout matches", { exact: true }));
+  await visible(page.getByText("1–3 roles worth your attention", { exact: true }));
   assert.equal(await choices("5 possibilities").count(), 0);
-  assert.equal(await choices("Daily").getAttribute("aria-pressed"), "true");
-  assert.equal(await page.getByLabel("Daily email time", { exact: true }).inputValue(), deliveryTime);
+  assert.equal(await choices("Daily").count(), 0);
+  assert.equal(await page.getByLabel("Delivery time", { exact: true }).inputValue(), deliveryTime);
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Find my first roles now" }).click();
   await visible(page.locator(".real-role").first());
   assert.equal(await page.locator(".real-role").count(), 3);
   await page.getByRole("button", { name: "Open settings", exact: true }).click();
-  await choices("Three times a week").click();
   await page.getByRole("button", { name: "Save settings", exact: true }).first().click();
   await visible(page.getByText(/Preferences saved/));
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Open settings", exact: true }).click();
   assert.equal(await choices("5 possibilities").count(), 0);
-  assert.equal(await choices("Three times a week").getAttribute("aria-pressed"), "true");
+  assert.equal(await choices("Daily").count(), 0);
   await page.screenshot({ path: `${output}/brief-settings-desktop.png`, fullPage: true, animations: "disabled" });
   await page.keyboard.press("Escape");
   assert.equal(await page.locator(".real-role").count(), 3, "Saving delivery settings must not rewrite an already delivered brief");
@@ -570,7 +572,7 @@ try {
       await visible(page.locator(".workspace-shell"));
     if (path.endsWith("state=onboarding")) {
       await page.getByRole("navigation", { name: "Setup steps" }).getByRole("button").nth(2).click();
-      await visible(page.getByText("Up to 3 standout matches", { exact: true }));
+      await visible(page.getByText("1–3 roles worth your attention", { exact: true }));
     }
     await noOverflow();
     await page.screenshot({

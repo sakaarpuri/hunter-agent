@@ -56,8 +56,8 @@ function extractPreferenceNotes(normalizedReply: string) {
   const lower = normalizedReply.toLowerCase();
   const notes: string[] = [];
 
-  if (lower.includes("pause")) notes.push("pause daily briefs");
-  if (lower.includes("resume")) notes.push("resume daily briefs");
+  if (lower.includes("pause")) notes.push("pause opportunity briefs");
+  if (lower.includes("resume")) notes.push("resume opportunity briefs");
   if (lower.includes("more remote")) notes.push("prefer more remote roles");
   if (lower.includes("less contract")) notes.push("prefer fewer contract roles");
   if (lower.includes("more design")) notes.push("prefer more design roles");
