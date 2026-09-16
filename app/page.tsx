@@ -18,7 +18,7 @@ const questions = [
   ],
   [
     "What actually arrives in my inbox?",
-    "Up to three standout matches per email. Our agents search on your chosen rhythm but only send genuine new matches, never filler. Your email arrives at your chosen time when there is something worthwhile to share.",
+    "One to three standout matches per opportunity brief. Our agents search Monday, Wednesday and Friday, then send only genuine new matches, never filler. Your email arrives at your chosen time when there is something worthwhile to share.",
   ],
   [
     "How adventurous can the search be?",
@@ -46,7 +46,7 @@ const questions = [
   ],
   [
     "What if I already like my CV?",
-    "Keep it. You can choose to prepare your own materials and just use the daily job brief. If you do use AI, you can refine your CV or cover letter separately.",
+    "Keep it. You can choose to prepare your own materials and just use your opportunity brief. If you do use AI, you can refine your CV or cover letter separately.",
   ],
   [
     "Are the dream jobs on this page real?",

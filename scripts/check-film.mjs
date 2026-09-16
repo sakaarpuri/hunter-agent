@@ -105,17 +105,20 @@ try {
       const boxes = await page.evaluate(() => ({
         video: document.querySelector('#dream-film-player').getBoundingClientRect().toJSON(),
         headline: document.querySelector('h1').getBoundingClientRect().toJSON(),
+        filmHeadline: document.querySelector('[data-film-headline]').getBoundingClientRect().toJSON(),
         cta: document.querySelector('.hero-actions .button').getBoundingClientRect().toJSON(),
         height: innerHeight,
       }));
-      assert.ok(boxes.video.top >= 0 && boxes.video.bottom < boxes.height, 'Entire preview fits in the initial viewport');
+      const visibleVideoHeight = Math.max(0, Math.min(boxes.video.bottom, boxes.height) - Math.max(boxes.video.top, 0));
+      assert.ok(visibleVideoHeight / boxes.video.height >= .55, 'Enough of the preview is visible for intentional autoplay');
       assert.ok(boxes.cta.bottom < boxes.height, 'Signup action is also above the fold');
-      assert.ok(boxes.headline.left >= boxes.video.left && boxes.headline.right <= boxes.video.right, 'Live headline stays inside the film');
-      assert.ok(boxes.headline.top >= boxes.video.top && boxes.headline.bottom < boxes.cta.top, 'Headline overlays the footage without covering the signup action');
+      assert.ok(boxes.filmHeadline.left >= boxes.video.left && boxes.filmHeadline.right <= boxes.video.right, 'Motion copy stays inside the film card');
+      assert.ok(name === 'desktop' ? boxes.video.left > boxes.headline.right : boxes.video.top > boxes.headline.bottom, 'Film sits right of desktop copy and below mobile copy');
       assert.equal(await page.getByRole('heading', {level: 1}).count(), 1);
-      assert.equal(await page.getByRole('heading', {level: 1}).innerText(), 'What if this\nwas work?');
+      assert.equal(await page.getByRole('heading', {level: 1}).innerText(), 'The right move might not be the obvious one.');
+      assert.equal(await page.locator('[data-film-headline]').innerText(), 'What if this\nwas work?');
       const text = await page.locator('main').innerText();
-      assert.ok(text.includes('Our agents search widely for roles'), 'The agent-search promise is explicit');
+      assert.ok(text.includes('Our agents learn what you do'), 'The agent-search promise is explicit');
       for (const phrase of ['25 seconds. Your sound, your choice.', 'AI-created concept scenes, not advertised vacancies.', 'A little possibility. Replay whenever you like.', 'Keep your job. Keep your standards.', 'Three or five possibilities worth making a move for.']) assert.ok(!text.includes(phrase));
       if (scenario === 'normal' || scenario === 'no-frame-callback') await playing(video);
       else {
@@ -134,18 +137,19 @@ try {
       if (scenario === 'normal' || scenario === 'no-frame-callback') {
         await video.evaluate((element) => { element.currentTime = 2.7; });
         await page.waitForFunction(() => document.querySelector('#dream-film-player').currentTime >= 3.35);
-        assert.equal(await page.locator('h1').innerText(), story[1].lines.join('\n'), 'Motion copy follows the playing film across a cut');
+        assert.equal(await page.locator('[data-film-headline]').innerText(), story[1].lines.join('\n'), 'Motion copy follows the playing film across a cut');
         await page.getByRole('button', {name:'Pause preview', exact:true}).click();
         for (const [index, scene] of story.entries()) {
           await video.evaluate((element, time) => { element.currentTime = time; }, scene.start + .8);
-          await page.waitForFunction((copy) => document.querySelector('h1').innerText === copy, scene.lines.join('\n'));
+          await page.waitForFunction((copy) => document.querySelector('[data-film-headline]').innerText === copy, scene.lines.join('\n'));
           await page.waitForTimeout(1000);
-          assert.equal(await page.getByRole('heading', {level:1}).getAttribute('aria-label'), 'What if this was work?', 'Stable accessible heading, no repeated screen-reader announcements');
+          assert.equal(await page.locator('[data-film-headline]').getAttribute('aria-label'), 'What if this was work?', 'Stable accessible film heading, no repeated screen-reader announcements');
           const layout = await page.evaluate(() => {
-            const heading = document.querySelector('h1'), cta = document.querySelector('.hero-actions .button');
-            return {fits: [...heading.children].every((line) => line.scrollWidth <= line.clientWidth), bottom: heading.getBoundingClientRect().bottom, ctaTop: cta.getBoundingClientRect().top, ctaBottom: cta.getBoundingClientRect().bottom, height: innerHeight, fit: getComputedStyle(document.querySelector('#dream-film-player')).objectFit, video: document.querySelector('#dream-film-player').getBoundingClientRect().toJSON(), opacity: getComputedStyle(heading.parentElement).opacity};
+            const heading = document.querySelector('[data-film-headline]'), watch = document.querySelector('[data-film-headline]').closest('div').parentElement.querySelector('button'), cta = document.querySelector('.hero-actions .button');
+            const headingBox = heading.getBoundingClientRect(), watchBox = watch.getBoundingClientRect(), videoBox = document.querySelector('#dream-film-player').getBoundingClientRect();
+            return {fits: [...heading.children].every((line) => line.scrollWidth <= line.clientWidth), inside: headingBox.left >= videoBox.left && headingBox.right <= videoBox.right && headingBox.top >= videoBox.top && headingBox.bottom < watchBox.top, ctaBottom: cta.getBoundingClientRect().bottom, height: innerHeight, fit: getComputedStyle(document.querySelector('#dream-film-player')).objectFit, video: videoBox.toJSON(), opacity: getComputedStyle(heading.parentElement).opacity};
           });
-          assert.ok(layout.fits && layout.bottom < layout.ctaTop && layout.ctaBottom < layout.height, `Scene ${index} stays readable with signup visible`);
+          assert.ok(layout.fits && layout.inside && layout.ctaBottom < layout.height, `Scene ${index} stays readable with signup visible`);
           assert.equal(layout.fit, 'cover', 'No mid-film object-fit switch');
           assert.deepEqual(layout.video, boxes.video, 'The video frame never changes size or position between scenes');
           assert.equal(Number(layout.opacity), 1, 'Headline is fully readable after its entrance');
@@ -154,7 +158,7 @@ try {
         const reflection = story.find((scene) => scene.reflection);
         await video.evaluate((element, time) => { element.currentTime = time; }, reflection.start + reflection.duration - .3);
         await page.waitForFunction(() => document.querySelector('[data-reflection="true"]')?.style.opacity === '1');
-        assert.equal(await page.locator('h1').innerText(), reflection.lines.join('\n'), 'Closing sentence stays fully readable until just before the cut');
+        assert.equal(await page.locator('[data-film-headline]').innerText(), reflection.lines.join('\n'), 'Closing sentence stays fully readable until just before the cut');
         await page.getByRole('button', {name:'Play preview', exact:true}).click();
         await video.evaluate((element) => { element.currentTime = element.duration - 0.1; });
         await page.waitForFunction(() => {const v=document.querySelector('#dream-film-player'); return !v.paused && v.currentTime < 2;});
@@ -228,16 +232,19 @@ try {
     const geometry = await page.evaluate(() => {
       const video = document.querySelector('#dream-film-player').getBoundingClientRect();
       const headline = document.querySelector('h1');
-      const rect = headline.getBoundingClientRect();
+      const filmHeadline = document.querySelector('[data-film-headline]');
+      const rect = headline.getBoundingClientRect(), filmRect = filmHeadline.getBoundingClientRect();
       const cta = document.querySelector('.hero-actions .button').getBoundingClientRect();
       return {
-        fits: video.top >= 0 && video.bottom < innerHeight && cta.bottom < innerHeight,
-        headlineFits: [...headline.querySelectorAll('span')].every((line) => line.scrollWidth <= line.clientWidth) && rect.bottom < cta.top,
+        ctaVisible: cta.bottom < innerHeight,
+        layout: innerWidth > 820 ? video.left > rect.right : video.top > rect.bottom,
+        headlineFits: headline.scrollWidth <= headline.clientWidth && [...filmHeadline.querySelectorAll('span')].every((line) => line.scrollWidth <= line.clientWidth) && filmRect.left >= video.left && filmRect.right <= video.right,
         overflow: document.documentElement.scrollWidth > innerWidth,
-        animations: [...headline.querySelectorAll('span')].map((line) => getComputedStyle(line).animationName),
+        animations: [...filmHeadline.querySelectorAll('span')].map((line) => getComputedStyle(line).animationName),
       };
     });
-    assert.equal(geometry.fits, true, `Above-fold film and signup at ${width}x${height}`);
+    assert.equal(geometry.ctaVisible, true, `Signup stays above the fold at ${width}x${height}`);
+    assert.equal(geometry.layout, true, `Film uses the intended responsive position at ${width}x${height}`);
     assert.equal(geometry.headlineFits, true, 'No cropped or overlapping headline');
     assert.equal(geometry.overflow, false);
     assert.ok(geometry.animations.every((name) => name === 'none'), 'Reduced motion also disables headline animation');
@@ -248,7 +255,8 @@ try {
   const noJSRequests = [];
   noJS.on('request', (request) => { if (request.url().includes('.mp4')) noJSRequests.push(request.url()); });
   await noJS.goto(base);
-  assert.ok(await noJS.getByRole('heading', {name: 'What if this was work?'}).isVisible());
+  assert.ok(await noJS.getByRole('heading', {level: 1, name: 'The right move might not be the obvious one.'}).isVisible());
+  assert.ok(await noJS.getByRole('heading', {level: 2, name: 'What if this was work?'}).isVisible());
   assert.ok(await noJS.locator('.hero-section').getByRole('link', {name: 'Find my what if', exact: true}).isVisible());
   assert.ok(await noJS.locator('#dream-film-player').getAttribute('poster'));
   assert.equal(noJSRequests.length, 0, 'Without JavaScript the poster and signup still work without video downloads');

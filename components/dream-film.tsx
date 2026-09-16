@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowUpRight, Pause, Play, X } from "@phosphor-icons/react";
+import { ArrowDown, ArrowUpRight, Check, Pause, Play, X } from "@phosphor-icons/react";
 import story from "@/media/what-if/story.json";
 import timing from "@/media/what-if/timing.json";
 import styles from "./dream-film.module.css";
@@ -229,61 +229,69 @@ export function DreamFilm() {
   return (
     <div className={styles.heroFilm} id="the-what-if">
       <link rel="preload" as="image" href="/films/what-if-hero-poster.jpg" fetchPriority="high" />
-      <div className={styles.aperture} data-ending={Boolean(scene.ending)} data-scene={sceneIndex}>
-      <video
-        ref={videoRef}
-        id="dream-film-player"
-        className={styles.player}
-        muted
-        loop
-        playsInline
-        preload="none"
-        poster="/films/what-if-hero-poster.jpg"
-        aria-label="Dream-job possibilities: an Arctic photographer, ocean scientist, remote professional and a woman leading a Seoul board meeting"
-        onTimeUpdate={(event) => syncScene(event.currentTarget)}
-        onSeeked={(event) => syncScene(event.currentTarget)}
-        onLoadedData={(event) => syncScene(event.currentTarget)}
-        onEmptied={(event) => syncScene(event.currentTarget, 0)}
-      >
-        <source data-src={`/films/what-if-hero-portrait.mp4?v=${timing.revision}`} type="video/mp4" media="(max-width: 600px)" />
-        <source data-src={`/films/what-if-hero.mp4?v=${timing.revision}`} type="video/mp4" />
-        Your browser cannot play this film. <a href="/films/what-if-landscape.mp4">Download the film</a>.
-      </video>
-        {scene.ending && <svg className={styles.endGraphic} viewBox="0 0 240 240" fill="none" aria-hidden="true">
-          {[35, 60, 85, 110].map((radius) => <circle key={radius} cx="120" cy="120" r={radius} stroke="currentColor" strokeWidth="1.5" strokeDasharray={`${radius * 4.5} ${radius * 1.8}`} />)}
-        </svg>}
-        <div className={styles.heroContent}>
-          <div ref={headlineRef} className={styles.headline} data-reflection={Boolean(scene.reflection)}>
-            <p className={styles.eyebrow} aria-hidden="true">{scene.label}</p>
-            <h1 id="hero-title" aria-label="What if this was work?" key={sceneIndex}>
-              {scene.lines.map((line) => <span key={line} aria-hidden="true">{line}</span>)}
-            </h1>
-            <span key={`underline-${sceneIndex}`} className={styles.underline} aria-hidden="true" />
+      <div className={styles.heroGrid}>
+        <div className={styles.heroCopy}>
+          <p className={styles.productEyebrow}>A PRIVATE CAREER RADAR</p>
+          <h1 id="hero-title">The right move might not be the obvious one.</h1>
+          <p className={styles.lead}>
+            Our agents learn what you do, what could tempt you, and where you can work. Then they search for close matches, credible stretches, and the occasional surprise.
+          </p>
+          <div className={styles.briefPromise}>
+            <Check size={17} weight="bold" aria-hidden="true" />
+            <span><strong>1–3 verified roles</strong> on Monday, Wednesday and Friday. No filler.</span>
           </div>
-          <div className={styles.invitation}>
-            <p className={styles.description}>
-              Our agents search widely for roles that fit your experience, ambitions and boundaries. You see three worth considering.
-            </p>
-            <div className={`${styles.actions} hero-actions`}>
-              <Link className={`button ${styles.cta}`} href="/dashboard">
-                Find my what if <ArrowUpRight size={19} aria-hidden="true" />
-              </Link>
-              <button ref={watchRef} type="button" className={styles.watch} onClick={openFilm} aria-haspopup="dialog">
-                <Play size={14} weight="fill" aria-hidden="true" /> Watch the film
-              </button>
-            </div>
-            <p className={styles.heroStatus} role="status">
-              {playback === "error" ? "Preview unavailable. You can still watch the film." : ""}
-            </p>
-            <p className={styles.heroStatus}>Private by default. Free during beta. No payment details.</p>
+          <div className={`${styles.actions} hero-actions`}>
+            <Link className={`button ${styles.cta}`} href="/dashboard">
+              Find my what if <ArrowUpRight size={19} aria-hidden="true" />
+            </Link>
+            <a className={styles.explore} href="#try-it">
+              See real possibilities <ArrowDown size={16} aria-hidden="true" />
+            </a>
           </div>
+          <p className={styles.heroStatus}>Private by default. Free during beta. No payment details.</p>
         </div>
-        <button className={styles.previewControl} type="button" onClick={() => controlsRef.current.togglePlayback()} aria-label={playLabel} aria-controls="dream-film-player">
-          {playing ? <Pause size={17} aria-hidden="true" /> : <Play size={17} aria-hidden="true" />}
-        </button>
-      </div>
-      <div className={styles.afterword}>
-        <a href="#try-it">Explore the possibilities <ArrowDown size={16} aria-hidden="true" /></a>
+        <div className={styles.aperture} data-ending={Boolean(scene.ending)} data-scene={sceneIndex}>
+          <video
+            ref={videoRef}
+            id="dream-film-player"
+            className={styles.player}
+            muted
+            loop
+            playsInline
+            preload="none"
+            poster="/films/what-if-hero-poster.jpg"
+            aria-label="Dream-job possibilities: an Arctic photographer, ocean scientist, remote professional and a woman leading a Seoul board meeting"
+            onTimeUpdate={(event) => syncScene(event.currentTarget)}
+            onSeeked={(event) => syncScene(event.currentTarget)}
+            onLoadedData={(event) => syncScene(event.currentTarget)}
+            onEmptied={(event) => syncScene(event.currentTarget, 0)}
+          >
+            <source data-src={`/films/what-if-hero-portrait.mp4?v=${timing.revision}`} type="video/mp4" media="(max-width: 600px)" />
+            <source data-src={`/films/what-if-hero.mp4?v=${timing.revision}`} type="video/mp4" />
+            Your browser cannot play this film. <a href="/films/what-if-landscape.mp4">Download the film</a>.
+          </video>
+          {scene.ending && <svg className={styles.endGraphic} viewBox="0 0 240 240" fill="none" aria-hidden="true">
+            {[35, 60, 85, 110].map((radius) => <circle key={radius} cx="120" cy="120" r={radius} stroke="currentColor" strokeWidth="1.5" strokeDasharray={`${radius * 4.5} ${radius * 1.8}`} />)}
+          </svg>}
+          <div className={styles.filmContent}>
+            <div ref={headlineRef} className={styles.headline} data-reflection={Boolean(scene.reflection)}>
+              <p className={styles.filmEyebrow} aria-hidden="true">{scene.label}</p>
+              <h2 aria-label="What if this was work?" key={sceneIndex} data-film-headline>
+                {scene.lines.map((line) => <span key={line} aria-hidden="true">{line}</span>)}
+              </h2>
+              <span key={`underline-${sceneIndex}`} className={styles.underline} aria-hidden="true" />
+            </div>
+            <button ref={watchRef} type="button" className={styles.watch} onClick={openFilm} aria-haspopup="dialog">
+              <Play size={14} weight="fill" aria-hidden="true" /> Watch the film
+            </button>
+          </div>
+          <p className={styles.previewStatus} role="status">
+            {playback === "error" ? "Preview unavailable. You can still watch the film." : ""}
+          </p>
+          <button className={styles.previewControl} type="button" onClick={() => controlsRef.current.togglePlayback()} aria-label={playLabel} aria-controls="dream-film-player">
+            {playing ? <Pause size={17} aria-hidden="true" /> : <Play size={17} aria-hidden="true" />}
+          </button>
+        </div>
       </div>
       <dialog ref={dialogRef} className={styles.dialog} aria-labelledby="dream-film-title" onClose={closeFilm}
         onClick={(event) => {
