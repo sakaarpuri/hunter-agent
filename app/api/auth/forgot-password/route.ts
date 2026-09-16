@@ -2,6 +2,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getUserByEmail, insertPasswordResetToken } from "@/lib/db";
 import { sendPasswordResetEmail } from "@/lib/agentmail";
+import { allowAuthAttempt } from "@/lib/auth-rate-limit";
 
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
@@ -20,6 +21,13 @@ export async function POST(request: NextRequest) {
     }
 
     const normalized = email.trim().toLowerCase();
+    const allowed = await allowAuthAttempt("password-reset-request", normalized, 3, 60 * 60);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Too many reset requests. Try again later." },
+        { status: 429, headers: { "retry-after": "3600" } },
+      );
+    }
     const user = await getUserByEmail(normalized);
 
     // Always return success to avoid leaking which emails are registered

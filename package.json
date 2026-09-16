@@ -8,6 +8,7 @@
     "dev": "next dev",
     "prebuild": "npm run clean:appledouble",
     "build": "next build",
+    "db:migrate": "node scripts/migrate.mjs",
     "start": "next start",
     "lint": "eslint"
   },
@@ -17,12 +18,13 @@
     "@tailwindcss/postcss": "^4",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.9.0",
-    "next": "16.2.3",
+    "next": "^16.3.4",
     "pdf-parse": "^1.1.1",
+    "postcss": "^8.5.28",
     "postgres": "^3.4.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "svix": "^1.90.0",
+    "svix": "^1.99.1",
     "tailwindcss": "^4"
   },
   "devDependencies": {
@@ -32,7 +34,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.3",
+    "eslint-config-next": "^16.3.4",
     "playwright": "^1.59.1",
     "typescript": "^5"
   }

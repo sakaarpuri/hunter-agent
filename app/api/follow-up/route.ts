@@ -16,7 +16,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 401 });
   }
 
-  const body = (await request.json()) as { roleId: number; plan: FollowUpPlan };
+  const body = (await request.json().catch(() => null)) as { roleId: number; plan: FollowUpPlan } | null;
+  if (!body || !Number.isSafeInteger(body.roleId) || body.roleId <= 0 || !["off", "7", "14"].includes(body.plan)) {
+    return NextResponse.json({ error: "A valid role and follow-up plan are required." }, { status: 400 });
+  }
 
   const workspace = await updateWorkspaceState(async (state) => {
     const applied = state.appliedRecords.find((item) => item.roleId === body.roleId);
@@ -38,7 +41,7 @@ export async function POST(request: Request) {
 
     const followUpDays = body.plan === "7" ? 7 : 14;
     applied.followUpDueAt = buildDueDate(applied.appliedAt, followUpDays);
-    const generated = await generateFollowUpDraft(role, state.profile, formatAppliedDate(applied.appliedAt));
+    const generated = await generateFollowUpDraft(role, state.profile, formatAppliedDate(applied.appliedAt), user.id);
     applied.followUpDraft = generated.draft;
     applied.provider = generated.provider;
     state.lastError = null;

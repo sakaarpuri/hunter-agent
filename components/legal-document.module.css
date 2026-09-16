@@ -1,0 +1,263 @@
+.page {
+  --legal-paper: #f6f1e8;
+  --legal-ink: #172321;
+  --legal-muted: #5c6965;
+  --legal-line: rgba(23, 35, 33, 0.17);
+  min-height: 100vh;
+  color: var(--legal-ink);
+  background:
+    radial-gradient(circle at 8% 2%, rgba(172, 210, 192, 0.34), transparent 31rem),
+    linear-gradient(180deg, #fcfaf5 0%, var(--legal-paper) 100%);
+}
+
+.skipLink {
+  position: fixed;
+  z-index: 20;
+  top: 12px;
+  left: 12px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  color: white;
+  background: var(--legal-ink);
+  transform: translateY(-180%);
+  transition: transform 160ms ease;
+}
+
+.skipLink:focus {
+  transform: translateY(0);
+}
+
+.header,
+.footer {
+  width: min(1160px, calc(100% - 40px));
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.header {
+  min-height: 84px;
+  border-bottom: 1px solid var(--legal-line);
+}
+
+.homeLink,
+.footer a,
+.contactLink {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+
+.homeLink {
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.main {
+  width: min(1160px, calc(100% - 40px));
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(230px, 0.72fr) minmax(0, 1.55fr);
+  gap: clamp(48px, 9vw, 132px);
+  padding-block: clamp(68px, 10vw, 132px);
+}
+
+.intro {
+  align-self: start;
+  position: sticky;
+  top: 42px;
+}
+
+.eyebrow,
+.updated {
+  font-family: var(--font-geist-mono), monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.69rem;
+}
+
+.eyebrow {
+  margin: 0 0 22px;
+  color: #176653;
+  font-weight: 700;
+}
+
+.intro h1 {
+  max-width: 8ch;
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(3.2rem, 7vw, 6.5rem);
+  font-weight: 500;
+  line-height: 0.9;
+  letter-spacing: -0.065em;
+}
+
+.summary {
+  max-width: 34rem;
+  margin: 30px 0 0;
+  color: var(--legal-muted);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.updated {
+  margin: 24px 0 0;
+  color: var(--legal-muted);
+}
+
+.document {
+  min-width: 0;
+  counter-reset: legal-section;
+}
+
+.document section {
+  counter-increment: legal-section;
+  padding: 0 0 42px;
+  margin: 0 0 42px;
+  border-bottom: 1px solid var(--legal-line);
+}
+
+.document section:last-child {
+  padding-bottom: 0;
+  margin-bottom: 0;
+  border-bottom: 0;
+}
+
+.document h2 {
+  display: grid;
+  grid-template-columns: 3rem 1fr;
+  gap: 14px;
+  align-items: baseline;
+  margin: 0 0 20px;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.5rem, 3vw, 2.15rem);
+  font-weight: 520;
+  line-height: 1.14;
+  letter-spacing: -0.035em;
+}
+
+.document h2::before {
+  content: counter(legal-section, decimal-leading-zero);
+  color: #227b66;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+}
+
+.document h3 {
+  margin: 28px 0 10px;
+  font-size: 1rem;
+  font-weight: 750;
+}
+
+.document p,
+.document li {
+  color: #364340;
+  font-size: 0.96rem;
+  line-height: 1.78;
+}
+
+.document p {
+  margin: 0 0 14px;
+}
+
+.document ul {
+  margin: 14px 0 0;
+  padding-left: 1.3rem;
+}
+
+.document li + li {
+  margin-top: 10px;
+}
+
+.document strong {
+  color: var(--legal-ink);
+}
+
+.document code {
+  padding: 0.12em 0.35em;
+  border-radius: 4px;
+  background: rgba(23, 35, 33, 0.07);
+  font-size: 0.88em;
+}
+
+.notice,
+.missingContact {
+  display: block;
+  border: 1px solid rgba(168, 91, 48, 0.38);
+  border-radius: 8px;
+  background: rgba(250, 235, 214, 0.72);
+  color: #704329;
+}
+
+.notice {
+  margin-top: 18px;
+  padding: 16px 18px;
+}
+
+.missingContact {
+  max-width: 40rem;
+  margin-top: 14px;
+  padding: 13px 15px;
+  line-height: 1.55;
+}
+
+.footer {
+  padding-block: 30px 38px;
+  border-top: 1px solid var(--legal-line);
+  color: var(--legal-muted);
+  font-size: 0.78rem;
+}
+
+.footer p {
+  margin: 0;
+  color: var(--legal-ink);
+  font-weight: 700;
+}
+
+.footer nav {
+  display: flex;
+  gap: 22px;
+}
+
+@media (max-width: 760px) {
+  .header,
+  .footer,
+  .main {
+    width: min(100% - 28px, 680px);
+  }
+
+  .header {
+    min-height: 72px;
+  }
+
+  .main {
+    display: block;
+    padding-block: 54px 72px;
+  }
+
+  .intro {
+    position: static;
+    padding-bottom: 54px;
+  }
+
+  .intro h1 {
+    font-size: clamp(3.25rem, 17vw, 5rem);
+  }
+
+  .document h2 {
+    grid-template-columns: 2.3rem 1fr;
+  }
+
+  .footer {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skipLink {
+    transition: none;
+  }
+}

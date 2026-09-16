@@ -1,9 +1,7 @@
 import { getResumeStyle } from "@/lib/hunteragent-data";
 import { buildFallbackFollowUp, buildFallbackPack } from "@/lib/hunteragent-fallback";
 import { PackIntent, PackRecord, PackTarget, Profile, ResumeStyleId, Role, Tone } from "@/lib/hunteragent-types";
-
-const ANTHROPIC_VERSION = "2023-06-01";
-const DEFAULT_MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-4-20250514";
+import { callTaskAi } from "@/lib/hunteragent-ai";
 
 type PackGenerationResult = ReturnType<typeof buildFallbackPack> & {
   provider: "anthropic" | "fallback";
@@ -15,22 +13,12 @@ type FollowUpGenerationResult = {
 };
 
 type PackGenerationOptions = {
+  userId?: string;
   target?: PackTarget;
   intent?: PackIntent;
   instruction?: string;
   currentPack?: Pick<PackRecord, "cvSummary" | "cvBullets" | "letter" | "reasoning" | "workSampleSelections"> | null;
 };
-
-function extractText(payload: unknown) {
-  if (!payload || typeof payload !== "object") return "";
-  const content = (payload as { content?: Array<{ type?: string; text?: string }> }).content;
-  if (!Array.isArray(content)) return "";
-  return content
-    .filter((item) => item?.type === "text" && typeof item.text === "string")
-    .map((item) => item.text)
-    .join("\n")
-    .trim();
-}
 
 function parseJsonResponse<T>(rawText: string): T | null {
   const fenced = rawText.match(/```json\s*([\s\S]*?)```/i)?.[1];
@@ -49,33 +37,6 @@ function parseJsonResponse<T>(rawText: string): T | null {
       return null;
     }
   }
-}
-
-async function callAnthropic(system: string, userPrompt: string) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return null;
-
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "anthropic-version": ANTHROPIC_VERSION,
-      "x-api-key": apiKey,
-    },
-    body: JSON.stringify({
-      model: DEFAULT_MODEL,
-      max_tokens: 1400,
-      system,
-      messages: [{ role: "user", content: userPrompt }],
-    }),
-  });
-
-  if (!response.ok) {
-    const message = await response.text();
-    throw new Error(`Anthropic request failed: ${response.status} ${message}`);
-  }
-
-  return extractText(await response.json());
 }
 
 function buildRefinementIntent(intent: PackIntent, target: PackTarget, instruction?: string) {
@@ -193,9 +154,10 @@ export async function generateApplicationPack(
       }
     : fallback;
   const apiKey = process.env.ANTHROPIC_API_KEY;
+  const safeFallback = { ...basePack, provider: "fallback" as const };
 
   if (!apiKey) {
-    return { ...mergePackSections(basePack, target, fallback), provider: "fallback" };
+    return safeFallback;
   }
 
   const style = getResumeStyle(styleId);
@@ -251,11 +213,21 @@ export async function generateApplicationPack(
   );
 
   try {
-    const rawText = await callAnthropic(system, userPrompt);
+    const rawText = await callTaskAi("materials", system, userPrompt, {
+      userId: options.userId,
+      validate: (text) => {
+        const value = parseJsonResponse<Partial<typeof fallback>>(text);
+        return Boolean(value && typeof value === "object"
+          && (target !== "cv" && target !== "pack" || (typeof value.cvSummary === "string" && value.cvSummary.trim()
+            && Array.isArray(value.cvBullets) && value.cvBullets.length === 3 && value.cvBullets.every((bullet) => typeof bullet === "string" && bullet.trim())))
+          && (target !== "letter" && target !== "pack" || (typeof value.letter === "string" && value.letter.trim()))
+          && (target !== "workSamples" && target !== "pack" || (typeof value.reasoning === "string" && Array.isArray(value.workSampleSelections))));
+      },
+    });
     const parsed = rawText ? parseJsonResponse<Partial<typeof fallback>>(rawText) : null;
 
     if (!parsed) {
-      return { ...mergePackSections(basePack, target, fallback), provider: "fallback" };
+      return safeFallback;
     }
 
     const merged = mergePackSections(basePack, target, {
@@ -272,11 +244,11 @@ export async function generateApplicationPack(
       provider: "anthropic",
     };
   } catch {
-    return { ...mergePackSections(basePack, target, fallback), provider: "fallback" };
+    return safeFallback;
   }
 }
 
-export async function generateFollowUpDraft(role: Role, profile: Profile, appliedAtLabel: string): Promise<FollowUpGenerationResult> {
+export async function generateFollowUpDraft(role: Role, profile: Profile, appliedAtLabel: string, userId?: string): Promise<FollowUpGenerationResult> {
   const fallback = buildFallbackFollowUp(role, profile, appliedAtLabel);
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
@@ -309,10 +281,13 @@ export async function generateFollowUpDraft(role: Role, profile: Profile, applie
   );
 
   try {
-    const rawText = await callAnthropic(system, userPrompt);
+    const rawText = await callTaskAi("followUp", system, userPrompt, { userId, validate: (text) => {
+      const value = parseJsonResponse<{ draft?: unknown }>(text);
+      return typeof value?.draft === "string" && value.draft.trim().length > 0 && value.draft.length <= 1800;
+    } });
     const parsed = rawText ? parseJsonResponse<{ draft?: string }>(rawText) : null;
 
-    if (!parsed?.draft) {
+    if (typeof parsed?.draft !== "string" || !parsed.draft.trim()) {
       return { draft: fallback, provider: "fallback" };
     }
 
